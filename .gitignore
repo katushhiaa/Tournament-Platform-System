@@ -28,6 +28,22 @@ project.lock.json
 project.fragment.lock.json
 artifacts/
 
+# .NET Artifacts
+appsettings.Development.json
+
+# User-specific files
+*.user
+*.userosscache
+*.sln.doccache
+
+# Секрети та оточення
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
 # ASP.NET Scaffolding
 ScaffoldingReadMe.txt
 
