@@ -100,6 +100,7 @@ CREATE TABLE tournament (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     organizer_id INTEGER REFERENCES "user"(id) ON DELETE SET NULL,
+    max_teams INTEGER NOT NULL,
     theme_id INTEGER NOT NULL REFERENCES tournament_theme(id),
     start_date TIMESTAMP NOT NULL,
     registration_deadline TIMESTAMP NOT NULL,
