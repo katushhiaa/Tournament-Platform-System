@@ -1,0 +1,31 @@
+{
+    "settings": {
+        "namingRules": {
+            "allowLeadingUnderscore": true,
+            "fieldNames": {
+                "private": {
+                    "requiredPrefix": "_",
+                    "capitalization": "camel_case"
+                }
+            }
+        },
+        "maintainabilityRules": {
+            "topLevelTypes": [
+                "class",
+                "interface",
+                "struct",
+                "enum"
+            ]
+        },
+        "layoutRules": {
+            "newlineAtEndOfFile": "require"
+        },
+        "documentationRules": {
+            "companyName": "TournamentPlatform",
+            "documentInterfaces": true,
+            "documentExposedElements": true,
+            "documentInternalElements": false,
+            "documentPrivateElements": false
+        }
+    }
+}
