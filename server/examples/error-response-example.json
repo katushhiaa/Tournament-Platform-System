@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-04-08T21:15:03Z",
+  "errorCode": "REGISTRATION_LIMIT_REACHED",
+  "message": "Неможливо приєднатися: ліміт учасників для цього турніру (16) вичерпано.",
+  "path": "/api/v1/tournaments/f47ac10b/participants",
+  "traceId": "req-99-xfgh-001",
+  "details": {
+    "currentCount": 16,
+    "limit": 16
+  }
+}
