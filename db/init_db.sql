@@ -1,11 +1,5 @@
 -- ============================================================================
--- 1. CREATE EXTENSIONS FOR UUID SUPPORT
--- ============================================================================
-
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
--- ============================================================================
--- 2. CREATE ENUM TYPES
+-- 1. CREATE ENUM TYPES
 -- ============================================================================
 
 CREATE TYPE tournament_status AS ENUM (
@@ -16,11 +10,11 @@ CREATE TYPE tournament_status AS ENUM (
 );
 
 -- ============================================================================
--- 3. CREATE ACCOUNT_STATE TABLE (Lookup)
+-- 2. CREATE ACCOUNT_STATE TABLE (Lookup)
 -- ============================================================================
 
 CREATE TABLE account_state (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(50) NOT NULL UNIQUE,
     description VARCHAR(255),
     is_active BOOLEAN DEFAULT true,
@@ -35,11 +29,11 @@ INSERT INTO account_state (name, description) VALUES
     ('banned', 'User account is banned');
 
 -- ============================================================================
--- 4. CREATE USER TABLE (with soft delete & audit trail)
+-- 3. CREATE USER TABLE (with soft delete & audit trail)
 -- ============================================================================
 
 CREATE TABLE "user" (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     full_name VARCHAR(255) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     is_organizer BOOLEAN DEFAULT false,
@@ -54,11 +48,11 @@ CREATE INDEX idx_user_is_organizer ON "user"(is_organizer);
 CREATE INDEX idx_user_deleted_at ON "user"(deleted_at);
 
 -- ============================================================================
--- 5. CREATE USER_DETAILS TABLE (Optional, cascade hard-delete with user)
+-- 4. CREATE USER_DETAILS TABLE (Optional, cascade hard-delete with user)
 -- ============================================================================
 
 CREATE TABLE user_details (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL UNIQUE REFERENCES "user"(id) ON DELETE CASCADE,
     email VARCHAR(255) UNIQUE NOT NULL,
     date_of_birth DATE NOT NULL,
@@ -70,11 +64,11 @@ CREATE INDEX idx_user_details_user_id ON user_details(user_id);
 CREATE INDEX idx_user_details_email ON user_details(email);
 
 -- ============================================================================
--- 6. CREATE USER_PHONE TABLE (Multiple phones per user, cascade hard-delete)
+-- 5. CREATE USER_PHONE TABLE (Multiple phones per user, cascade hard-delete)
 -- ============================================================================
 
 CREATE TABLE user_phone (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
     phone_number VARCHAR(20) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -85,11 +79,11 @@ CREATE INDEX idx_user_phone_user_id ON user_phone(user_id);
 CREATE INDEX idx_user_phone_phone_number ON user_phone(phone_number);
 
 -- ============================================================================
--- 7. CREATE TOURNAMENT_THEME TABLE (Lookup)
+-- 6. CREATE TOURNAMENT_THEME TABLE (Lookup)
 -- ============================================================================
 
 CREATE TABLE tournament_theme (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(100) NOT NULL UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -103,11 +97,11 @@ INSERT INTO tournament_theme (name) VALUES
     ('Rocket League');
 
 -- ============================================================================
--- 8. CREATE TOURNAMENT TABLE (with background_img, soft delete & audit trail)
+-- 7. CREATE TOURNAMENT TABLE (with background_img, soft delete & audit trail)
 -- ============================================================================
 
 CREATE TABLE tournament (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
     organizer_id UUID REFERENCES "user"(id) ON DELETE SET NULL,
     theme_id UUID NOT NULL REFERENCES tournament_theme(id),
@@ -133,11 +127,11 @@ CREATE INDEX idx_tournament_start_date ON tournament(start_date);
 CREATE INDEX idx_tournament_registration_deadline ON tournament(registration_deadline);
 
 -- ============================================================================
--- 9. CREATE TEAM TABLE (Tournament-scoped, deletable)
+-- 8. CREATE TEAM TABLE (Tournament-scoped, deletable)
 -- ============================================================================
 
 CREATE TABLE team (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
     tournament_id UUID NOT NULL REFERENCES tournament(id) ON DELETE CASCADE,
     is_disqualified BOOLEAN DEFAULT false,
@@ -150,11 +144,11 @@ CREATE INDEX idx_team_tournament_id ON team(tournament_id);
 CREATE INDEX idx_team_is_disqualified ON team(is_disqualified);
 
 -- ============================================================================
--- 10. CREATE USER_TEAM TABLE (Junction, immutable membership)
+-- 9. CREATE USER_TEAM TABLE (Junction, immutable membership)
 -- ============================================================================
 
 CREATE TABLE user_team (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES "user"(id) ON DELETE RESTRICT,
     team_id UUID NOT NULL REFERENCES team(id) ON DELETE RESTRICT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -165,11 +159,11 @@ CREATE INDEX idx_user_team_user_id ON user_team(user_id);
 CREATE INDEX idx_user_team_team_id ON user_team(team_id);
 
 -- ============================================================================
--- 11. CREATE MATCH TABLE (Immutable, single elimination)
+-- 10. CREATE MATCH TABLE (Immutable, single elimination)
 -- ============================================================================
 
 CREATE TABLE match (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tournament_id UUID NOT NULL REFERENCES tournament(id) ON DELETE CASCADE,
     team_a_id UUID NOT NULL REFERENCES team(id) ON DELETE RESTRICT,
     team_b_id UUID REFERENCES team(id) ON DELETE SET NULL,
@@ -184,7 +178,7 @@ CREATE TABLE match (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT unique_match_position UNIQUE (tournament_id, level, order_number),
     CONSTRAINT valid_different_teams CHECK (team_a_id != team_b_id),
-    CONSTRAINT valid_winner CHECK (winner_id IS NULL OR winner_id IN (team_a_id, team_b_id)),
+    CONSTRAINT valid_winner CHECK (winner_id IS NULL OR winner_id = team_a_id OR (team_b_id IS NOT NULL AND winner_id = team_b_id)),
     CONSTRAINT valid_scores CHECK (team_a_score >= 0 AND team_b_score >= 0)
 );
 
@@ -196,7 +190,7 @@ CREATE INDEX idx_match_is_valid ON match(is_valid);
 CREATE INDEX idx_match_level ON match(level);
 
 -- ============================================================================
--- 12. CREATE TRIGGERS (Immutability enforcement, audit & GDPR compliance)
+-- 11. CREATE TRIGGERS (Immutability enforcement, audit & GDPR compliance)
 -- ============================================================================
 
 -- Prevent match deletion
@@ -278,8 +272,8 @@ FOR EACH ROW
 WHEN (OLD.deleted_at IS DISTINCT FROM NEW.deleted_at AND NEW.deleted_at IS NOT NULL)
 EXECUTE FUNCTION hard_delete_user_details();
 
--- Update updated_at timestamp on user
-CREATE OR REPLACE FUNCTION update_user_timestamp()
+-- Update updated_at timestamp (shared for all tables with updated_at)
+CREATE OR REPLACE FUNCTION update_timestamp()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = CURRENT_TIMESTAMP;
@@ -290,66 +284,30 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trigger_update_user_timestamp
 BEFORE UPDATE ON "user"
 FOR EACH ROW
-EXECUTE FUNCTION update_user_timestamp();
-
--- Update updated_at timestamp on user_details
-CREATE OR REPLACE FUNCTION update_user_details_timestamp()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+EXECUTE FUNCTION update_timestamp();
 
 CREATE TRIGGER trigger_update_user_details_timestamp
 BEFORE UPDATE ON user_details
 FOR EACH ROW
-EXECUTE FUNCTION update_user_details_timestamp();
-
--- Update updated_at timestamp on tournament
-CREATE OR REPLACE FUNCTION update_tournament_timestamp()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+EXECUTE FUNCTION update_timestamp();
 
 CREATE TRIGGER trigger_update_tournament_timestamp
 BEFORE UPDATE ON tournament
 FOR EACH ROW
-EXECUTE FUNCTION update_tournament_timestamp();
-
--- Update updated_at timestamp on team
-CREATE OR REPLACE FUNCTION update_team_timestamp()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+EXECUTE FUNCTION update_timestamp();
 
 CREATE TRIGGER trigger_update_team_timestamp
 BEFORE UPDATE ON team
 FOR EACH ROW
-EXECUTE FUNCTION update_team_timestamp();
-
--- Update updated_at timestamp on match
-CREATE OR REPLACE FUNCTION update_match_timestamp()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+EXECUTE FUNCTION update_timestamp();
 
 CREATE TRIGGER trigger_update_match_timestamp
 BEFORE UPDATE ON match
 FOR EACH ROW
-EXECUTE FUNCTION update_match_timestamp();
+EXECUTE FUNCTION update_timestamp();
 
 -- ============================================================================
--- 13. VERIFY SCHEMA
+-- 12. VERIFY SCHEMA
 -- ============================================================================
 
 -- Verify all tables created successfully
