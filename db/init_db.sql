@@ -100,14 +100,11 @@ CREATE TABLE tournament_theme (
 
 -- Insert default themes
 INSERT INTO tournament_theme (name) VALUES
-    ('Football'),
-    ('Basketball'),
-    ('Volleyball'),
-    ('Tennis'),
     ('Chess'),
-    ('Badminton'),
-    ('Table Tennis'),
-    ('Esports');
+    ('Tennis'),
+    ('Shooting'),
+    ('Boxing'),
+    ('Rocket League');
 
 -- ============================================================================
 -- 8. CREATE TOURNAMENT TABLE (with background_img, soft delete & audit trail)
