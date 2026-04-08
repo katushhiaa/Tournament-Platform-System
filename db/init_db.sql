@@ -49,10 +49,6 @@ CREATE TABLE "user" (
     deleted_at TIMESTAMP NULL
 );
 
-CREATE UNIQUE INDEX idx_user_email_not_deleted 
-ON "user" (id) 
-WHERE deleted_at IS NULL;
-
 CREATE INDEX idx_user_account_state_id ON "user"(account_state_id);
 CREATE INDEX idx_user_is_organizer ON "user"(is_organizer);
 CREATE INDEX idx_user_deleted_at ON "user"(deleted_at);
@@ -159,8 +155,8 @@ CREATE INDEX idx_team_is_disqualified ON team(is_disqualified);
 
 CREATE TABLE user_team (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
-    team_id UUID NOT NULL REFERENCES team(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES "user"(id) ON DELETE RESTRICT,
+    team_id UUID NOT NULL REFERENCES team(id) ON DELETE RESTRICT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT unique_user_team UNIQUE (user_id, team_id)
 );
@@ -175,7 +171,7 @@ CREATE INDEX idx_user_team_team_id ON user_team(team_id);
 CREATE TABLE match (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tournament_id UUID NOT NULL REFERENCES tournament(id) ON DELETE CASCADE,
-    team_a_id UUID NOT NULL REFERENCES team(id) ON DELETE CASCADE,
+    team_a_id UUID NOT NULL REFERENCES team(id) ON DELETE RESTRICT,
     team_b_id UUID REFERENCES team(id) ON DELETE SET NULL,
     winner_id UUID REFERENCES team(id) ON DELETE SET NULL,
     level INTEGER NOT NULL,
@@ -233,13 +229,13 @@ EXECUTE FUNCTION prevent_user_team_deletion();
 CREATE OR REPLACE FUNCTION prevent_active_tournament_team_deletion()
 RETURNS TRIGGER AS $$
 DECLARE
-    tournament_status tournament_status;
+    v_status tournament_status;
 BEGIN
-    SELECT status INTO tournament_status
+    SELECT status INTO v_status
     FROM tournament
     WHERE id = OLD.tournament_id;
     
-    IF tournament_status IN ('IN_PROGRESS', 'COMPLETED') THEN
+    IF v_status IN ('IN_PROGRESS', 'COMPLETED') THEN
         RAISE EXCEPTION 'Cannot delete teams from active or completed tournaments';
     END IF;
     
