@@ -10,6 +10,7 @@
     <ProjectReference Include="../TournamentPlatformSystem.Application/TournamentPlatformSystemWebApi.Application.csproj" />
     <ProjectReference Include="../TournamentPlatformSystemWebApi.Core/TournamentPlatformSystemWebApi.Core.csproj" />
     <ProjectReference Include="../TournamentPlatformSystemWebApi.Infrastructure/TournamentPlatformSystemWebApi.Infrastructure.csproj" />
+    <ProjectReference Include="../TournamentPlatformSystemWebApi.Common/TournamentPlatformSystemWebApi.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -18,5 +19,19 @@
     <Folder Include="Middleware/" />
     <Folder Include="Swagger/" />
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.5.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="9.0.0" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+  </PropertyGroup>
 
 </Project>
