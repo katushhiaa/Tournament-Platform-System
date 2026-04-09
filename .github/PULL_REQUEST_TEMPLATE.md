@@ -22,12 +22,12 @@
 ##  Task Link
 
 <!-- Посилання на завдання в Jira -->
-- Task: [DEV-XXX](https://tournamentsystem.atlassian.net/browse/DEV-XX)
+- Task: [DEV-XXX](https://tournamentsystem.atlassian.net/browse/DEV-XXX)
 
 ## Self-Review Checklist
 
 ### Code Quality
-- [ ] Код відповідає встановленому [Code Style Guide](../docs/CODE_STYLE.md)
+- [ ] Код відповідає встановленому [Code Style Guide](../docs/NAMING_CONVENTIONS.md)
 - [ ] Немає дублювання коду
 - [ ] Складні логіки мають коментарі
 - [ ] Назви змінних/функцій зрозумілі та за конвенціями
@@ -74,7 +74,7 @@
 <!-- Вставте скріншот або видаліть цей розділ -->
 
 ### After (Стало)
-<!-- Вставте скріщот або видаліть цей розділ -->
+<!-- Вставте скріншот або видаліть цей розділ -->
 
 ## Breaking Changes
 
