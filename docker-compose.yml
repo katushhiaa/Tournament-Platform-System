@@ -1,0 +1,10 @@
+services:
+  client:
+    build: ./client
+    container_name: tournament-client
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0
