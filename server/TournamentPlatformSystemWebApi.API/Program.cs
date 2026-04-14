@@ -8,12 +8,12 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
 // Swagger configuration moved to Swagger/SwaggerExtensions.cs
-builder.Services.AddPlayTourSwagger();
+builder.Services.AddConfiguredSwagger();
 
 var app = builder.Build();
 
 // Use swagger middleware from extensions
-app.UsePlayTourSwagger();
+app.UseConfiguredSwagger();
 
 app.MapControllers();
 

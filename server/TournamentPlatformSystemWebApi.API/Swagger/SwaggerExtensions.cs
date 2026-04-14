@@ -10,7 +10,7 @@ namespace TournamentPlatformSystemWebApi.API.Swagger
 {
     public static class SwaggerExtensions
     {
-        public static IServiceCollection AddPlayTourSwagger(this IServiceCollection services)
+        public static IServiceCollection AddConfiguredSwagger(this IServiceCollection services)
         {
             services.AddSwaggerGen(c =>
             {
@@ -57,9 +57,13 @@ namespace TournamentPlatformSystemWebApi.API.Swagger
             return services;
         }
 
-        public static WebApplication UsePlayTourSwagger(this WebApplication app)
+        public static WebApplication UseConfiguredSwagger(this WebApplication app)
         {
-            if (app.Environment.IsDevelopment())
+            // Enable Swagger in Development OR when explicitly allowed via ENABLE_SWAGGER env var
+            var enableSwaggerEnv = Environment.GetEnvironmentVariable("ENABLE_SWAGGER");
+            var enableSwagger = app.Environment.IsDevelopment() || string.Equals(enableSwaggerEnv, "true", StringComparison.OrdinalIgnoreCase);
+
+            if (enableSwagger)
             {
                 app.UseSwagger();
                 app.UseSwaggerUI(c =>
