@@ -15,12 +15,28 @@ COPY . .
 WORKDIR /src/TournamentPlatformSystemWebApi.API
 RUN dotnet publish -c Debug -o /app/publish --no-restore
 
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS runtime
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y postgresql-client && rm -rf /var/lib/apt/lists/*
+
+RUN dotnet tool install --global dotnet-ef --version 9.0.15
+ENV PATH="$PATH:/root/.dotnet/tools"
+
+
+COPY --from=build /src /src
+
+
+
+
 
 # Let Kestrel listen on port 80
 ENV ASPNETCORE_URLS=http://+:80
 EXPOSE 80
 
 COPY --from=build /app/publish .
-ENTRYPOINT ["dotnet", "TournamentPlatformSystemWebApi.API.dll"]
+COPY seeds/seed.sql .
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh
+
+ENTRYPOINT ["/app/entrypoint.sh"]

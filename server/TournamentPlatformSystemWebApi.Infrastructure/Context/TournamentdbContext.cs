@@ -178,9 +178,12 @@ public partial class TournamentdbContext : DbContext
             entity.HasIndex(e => e.ThemeId, "idx_tournament_theme_id");
 
             entity.Property(e => e.Status)
-                .HasColumnName("status")
-                .HasColumnType("tournament_status")
-                .HasConversion<string>();
+             .HasColumnName("status")
+             .HasColumnType("tournament_status")
+              .HasConversion(
+                  v => v.ToString(),  
+                  v => Enum.Parse<TournamentStatusType>(v)
+              );
             entity.Property(e => e.Id)
                 .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("id");
@@ -383,9 +386,14 @@ public partial class TournamentdbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("user_team_user_id_fkey");
         });
+    
 
-        OnModelCreatingPartial(modelBuilder);
-    }
 
+
+  
+    OnModelCreatingPartial(modelBuilder);
+
+}
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }
+
