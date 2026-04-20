@@ -2,7 +2,7 @@ using System;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
-using TournamentPlatformSystem.Application.DTOs.Auth;
+using TournamentPlatformSystemWebApi.Application.DTOs.Auth;
 using TournamentPlatformSystemWebApi.Common.Models;
 
 namespace TournamentPlatformSystemWebApi.API.Controllers

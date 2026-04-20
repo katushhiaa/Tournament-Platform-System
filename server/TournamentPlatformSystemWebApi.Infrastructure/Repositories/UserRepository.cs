@@ -3,7 +3,7 @@
 // using System.Threading.Tasks;
 // using Microsoft.EntityFrameworkCore;
 // using TournamentPlatformSystemWebApi.Infrastructure.Entities;
-// using TournamentPlatformSystem.Application.DTOs.Auth;
+// using TournamentPlatformSystemWebApi.Application.DTOs.Auth;
 // using TournamentPlatformSystemWebApi.Application.Interfaces;
 // using TournamentPlatformSystemWebApi.Infrastructure.Context;
 
@@ -150,7 +150,7 @@
 //                 Email = user.UserDetail?.Email,
 //                 Name = user.FullName,
 //                 Role = user.IsOrganizer == true ? "Organizer" : "Player",
-//                 Stats = new TournamentPlatformSystem.Application.DTOs.Auth.UserStatsDto
+//                 Stats = new TournamentPlatformSystemWebApi.Application.DTOs.Auth.UserStatsDto
 //                 {
 //                     DateOfBirth = user.UserDetail?.DateOfBirth,
 //                     Phones = user.UserPhones != null ? user.UserPhones.Select(p => p.PhoneNumber).ToList() : null

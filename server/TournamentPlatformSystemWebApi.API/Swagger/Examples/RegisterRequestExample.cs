@@ -1,6 +1,6 @@
 using System;
 using Swashbuckle.AspNetCore.Filters;
-using TournamentPlatformSystem.Application.DTOs.Auth;
+using TournamentPlatformSystemWebApi.Application.DTOs.Auth;
 
 namespace TournamentPlatformSystemWebApi.API.Swagger.Examples
 {

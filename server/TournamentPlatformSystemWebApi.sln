@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TournamentPlatformSystemWebApi.Core", "TournamentPlatformSystemWebApi.Core\TournamentPlatformSystemWebApi.Core.csproj", "{38049E60-90CB-4CB8-B7B9-971C970EF96D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TournamentPlatformSystemWebApi.Application", "TournamentPlatformSystem.Application\TournamentPlatformSystemWebApi.Application.csproj", "{E93F66AA-E40E-4252-9E15-BEFC3022477C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TournamentPlatformSystemWebApi.Application", "TournamentPlatformSystemWebApi.Application\TournamentPlatformSystemWebApi.Application.csproj", "{E93F66AA-E40E-4252-9E15-BEFC3022477C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TournamentPlatformSystemWebApi.Infrastructure", "TournamentPlatformSystemWebApi.Infrastructure\TournamentPlatformSystemWebApi.Infrastructure.csproj", "{C89ABBFB-2962-47CC-B6A4-8DEFC84E7B19}"
 EndProject

@@ -1,5 +1,5 @@
 using System;
-using TournamentPlatformSystem.Application.DTOs.Auth;
+using TournamentPlatformSystemWebApi.Application.DTOs.Auth;
 
 namespace TournamentPlatformSystemWebApi.Application.Interfaces;
 

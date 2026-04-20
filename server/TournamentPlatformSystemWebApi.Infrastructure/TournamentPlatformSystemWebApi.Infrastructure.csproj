@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../TournamentPlatformSystem.Application/TournamentPlatformSystemWebApi.Application.csproj" />
+    <ProjectReference Include="../TournamentPlatformSystemWebApi.Application/TournamentPlatformSystemWebApi.Application.csproj" />
     <ProjectReference Include="../TournamentPlatformSystemWebApi.Core/TournamentPlatformSystemWebApi.Core.csproj" />
   </ItemGroup>
 

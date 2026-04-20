@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace TournamentPlatformSystem.Application.DTOs.Auth
+namespace TournamentPlatformSystemWebApi.Application.DTOs.Auth
 {
     public class UserStatsDto
     {

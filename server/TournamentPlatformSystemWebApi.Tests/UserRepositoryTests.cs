@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using TournamentPlatformSystemWebApi.Infrastructure.Context;
 using TournamentPlatformSystemWebApi.Infrastructure.Repositories;
 using TournamentPlatformSystemWebApi.Infrastructure.Entities;
-using TournamentPlatformSystem.Application.DTOs.Auth;
+using TournamentPlatformSystemWebApi.Application.DTOs.Auth;
 using Xunit;
 
 namespace TournamentPlatformSystemWebApi.Tests

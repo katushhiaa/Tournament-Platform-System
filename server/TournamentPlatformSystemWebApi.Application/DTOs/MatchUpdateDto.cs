@@ -1,6 +1,6 @@
 using System;
 
-namespace TournamentPlatformSystem.Application.DTOs
+namespace TournamentPlatformSystemWebApi.Application.DTOs
 {
     public class MatchUpdateDto
     {
