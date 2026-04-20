@@ -73,3 +73,6 @@ nunit-*.xml
 .env
 .env.local
 .env.*.local
+
+# docker
+*.override.yml
