@@ -26,6 +26,13 @@ builder.Services.AddTransient<IDbStateChecker, DbStateChecker>(serviceProvider =
 
 // Swagger configuration moved to Swagger/SwaggerExtensions.cs
 builder.Services.AddConfiguredSwagger();
+// Register AutoMapper profiles from Infrastructure assembly
+builder.Services.AddAutoMapper(typeof(TournamentPlatformSystemWebApi.Infrastructure.Mappings.UserProfile).Assembly);
+builder.Services.AddAutoMapper(typeof(TournamentPlatformSystemWebApi.Infrastructure.Mappings.MatchProfile).Assembly);
+builder.Services.AddAutoMapper(typeof(TournamentPlatformSystemWebApi.Infrastructure.Mappings.StatusProfile).Assembly);
+builder.Services.AddAutoMapper(typeof(TournamentPlatformSystemWebApi.Infrastructure.Mappings.TeamProfile).Assembly);
+builder.Services.AddAutoMapper(typeof(TournamentPlatformSystemWebApi.Infrastructure.Mappings.TournamentProfile).Assembly);
+builder.Services.AddAutoMapper(typeof(TournamentPlatformSystemWebApi.Infrastructure.Mappings.UserTeamProfile).Assembly);
 
 var app = builder.Build();
 
