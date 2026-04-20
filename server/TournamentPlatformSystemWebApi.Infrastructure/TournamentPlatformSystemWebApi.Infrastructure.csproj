@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Npgsql" Version="7.1.0" />
+    <!-- <PackageReference Include="Npgsql" Version="7.1.0" /> -->
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.2" />
   </ItemGroup>
 
