@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TournamentPlatformSystemWeb
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TournamentPlatformSystemWebApi.Common", "TournamentPlatformSystemWebApi.Common\TournamentPlatformSystemWebApi.Common.csproj", "{8130E2C8-B612-4AE1-B204-E62F509D7FC3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TournamentPlatformSystemWebApi.Tests", "TournamentPlatformSystemWebApi.Tests\TournamentPlatformSystemWebApi.Tests.csproj", "{FC6364ED-A3F4-49BC-9D83-A01379B9177A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,6 +85,18 @@ Global
 		{8130E2C8-B612-4AE1-B204-E62F509D7FC3}.Release|x64.Build.0 = Release|Any CPU
 		{8130E2C8-B612-4AE1-B204-E62F509D7FC3}.Release|x86.ActiveCfg = Release|Any CPU
 		{8130E2C8-B612-4AE1-B204-E62F509D7FC3}.Release|x86.Build.0 = Release|Any CPU
+		{FC6364ED-A3F4-49BC-9D83-A01379B9177A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FC6364ED-A3F4-49BC-9D83-A01379B9177A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FC6364ED-A3F4-49BC-9D83-A01379B9177A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{FC6364ED-A3F4-49BC-9D83-A01379B9177A}.Debug|x64.Build.0 = Debug|Any CPU
+		{FC6364ED-A3F4-49BC-9D83-A01379B9177A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{FC6364ED-A3F4-49BC-9D83-A01379B9177A}.Debug|x86.Build.0 = Debug|Any CPU
+		{FC6364ED-A3F4-49BC-9D83-A01379B9177A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FC6364ED-A3F4-49BC-9D83-A01379B9177A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FC6364ED-A3F4-49BC-9D83-A01379B9177A}.Release|x64.ActiveCfg = Release|Any CPU
+		{FC6364ED-A3F4-49BC-9D83-A01379B9177A}.Release|x64.Build.0 = Release|Any CPU
+		{FC6364ED-A3F4-49BC-9D83-A01379B9177A}.Release|x86.ActiveCfg = Release|Any CPU
+		{FC6364ED-A3F4-49BC-9D83-A01379B9177A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

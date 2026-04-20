@@ -13,16 +13,25 @@
 
   <ItemGroup>
     <PackageReference Include="Npgsql" Version="7.1.0" />
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.2" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Configurations/" />
-    <Folder Include="Context/" />
     <Folder Include="Entities/" />
     <Folder Include="ExternalServices/" />
     <Folder Include="Migrations/" />
     <Folder Include="Repositories/" />
     <Folder Include="Services/" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.15">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Templates" Version="9.0.15" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.3" />
   </ItemGroup>
 
 </Project>
