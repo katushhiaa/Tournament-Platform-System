@@ -1,10 +1,10 @@
 using System;
+using TournamentPlatformSystemWebApi.Common.Helpers;
 
 namespace TournamentPlatformSystemWebApi.Core.Entities
 {
-    public class UserDetail
+    public class UserDetail : BaseEntity
     {
-        public Guid Id { get; set; }
         public string Email { get; set; } = null!;
         public DateOnly DateOfBirth { get; set; }
         public DateTime? CreatedAt { get; set; }

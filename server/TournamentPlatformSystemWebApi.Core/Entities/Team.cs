@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
+using TournamentPlatformSystemWebApi.Common.Helpers;
 
 namespace TournamentPlatformSystemWebApi.Core.Entities
 {
-    public class Team
+    public class Team : BaseEntity
     {
-        public Guid Id { get; set; }
         public string Name { get; set; } = null!;
         public Guid TournamentId { get; set; }
         public bool? IsDisqualified { get; set; }

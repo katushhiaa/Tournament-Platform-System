@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
+using TournamentPlatformSystemWebApi.Common.Helpers;
 
 namespace TournamentPlatformSystemWebApi.Core.Entities
 {
-    public class Match
+    public class Match : BaseEntity
     {
-        public Guid Id { get; set; }
         public Guid TournamentId { get; set; }
         public Guid TeamAId { get; set; }
         public Guid? TeamBId { get; set; }

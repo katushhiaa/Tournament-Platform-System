@@ -21,6 +21,7 @@ public class UserProfile : Profile
             .ForMember(d => d.AccountStateDescription, o => o.MapFrom(s => s.AccountState != null ? s.AccountState.Description : null))
             .ForMember(d => d.IsActive, o => o.MapFrom(s => s.AccountState != null ? s.AccountState.IsActive ?? false : false))
             .ForMember(d => d.UserDetail, o => o.MapFrom(s => s.UserDetail))
+            .ForMember(d => d.Password, o => o.Ignore())
             // populate UserDetail.Phones from the flat UserPhones collection on the user
             .ForPath(d => d.UserDetail.Phones, o => o.MapFrom(s => s.UserPhones));
 

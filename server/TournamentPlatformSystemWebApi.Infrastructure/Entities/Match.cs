@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using TournamentPlatformSystemWebApi.Common.Helpers;
 
 namespace TournamentPlatformSystemWebApi.Infrastructure.Entities;
 
-public partial class MatchModel
+public partial class MatchModel : BaseDbEntity
 {
-    public Guid Id { get; set; }
-
     public Guid TournamentId { get; set; }
 
     public Guid TeamAId { get; set; }
