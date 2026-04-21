@@ -4,16 +4,18 @@ using TournamentPlatformSystemWebApi.Application.DTOs.Auth;
 
 namespace TournamentPlatformSystemWebApi.API.Swagger.Examples
 {
-    public class RegisterRequestExample : IExamplesProvider<RegisterRequestDto>
+    public class RegisterUserRequestExample : IExamplesProvider<RegisterUserRequest>
     {
-        public RegisterRequestDto GetExamples()
+        public RegisterUserRequest GetExamples()
         {
-            return new RegisterRequestDto
+            return new RegisterUserRequest
             {
                 Email = "organizer@example.com",
                 Password = "P@ssw0rd!",
-                Name = "Olena Organizer",
-                Role = "Organizer"
+                FullName = "Olena Organizer",
+                Role = "Organizer",
+                DateOfBirth = DateOnly.FromDateTime(DateTime.Now).AddYears(-20),
+                PhoneNumber = "+380661234567"
             };
         }
     }

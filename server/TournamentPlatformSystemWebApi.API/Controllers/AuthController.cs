@@ -3,7 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
 using TournamentPlatformSystemWebApi.Application.DTOs.Auth;
+using TournamentPlatformSystemWebApi.Application.Interfaces;
 using TournamentPlatformSystemWebApi.Common.Models;
+using TournamentPlatformSystemWebApi.Common.Exceptions;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
 
 namespace TournamentPlatformSystemWebApi.API.Controllers
 {
@@ -12,18 +16,76 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
     [SwaggerTag("Auth")]
     public class AuthController : ControllerBase
     {
+        private readonly IAuthenticationService _authenticationService;
+
+        public AuthController(IAuthenticationService authenticationService)
+        {
+            _authenticationService = authenticationService;
+        }
+
         [HttpPost("register")]
+        [AllowAnonymous]
         [SwaggerOperation(Summary = "Реєстрація нового користувача", Description = "Реєструє нового користувача. Роль: Guest.")]
-        [SwaggerResponse(201, Type = typeof(TokenResponseDto), Description = "Повертає токен та дані користувача")]
+        [SwaggerResponse(201, Type = typeof(RegisterUserResponse), Description = "Повертає токен та дані користувача")]
         [SwaggerResponse(400, Type = typeof(ErrorResponseDto), Description = "Невалідні дані")]
         [SwaggerResponse(409, Type = typeof(ErrorResponseDto), Description = "Email вже існує")]
-        [SwaggerRequestExample(typeof(RegisterRequestDto), typeof(Swagger.Examples.RegisterRequestExample))]
-        [SwaggerResponseExample(201, typeof(Swagger.Examples.TokenResponseExample))]
-        public IActionResult Register([FromBody] RegisterRequestDto dto)
+        [SwaggerRequestExample(typeof(RegisterUserRequest), typeof(Swagger.Examples.RegisterUserRequestExample))]
+        [SwaggerResponseExample(201, typeof(Swagger.Examples.RegisterUserResponseExample))]
+        public async Task<IActionResult> Register([FromBody] RegisterUserRequest dto)
         {
-            var user = new UserDto { Id = Guid.NewGuid(), Email = dto.Email, Name = dto.Name, Role = dto.Role };
-            var token = new TokenResponseDto { Token = "token-sample" };
-            return Created(string.Empty, new { token = token.Token, user });
+            try
+            {
+                var result = await _authenticationService.RegisterAsync(dto);
+                return Created(string.Empty, result);
+            }
+            catch (ValidationException ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = 400,
+                        Type = "ValidationError",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+                return BadRequest(err);
+            }
+            catch (DuplicateEmailException ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = 409,
+                        Type = "Conflict",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+                return Conflict(err);
+            }
+            catch (Exception ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = 500,
+                        Type = "InternalServerError",
+                        Message = "Internal server error",
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+                return StatusCode(500, err);
+            }
         }
 
         [HttpPost("login")]

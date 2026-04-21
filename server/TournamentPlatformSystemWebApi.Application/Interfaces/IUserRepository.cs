@@ -6,4 +6,5 @@ namespace TournamentPlatformSystemWebApi.Application.Interfaces;
 public interface IUserRepository : IRepository<User, Guid>
 {
     Task<User> GetUserWithDetails(Guid id);
+    Task<bool> ExistsByEmailAsync(string email);
 }

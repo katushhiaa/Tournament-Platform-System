@@ -49,5 +49,10 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Repositories
 
             return _mapper.Map<User>(dbModel);
         }
+
+        public async Task<bool> ExistsByEmailAsync(string email)
+        {
+            return await _context.Set<UserDetailModel>().AnyAsync(x => x.Email == email);
+        }
     }
 }
