@@ -34,7 +34,16 @@ builder.Services.AddTransient<IDbStateChecker, DbStateChecker>(serviceProvider =
 // infra services
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>(sp => new BcryptPasswordHasher(12));
-builder.Services.AddScoped<IAuthenticationService, TournamentPlatformSystemWebApi.Infrastructure.Services.AuthenticationService>();
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+// JWT token options and service
+var jwtSection = builder.Configuration.GetSection("Jwt");
+var jwtOptions = new JwtTokenOptions(
+    jwtSection["Key"] ?? "default-development-key-change-in-production",
+    jwtSection["Issuer"] ?? "tournament-api",
+    int.TryParse(jwtSection["ExpirationDays"], out var d) ? d : 1
+);
+
+builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>(sp => new JwtTokenService(jwtOptions));
 
 // Swagger configuration moved to Swagger/SwaggerExtensions.cs
 builder.Services.AddConfiguredSwagger();
