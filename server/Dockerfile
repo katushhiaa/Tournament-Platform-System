@@ -3,7 +3,7 @@ WORKDIR /src
 
 # Copy csproj files and restore
 COPY ["TournamentPlatformSystemWebApi.API/TournamentPlatformSystemWebApi.API.csproj", "TournamentPlatformSystemWebApi.API/"]
-COPY ["TournamentPlatformSystemWebApi.Application/TournamentPlatformSystemWebApi.Application.Application.csproj", "TournamentPlatformSystemWebApi.Application/"]
+COPY ["TournamentPlatformSystemWebApi.Application/TournamentPlatformSystemWebApi.Application.csproj", "TournamentPlatformSystemWebApi.Application/"]
 COPY ["TournamentPlatformSystemWebApi.Core/TournamentPlatformSystemWebApi.Core.csproj", "TournamentPlatformSystemWebApi.Core/"]
 COPY ["TournamentPlatformSystemWebApi.Infrastructure/TournamentPlatformSystemWebApi.Infrastructure.csproj", "TournamentPlatformSystemWebApi.Infrastructure/"]
 COPY ["TournamentPlatformSystemWebApi.Common/TournamentPlatformSystemWebApi.Common.csproj", "TournamentPlatformSystemWebApi.Common/"]

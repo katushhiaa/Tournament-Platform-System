@@ -1,161 +1,136 @@
-// using System;
-// using System.Data.Common;
-// using System.Threading.Tasks;
-// using Microsoft.EntityFrameworkCore;
-// using TournamentPlatformSystemWebApi.Infrastructure.Entities;
-// using TournamentPlatformSystemWebApi.Application.DTOs.Auth;
-// using TournamentPlatformSystemWebApi.Application.Interfaces;
-// using TournamentPlatformSystemWebApi.Infrastructure.Context;
+using System;
+using System.Data.Common;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using TournamentPlatformSystemWebApi.Infrastructure.Entities;
+using TournamentPlatformSystemWebApi.Application.DTOs.Auth;
+using TournamentPlatformSystemWebApi.Application.Interfaces;
+using TournamentPlatformSystemWebApi.Infrastructure.Context;
+using TournamentPlatformSystemWebApi.Core.Entities;
+using AutoMapper;
+using TournamentPlatformSystemWebApi.Infrastructure.Security;
 
-// namespace TournamentPlatformSystemWebApi.Infrastructure.Repositories
-// {
-//     public class UserRepository : IUserRepository
-//     {
-//         private readonly TournamentdbContext _context;
+namespace TournamentPlatformSystemWebApi.Infrastructure.Repositories
+{
+    public class UserRepository : BaseRepository<User, UserModel>, IUserRepository
+    {
+        private readonly IPasswordHasher _passwordHasher;
 
-//         public UserRepository(TournamentdbContext context)
-//         {
-//             _context = context;
-//         }
+        public UserRepository(TournamentdbContext context, IMapper mapper, IPasswordHasher passwordHasher) : base(context, mapper)
+        {
+            _passwordHasher = passwordHasher;
+        }
 
-//         public async Task CreateAsync(UserDto user)
-//         {
-//             // The InMemory provider does not support transactions and will emit a warning
-//             // that can surface as an exception in tests. Avoid beginning a transaction
-//             // when running against the in-memory provider.
-//             var isInMemory = _context.Database.ProviderName?.Contains("InMemory", StringComparison.OrdinalIgnoreCase) == true;
+        public async override Task<Guid> CreateAsync(User entity)
+        {
+            if (entity.Password == null)
+            {
+                return Guid.Empty;
+            }
 
-//             if (isInMemory)
-//             {
-//                 var accountState = await _context.AccountStates.FirstOrDefaultAsync(s => s.Name == "active");
-//                 if (accountState == null)
-//                     throw new InvalidOperationException("Default account state 'active' not found");
+            var provider = _context.Database.ProviderName ?? string.Empty;
+            var useTransaction = !provider.Contains("InMemory", StringComparison.OrdinalIgnoreCase);
 
-//                 var userModel = new UserModel
-//                 {
-//                     Id = user.Id == Guid.Empty ? Guid.NewGuid() : user.Id,
-//                     FullName = user.Name ?? string.Empty,
-//                     PasswordHash = string.Empty,
-//                     IsOrganizer = false,
-//                     AccountStateId = accountState.Id
-//                 };
+            await using var txn = useTransaction ? await _context.Database.BeginTransactionAsync() : null;
+            try
+            {
+                var paswordHash = _passwordHasher.HashPassword(entity.Password);
 
-//                 _context.Users.Add(userModel);
-//                 await _context.SaveChangesAsync();
+                var dbModel = _mapper.Map<UserModel>(entity);
+                dbModel.Id = Guid.NewGuid();
 
-//                 if (!string.IsNullOrWhiteSpace(user.Email))
-//                 {
-//                     var userDetail = new UserDetailModel
-//                     {
-//                         UserId = userModel.Id,
-//                         Email = user.Email,
-//                         DateOfBirth = DateOnly.MinValue
-//                     };
+                dbModel.PasswordHash = paswordHash;
+                dbModel.CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
-//                     _context.UserDetails.Add(userDetail);
-//                     await _context.SaveChangesAsync();
-//                 }
+                // if account state not provided, try to resolve "active"
+                if (dbModel.AccountStateId == Guid.Empty)
+                {
+                    var activeState = await _context.Set<AccountStateModel>().FirstOrDefaultAsync(s => s.Name == "active");
+                    if (activeState != null)
+                    {
+                        dbModel.AccountStateId = activeState.Id;
+                    }
+                }
 
-//                 return;
-//             }
+                await _context.Set<UserModel>().AddAsync(dbModel);
+                await _context.SaveChangesAsync();
 
-//             await using var transaction = await _context.Database.BeginTransactionAsync();
-//             try
-//             {
-//                 var accountState = await _context.AccountStates.FirstOrDefaultAsync(s => s.Name == "active");
-//                 if (accountState == null)
-//                     throw new InvalidOperationException("Default account state 'active' not found");
+                // create user detail if provided
+                if (entity.UserDetail != null)
+                {
+                    var userDetail = new UserDetailModel
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = dbModel.Id,
+                        Email = entity.UserDetail.Email,
+                        DateOfBirth = entity.UserDetail.DateOfBirth,
+                        CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                    };
 
-//                 var userModel = new UserModel
-//                 {
-//                     Id = user.Id == Guid.Empty ? Guid.NewGuid() : user.Id,
-//                     FullName = user.Name ?? string.Empty,
-//                     PasswordHash = string.Empty,
-//                     IsOrganizer = false,
-//                     AccountStateId = accountState.Id
-//                 };
+                    await _context.Set<UserDetailModel>().AddAsync(userDetail);
 
-//                 _context.Users.Add(userModel);
-//                 await _context.SaveChangesAsync();
+                    // create phones
+                    if (entity.UserDetail.Phones != null)
+                    {
+                        foreach (var phone in entity.UserDetail.Phones)
+                        {
+                            var userPhone = new UserPhoneModel
+                            {
+                                Id = Guid.NewGuid(),
+                                UserId = dbModel.Id,
+                                PhoneNumber = phone,
+                                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                            };
 
-//                 if (!string.IsNullOrWhiteSpace(user.Email))
-//                 {
-//                     var userDetail = new UserDetailModel
-//                     {
-//                         UserId = userModel.Id,
-//                         Email = user.Email,
-//                         DateOfBirth = DateOnly.MinValue
-//                     };
+                            await _context.Set<UserPhoneModel>().AddAsync(userPhone);
+                        }
+                    }
 
-//                     _context.UserDetails.Add(userDetail);
-//                     await _context.SaveChangesAsync();
-//                 }
+                    await _context.SaveChangesAsync();
+                }
 
-//                 await transaction.CommitAsync();
-//             }
-//             catch
-//             {
-//                 await transaction.RollbackAsync();
-//                 throw;
-//             }
-//         }
+                if (useTransaction && txn != null)
+                {
+                    await txn.CommitAsync();
+                }
 
-//         public async Task<bool> ExistsByEmailAsync(string email)
-//         {
-//             if (string.IsNullOrWhiteSpace(email))
-//                 return false;
+                return dbModel.Id;
+            }
+            catch
+            {
+                if (useTransaction && txn != null)
+                {
+                    await txn.RollbackAsync();
+                }
 
-//             return await _context.UserDetails.CountAsync(d => d.Email == email)
-//                 .ContinueWith(t => t.Result > 0);
-//         }
+                throw;
+            }
+        }
 
-//         public async Task<UserDto?> GetByEmailAsync(string email)
-//         {
-//             if (string.IsNullOrWhiteSpace(email))
-//                 return null;
+        public async Task<User> GetUserWithDetails(Guid id)
+        {
+            var dbModel = await _context.Set<UserModel>()
+            .Include(x => x.UserDetail)
+            .Include(x => x.UserPhones)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id);
 
-//             var userDetail = await _context.UserDetails
-//                 .Include(d => d.User)
-//                 .FirstOrDefaultAsync(d => d.Email == email);
+            return _mapper.Map<User>(dbModel);
+        }
 
-//             if (userDetail == null)
-//                 return null;
+        public async Task<bool> ExistsByEmailAsync(string email)
+        {
+            return await _context.Set<UserDetailModel>().AnyAsync(x => x.Email == email);
+        }
 
-//             var user = userDetail.User;
+        public async Task<User> GetByEmailAsync(string email)
+        {
+            var dbModel = await _context.Set<UserModel>()
+            .Include(x => x.UserDetail)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.UserDetail != null && x.UserDetail.Email == email);
 
-//             return new UserDto
-//             {
-//                 Id = user.Id,
-//                 Email = userDetail.Email,
-//                 Name = user.FullName,
-//                 Role = user.IsOrganizer == true ? "Organizer" : "Player",
-//                 Stats = null
-//             };
-//         }
-
-
-//         public async Task<UserDto?> GetByIdAsync(Guid id)
-//         {
-//             var user = await _context.Users
-//                 .Include(u => u.UserDetail)
-//                 .Include(u => u.UserPhones)
-//                 .FirstOrDefaultAsync(u => u.Id == id);
-
-//             if (user == null)
-//                 return null;
-
-//             return new UserDto
-//             {
-//                 Id = user.Id,
-//                 Email = user.UserDetail?.Email,
-//                 Name = user.FullName,
-//                 Role = user.IsOrganizer == true ? "Organizer" : "Player",
-//                 Stats = new TournamentPlatformSystemWebApi.Application.DTOs.Auth.UserStatsDto
-//                 {
-//                     DateOfBirth = user.UserDetail?.DateOfBirth,
-//                     Phones = user.UserPhones != null ? user.UserPhones.Select(p => p.PhoneNumber).ToList() : null
-//                 }
-//             };
-//         }
-//     }
-// }
+            return _mapper.Map<User>(dbModel);
+        }
+    }
+}

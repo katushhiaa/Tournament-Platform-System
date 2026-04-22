@@ -12,4 +12,8 @@
     <Folder Include="Logic/" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="../TournamentPlatformSystemWebApi.Common/TournamentPlatformSystemWebApi.Common.csproj" />
+  </ItemGroup>
+
 </Project>
