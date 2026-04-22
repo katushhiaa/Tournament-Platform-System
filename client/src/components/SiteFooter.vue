@@ -4,11 +4,11 @@
       <div class="footer__brand">
         <div class="footer__logo-row">
           <img src="../assets/logo-icon.png" alt="Zvytyaha logo" class="header__logo" />
-          <span class="footer__title">ZVYTYAHA</span>
+          <span class="footer__title">ZVYTIAHA</span>
         </div>
 
         <p class="footer__description">
-          Zvytyaha is a platform for organizing and participating in tournaments.
+          Zvytiaha is a platform for organizing and participating in tournaments.
         </p>
 
          <div class="footer__socials">
@@ -62,7 +62,7 @@
     </div>
 
     <div class="footer__bottom">
-      © 2026 Zvytyaha. All rights reserved.
+      © 2026 Zvytiaha. All rights reserved.
     </div>
   </footer>
 </template>
