@@ -63,6 +63,8 @@ CodeCoverage/
 # MSTest test Results
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
+*.lscache
+
 
 # NUnit
 *.VisualState.xml
@@ -73,3 +75,6 @@ nunit-*.xml
 .env
 .env.local
 .env.*.local
+
+# docker
+*.override.yml
