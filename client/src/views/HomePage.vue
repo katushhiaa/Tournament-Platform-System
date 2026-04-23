@@ -84,85 +84,85 @@ import checkIconGreen from '../assets/icons/check-icon-green.svg';
 
     <section class="section section--purpose">
       <div class="section__inner">
-        <h2 class="section__title">PLATFORM PURPOSE</h2>
+        <h2 class="section__title">OUR PURPOSE</h2>
         <p class="section__subtitle section__subtitle--wide">
           Zvytyaha unites organizers and players, creating a convenient environment
           for hosting and participating in esports tournaments.
         </p>
 
-         <div class="purpose-grid">
-                <article
-                    class="purpose-card purpose-card--blue"
-                    :style="{ backgroundImage: `url(${organizersBg})` }"
-                >
-                    <div class="purpose-card__overlay"></div>
-                    <div class="purpose-card__content">
-                    <div class="purpose-card__title-row">
-                        <img
-                        :src="organizersTitleIcon"
-                        alt="Organizers icon"
-                        class="purpose-card__title-icon"
-                        />
-                        <h3>FOR ORGANIZERS</h3>
-                    </div>
+        <div class="purpose-grid">
+          <article
+            class="purpose-card purpose-card--blue"
+            :style="{ backgroundImage: `url(${organizersBg})` }"
+          >
+            <div class="purpose-card__overlay"></div>
+            <div class="purpose-card__content">
+              <div class="purpose-card__title-row">
+                <img
+                  :src="organizersTitleIcon"
+                  alt="Organizers icon"
+                  class="purpose-card__title-icon"
+                />
+                <h3>FOR ORGANIZERS</h3>
+              </div>
 
-                    <ul>
-                        <li>
-                        <img :src="checkIconBlue" alt="Check icon" class="purpose-card__list-icon" />
-                        <span>Tournament creation and management</span>
-                        </li>
-                        <li>
-                        <img :src="checkIconBlue" alt="Check icon" class="purpose-card__list-icon" />
-                        <span>Setting up competition rules and formats</span>
-                        </li>
-                        <li>
-                        <img :src="checkIconBlue" alt="Check icon" class="purpose-card__list-icon" />
-                        <span>Tracking participants and results</span>
-                        </li>
-                        <li>
-                        <img :src="checkIconBlue" alt="Check icon" class="purpose-card__list-icon" />
-                        <span>Automating tournament draws</span>
-                        </li>
-                    </ul>
-                    </div>
-                </article>
-
-                <article
-                    class="purpose-card purpose-card--green"
-                    :style="{ backgroundImage: `url(${playersBg})` }"
-                >
-                    <div class="purpose-card__overlay"></div>
-                    <div class="purpose-card__content">
-                    <div class="purpose-card__title-row">
-                        <img
-                        :src="playersTitleIcon"
-                        alt="Players icon"
-                        class="purpose-card__title-icon"
-                        />
-                        <h3>FOR PLAYERS</h3>
-                    </div>
-
-                    <ul>
-                        <li>
-                        <img :src="checkIconGreen" alt="Check icon" class="purpose-card__list-icon" />
-                        <span>Participate in tournaments for various games</span>
-                        </li>
-                        <li>
-                        <img :src="checkIconGreen" alt="Check icon" class="purpose-card__list-icon" />
-                        <span>Track your results</span>
-                        </li>
-                        <li>
-                        <img :src="checkIconGreen" alt="Check icon" class="purpose-card__list-icon" />
-                        <span>Compete with other players</span>
-                        </li>
-                        <li>
-                        <img :src="checkIconGreen" alt="Check icon" class="purpose-card__list-icon" />
-                        <span>Increase your rating and experience</span>
-                        </li>
-                    </ul>
-                    </div>
-                </article>
+              <ul>
+                <li>
+                  <img :src="checkIconBlue" alt="Check icon" class="purpose-card__list-icon" />
+                  <span>Tournament creation and management</span>
+                </li>
+                <li>
+                  <img :src="checkIconBlue" alt="Check icon" class="purpose-card__list-icon" />
+                  <span>Setting up competition rules and formats</span>
+                </li>
+                <li>
+                  <img :src="checkIconBlue" alt="Check icon" class="purpose-card__list-icon" />
+                  <span>Tracking participants and results</span>
+                </li>
+                <li>
+                  <img :src="checkIconBlue" alt="Check icon" class="purpose-card__list-icon" />
+                  <span>Automating tournament draws</span>
+                </li>
+              </ul>
             </div>
+          </article>
+
+          <article
+            class="purpose-card purpose-card--green"
+            :style="{ backgroundImage: `url(${playersBg})` }"
+          >
+            <div class="purpose-card__overlay"></div>
+            <div class="purpose-card__content">
+              <div class="purpose-card__title-row">
+                <img
+                  :src="playersTitleIcon"
+                  alt="Players icon"
+                  class="purpose-card__title-icon"
+                />
+                <h3>FOR PLAYERS</h3>
+              </div>
+
+              <ul>
+                <li>
+                  <img :src="checkIconGreen" alt="Check icon" class="purpose-card__list-icon" />
+                  <span>Participate in tournaments for various games</span>
+                </li>
+                <li>
+                  <img :src="checkIconGreen" alt="Check icon" class="purpose-card__list-icon" />
+                  <span>Track your results</span>
+                </li>
+                <li>
+                  <img :src="checkIconGreen" alt="Check icon" class="purpose-card__list-icon" />
+                  <span>Compete with other players</span>
+                </li>
+                <li>
+                  <img :src="checkIconGreen" alt="Check icon" class="purpose-card__list-icon" />
+                  <span>Increase your rating and experience</span>
+                </li>
+              </ul>
+            </div>
+          </article>
+        </div>
       </div>
     </section>
 
@@ -171,14 +171,15 @@ import checkIconGreen from '../assets/icons/check-icon-green.svg';
       <div class="cta__content">
         <h2>Ready to get started?</h2>
         <p>Join the platform today and start your path to victory.</p>
-        <button class="main-button">Create an Account</button>
+        <router-link to="/register" class="main-button main-button--link">
+          Create an Account
+        </router-link>
       </div>
     </section>
 
     <SiteFooter />
   </div>
 </template>
-
 
 <style scoped>
 .home-page {
@@ -234,12 +235,38 @@ import checkIconGreen from '../assets/icons/check-icon-green.svg';
 
 .hero__button,
 .main-button {
-  border: none;
+  border: 1px solid #ff9800;
   border-radius: 12px;
   background: #ff9800;
   color: #fffcf2;
   font-weight: 700;
   cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.hero__button:hover,
+.main-button:hover {
+  background: #ff9800;
+  color: #fffcf2;
+}
+
+.hero__button:active,
+.main-button:active {
+  background: transparent;
+  color: #ff9800;
+  border-color: #ff9800;
+}
+
+.hero__button:focus-visible,
+.main-button:focus-visible {
+  background: transparent;
+  color: #ff9800;
+  border-color: #ff9800;
+  outline: none;
 }
 
 .hero__button {
@@ -308,7 +335,7 @@ import checkIconGreen from '../assets/icons/check-icon-green.svg';
   font-size: 16px;
 }
 
-/* PLATFORM PURPOSE */
+/* OUR PURPOSE */
 .purpose-grid {
   display: grid;
   grid-template-columns: repeat(2, 506px);
@@ -366,12 +393,6 @@ import checkIconGreen from '../assets/icons/check-icon-green.svg';
   padding: 34px 34px 30px;
 }
 
-.purpose-card__content {
-  position: relative;
-  z-index: 1;
-  padding: 34px 34px 30px;
-}
-
 .purpose-card__title-row {
   display: flex;
   align-items: center;
@@ -421,6 +442,12 @@ import checkIconGreen from '../assets/icons/check-icon-green.svg';
   flex-shrink: 0;
 }
 
+.main-button--link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
 
 /* CTA */
 .cta {
