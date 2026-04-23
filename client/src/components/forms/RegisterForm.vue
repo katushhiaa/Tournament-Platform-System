@@ -56,10 +56,11 @@
 
           <input
             id="phoneNumber"
-            v-model.trim="form.phoneNumber"
+            :value="form.phoneNumber"
+            @input="handlePhoneInput"
             type="tel"
             class="register-form__input"
-            placeholder="+380 00 000 00 00"
+            placeholder="+380 XX XXX XX XX"
             @blur="validateField('phoneNumber')"
           />
         </div>
@@ -445,7 +446,7 @@ const router = useRouter();
 
 const form = reactive<IRegisterFormValues>({
   fullName: '',
-  phoneNumber: '',
+  phoneNumber: '+380',
   email: '',
   dateOfBirth: '',
   role: 'organizer',
@@ -463,6 +464,41 @@ const submitSuccess = ref(false);
 
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
+
+const formatPhone = (digits: string) => {
+  let formatted = '+380';
+
+  if (digits.length > 0) {
+    formatted += ' ' + digits.substring(0, 2);
+  }
+  if (digits.length >= 3) {
+    formatted += ' ' + digits.substring(2, 5);
+  }
+  if (digits.length >= 6) {
+    formatted += ' ' + digits.substring(5, 7);
+  }
+  if (digits.length >= 8) {
+    formatted += ' ' + digits.substring(7, 9);
+  }
+
+  return formatted;
+};
+
+const handlePhoneInput = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+
+  let digits = input.value.replace(/\D/g, '');
+
+  if (!digits.startsWith('380')) {
+    digits = '380' + digits;
+  }
+
+  digits = digits.substring(3);
+
+  digits = digits.substring(0, 9);
+
+  form.phoneNumber = formatPhone(digits);
+};
 
 const fullNameRegex =
   /^[A-Za-zА-Яа-яІіЇїЄєҐґ'’-]+(?:\s+[A-Za-zА-Яа-яІіЇїЄєҐґ'’-]+){2,}$/u;
