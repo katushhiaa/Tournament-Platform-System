@@ -1,5 +1,5 @@
 import { computed, reactive } from 'vue';
-import type { IAuthResponse, IUser, UserRole } from '../types/Auth';
+import type { IAuthResponse, IUser } from '../types/Auth';
 
 type AuthState = {
     token: string | null;
@@ -19,6 +19,13 @@ const state = reactive<AuthState>({
     user: storedUser ? (JSON.parse(storedUser) as IUser) : null,
 });
 
+const normalizeRole = (role: string): 'organizer' | 'player' => {
+    const normalizedRole = role.toLowerCase();
+
+    if (normalizedRole === 'organizer') return 'organizer';
+    return 'player';
+};
+
 const setAuth = (payload: IAuthResponse) => {
     state.token = payload.token;
     state.isAuthenticated = true;
@@ -26,7 +33,7 @@ const setAuth = (payload: IAuthResponse) => {
         userId: payload.userId,
         fullName: payload.fullName,
         email: payload.email,
-        role: payload.role,
+        role: normalizeRole(payload.role),
     };
 
     localStorage.setItem(AUTH_TOKEN_KEY, payload.token);
@@ -42,8 +49,10 @@ const clearAuth = () => {
     localStorage.removeItem(AUTH_USER_KEY);
 };
 
-const getDashboardRouteByRole = (role: UserRole) => {
-    return role === 'organizer' ? '/organizer/dashboard' : '/player/dashboard';
+const getDashboardRouteByRole = (role: string) => {
+    return normalizeRole(role) === 'organizer'
+        ? '/organizer/dashboard'
+        : '/player/dashboard';
 };
 
 const dashboardRoute = computed(() => {

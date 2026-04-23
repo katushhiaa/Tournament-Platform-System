@@ -1,31 +1,35 @@
-export type UserRole = 'organizer' | 'player';
-
 export interface IRegisterRequest {
     fullName: string;
     phoneNumber: string;
     email: string;
     dateOfBirth: string;
-    role: UserRole;
+    role: 'organizer' | 'player' | 'Organizer' | 'Player';
     password: string;
-}
-
-export interface IRegisterFormValues extends IRegisterRequest {
-    confirmPassword: string;
 }
 
 export interface IUser {
     userId: string;
     fullName: string;
     email: string;
-    role: UserRole;
+    role: string;
 }
 
 export interface IAuthResponse {
     userId: string;
     fullName: string;
     email: string;
-    role: UserRole;
+    role: string;
     token: string;
+}
+
+export interface IRegisterFormValues {
+    fullName: string;
+    phoneNumber: string;
+    email: string;
+    dateOfBirth: string;
+    role: 'organizer' | 'player';
+    password: string;
+    confirmPassword: string;
 }
 
 export interface IApiError {

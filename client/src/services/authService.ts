@@ -1,72 +1,132 @@
-import type { IAuthResponse, IRegisterRequest } from '../types/Auth';
+import { authStore } from '../state/authStore';
+import type { IApiError, IAuthResponse, IRegisterRequest } from '../types/Auth';
 
-const TAKEN_EMAILS = ['taken@example.com', 'admin@example.com', 'test@test.com'];
-
-const STORAGE_KEY = 'mock_users';
-
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const getStoredUsers = (): IRegisterRequest[] => {
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
+type BackendErrorResponse = {
+    error?: {
+        code?: number;
+        type?: string;
+        message?: string;
+        path?: string;
+        timestamp?: string;
+        traceId?: string;
+    };
 };
 
-const saveUser = (user: IRegisterRequest) => {
-    const users = getStoredUsers();
-    users.push(user);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
+type BackendTokenOnlyResponse = {
+    token: string;
 };
 
 class AuthService {
-    async checkEmailUnique(email: string): Promise<boolean> {
-        await wait(700);
+    async register(data: IRegisterRequest): Promise<IAuthResponse> {
+        const payload = {
+            email: data.email.trim(),
+            password: data.password,
+            fullName: data.fullName.trim(),
+            phoneNumber: data.phoneNumber.trim(),
+            dateOfBirth: data.dateOfBirth,
+            role: data.role.toLowerCase() === 'organizer' ? 'Organizer' : 'Player',
+        };
 
-        const normalizedEmail = email.trim().toLowerCase();
+        if (import.meta.env.DEV) {
+            console.log('[authService] register request', payload);
+        }
 
-        const storedUsers = getStoredUsers();
+        try {
+            const response = await fetch('/api/v1/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
 
-        const existsInStorage = storedUsers.some(
-            (u) => u.email.trim().toLowerCase() === normalizedEmail
-        );
+            if (!response.ok) {
+                const errorBody = (await response.json()) as BackendErrorResponse;
 
-        return !TAKEN_EMAILS.includes(normalizedEmail) && !existsInStorage;
+                let errorCode = 'INTERNAL_ERROR';
+                const errorMessage =
+                    errorBody.error?.message ?? 'Server error. Please try again later.';
+
+                if (response.status === 400) {
+                    errorCode = 'VALIDATION_ERROR';
+                } else if (response.status === 409) {
+                    errorCode = 'EMAIL_TAKEN';
+                } else if (response.status >= 500) {
+                    errorCode = 'INTERNAL_ERROR';
+                } else if (errorBody.error?.type) {
+                    errorCode = errorBody.error.type;
+                }
+
+                const apiError: IApiError = {
+                    errorCode,
+                    message: errorMessage,
+                };
+
+                if (import.meta.env.DEV) {
+                    console.error('[authService] error response', apiError);
+                }
+
+                throw apiError;
+            }
+
+            const successBody = (await response.json()) as Partial<IAuthResponse> &
+                Partial<BackendTokenOnlyResponse>;
+
+            if (import.meta.env.DEV) {
+                console.log('[authService] response', successBody);
+            }
+
+            if (!successBody.token) {
+                throw {
+                    errorCode: 'INVALID_RESPONSE',
+                    message: 'Token is missing in server response.',
+                } satisfies IApiError;
+            }
+
+            const result: IAuthResponse = {
+                userId:
+                    typeof successBody.userId === 'string'
+                        ? successBody.userId
+                        : crypto.randomUUID(),
+                email:
+                    typeof successBody.email === 'string' ? successBody.email : payload.email,
+                fullName:
+                    typeof successBody.fullName === 'string'
+                        ? successBody.fullName
+                        : payload.fullName,
+                role:
+                    typeof successBody.role === 'string' ? successBody.role : payload.role,
+                token: successBody.token,
+            };
+
+            authStore.setAuth(result);
+
+            if (import.meta.env.DEV) {
+                console.log('[authService] normalized response', result);
+            }
+
+            return result;
+        } catch (error) {
+            if (import.meta.env.DEV) {
+                console.error('[authService] network/runtime error', error);
+            }
+
+            const apiError = error as Partial<IApiError>;
+
+            throw {
+                errorCode: apiError.errorCode ?? 'INTERNAL_ERROR',
+                message: apiError.message ?? 'Server error. Please try again later.',
+            } satisfies IApiError;
+        }
     }
 
-    async register(data: IRegisterRequest): Promise<IAuthResponse> {
-        await wait(1200);
-
-        const normalizedEmail = data.email.trim().toLowerCase();
-
-        const storedUsers = getStoredUsers();
-
-        const existsInStorage = storedUsers.some(
-            (u) => u.email.trim().toLowerCase() === normalizedEmail
-        );
-
-        if (TAKEN_EMAILS.includes(normalizedEmail) || existsInStorage) {
-            throw {
-                errorCode: 'EMAIL_TAKEN',
-                message: 'Email already registered',
-            };
+    async checkEmailUnique(email: string): Promise<boolean> {
+        if (import.meta.env.DEV) {
+            console.log('[authService] checkEmailUnique fallback', email);
         }
 
-        if (normalizedEmail === 'server-error@example.com') {
-            throw {
-                errorCode: 'INTERNAL_ERROR',
-                message: 'Server error. Please try again later.',
-            };
-        }
-
-        //Зберігаємо користувача
-        saveUser(data);
-
-        return {
-            userId: crypto.randomUUID(),
-            fullName: data.fullName,
-            email: data.email,
-            role: data.role,
-            token: 'mock-jwt-token',
-        };
+        return true;
     }
 }
 

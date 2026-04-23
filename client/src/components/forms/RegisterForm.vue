@@ -437,7 +437,7 @@ import { computed, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { authService } from '../../services/authService';
 import { authStore } from '../../state/authStore';
-import type { IRegisterFormValues, IRegisterRequest } from '../../types/Auth';
+import type { IApiError, IRegisterFormValues, IRegisterRequest } from '../../types/Auth';
 
 type FormErrors = Partial<Record<keyof IRegisterFormValues, string>>;
 
@@ -668,14 +668,13 @@ const handleSubmit = async () => {
 
     const response = await authService.register(payload);
 
-    authStore.setAuth(response);
     submitSuccess.value = true;
 
     setTimeout(() => {
       router.push(authStore.getDashboardRouteByRole(response.role));
     }, 900);
   } catch (error: unknown) {
-    const apiError = error as { errorCode?: string; message?: string };
+    const apiError = error as IApiError;
 
     if (apiError.errorCode === 'EMAIL_TAKEN') {
       submitError.value = 'Email is already registered';
