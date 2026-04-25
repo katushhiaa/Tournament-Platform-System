@@ -89,14 +89,12 @@ class AuthService {
                     typeof successBody.userId === 'string'
                         ? successBody.userId
                         : crypto.randomUUID(),
-                email:
-                    typeof successBody.email === 'string' ? successBody.email : payload.email,
+                email: typeof successBody.email === 'string' ? successBody.email : payload.email,
                 fullName:
                     typeof successBody.fullName === 'string'
                         ? successBody.fullName
                         : payload.fullName,
-                role:
-                    typeof successBody.role === 'string' ? successBody.role : payload.role,
+                role: typeof successBody.role === 'string' ? successBody.role : payload.role,
                 token: successBody.token,
             };
 
