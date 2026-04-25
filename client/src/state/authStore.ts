@@ -13,18 +13,20 @@ const AUTH_USER_KEY = 'zvytiaha_user';
 const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
 const storedUser = localStorage.getItem(AUTH_USER_KEY);
 
+const normalizeRole = (role: string): 'organizer' | 'player' => {
+    return role.toLowerCase() === 'organizer' ? 'organizer' : 'player';
+};
+
 const state = reactive<AuthState>({
     token: storedToken,
     isAuthenticated: Boolean(storedToken),
-    user: storedUser ? (JSON.parse(storedUser) as IUser) : null,
+    user: storedUser
+        ? {
+            ...(JSON.parse(storedUser) as IUser),
+            role: normalizeRole((JSON.parse(storedUser) as IUser).role),
+        }
+        : null,
 });
-
-const normalizeRole = (role: string): 'organizer' | 'player' => {
-    const normalizedRole = role.toLowerCase();
-
-    if (normalizedRole === 'organizer') return 'organizer';
-    return 'player';
-};
 
 const setAuth = (payload: IAuthResponse) => {
     state.token = payload.token;
@@ -50,9 +52,7 @@ const clearAuth = () => {
 };
 
 const getDashboardRouteByRole = (role: string) => {
-    return normalizeRole(role) === 'organizer'
-        ? '/organizer/dashboard'
-        : '/player/dashboard';
+    return normalizeRole(role) === 'organizer' ? '/organizer/dashboard' : '/player/dashboard';
 };
 
 const dashboardRoute = computed(() => {

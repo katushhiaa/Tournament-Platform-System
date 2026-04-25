@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { h } from 'vue';
 import HomePage from '../views/HomePage.vue';
 import RegisterPage from '../views/RegisterPage.vue';
 import LoginPage from '../views/LoginPage.vue';
@@ -38,6 +39,22 @@ const router = createRouter({
             component: PlayerDashboardPage,
             meta: { requiresAuth: true, role: 'player' },
         },
+        {
+            path: '/tournaments',
+            name: 'tournaments',
+            component: {
+                render() {
+                    return h(
+                        'main',
+                        {
+                            style:
+                                'min-height:100vh;background:#252e35;color:#fffcf2;display:flex;align-items:center;justify-content:center;font-size:32px;',
+                        },
+                        'Tournaments page is under development',
+                    );
+                },
+            },
+        },
     ],
 });
 
@@ -50,11 +67,25 @@ router.beforeEach((to) => {
     }
 
     if (to.meta.guestOnly && isAuthenticated && role) {
-        return authStore.getDashboardRouteByRole(role);
+        const dashboardRoute = authStore.getDashboardRouteByRole(role);
+
+        if (to.path !== dashboardRoute) {
+            return dashboardRoute;
+        }
+
+        return true;
     }
 
-    if (to.meta.requiresAuth && to.meta.role && role && to.meta.role !== role) {
-        return authStore.getDashboardRouteByRole(role);
+    if (to.meta.requiresAuth && to.meta.role && role) {
+        const requiredRole = String(to.meta.role).toLowerCase();
+
+        if (requiredRole !== role) {
+            const dashboardRoute = authStore.getDashboardRouteByRole(role);
+
+            if (to.path !== dashboardRoute) {
+                return dashboardRoute;
+            }
+        }
     }
 
     return true;
