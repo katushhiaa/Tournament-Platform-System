@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using TournamentPlatformSystemWebApi.Common.Models;
+using Microsoft.AspNetCore.Http;
 
 namespace TournamentPlatformSystemWebApi.API.Middleware;
 
