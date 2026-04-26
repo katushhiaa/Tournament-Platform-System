@@ -1,5 +1,5 @@
 import { computed, reactive } from 'vue';
-import type { IAuthResponse, IUser, UserRole } from '../types/Auth';
+import type { IAuthResponse, IUser } from '../types/Auth';
 
 type AuthState = {
     token: string | null;
@@ -13,10 +13,19 @@ const AUTH_USER_KEY = 'zvytiaha_user';
 const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
 const storedUser = localStorage.getItem(AUTH_USER_KEY);
 
+const normalizeRole = (role: string): 'organizer' | 'player' => {
+    return role.toLowerCase() === 'organizer' ? 'organizer' : 'player';
+};
+
 const state = reactive<AuthState>({
     token: storedToken,
     isAuthenticated: Boolean(storedToken),
-    user: storedUser ? (JSON.parse(storedUser) as IUser) : null,
+    user: storedUser
+        ? {
+            ...(JSON.parse(storedUser) as IUser),
+            role: normalizeRole((JSON.parse(storedUser) as IUser).role),
+        }
+        : null,
 });
 
 const setAuth = (payload: IAuthResponse) => {
@@ -26,7 +35,7 @@ const setAuth = (payload: IAuthResponse) => {
         userId: payload.userId,
         fullName: payload.fullName,
         email: payload.email,
-        role: payload.role,
+        role: normalizeRole(payload.role),
     };
 
     localStorage.setItem(AUTH_TOKEN_KEY, payload.token);
@@ -42,8 +51,8 @@ const clearAuth = () => {
     localStorage.removeItem(AUTH_USER_KEY);
 };
 
-const getDashboardRouteByRole = (role: UserRole) => {
-    return role === 'organizer' ? '/organizer/dashboard' : '/player/dashboard';
+const getDashboardRouteByRole = (role: string) => {
+    return normalizeRole(role) === 'organizer' ? '/organizer/dashboard' : '/player/dashboard';
 };
 
 const dashboardRoute = computed(() => {
