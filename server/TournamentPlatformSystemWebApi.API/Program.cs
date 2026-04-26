@@ -3,6 +3,8 @@ using TournamentPlatformSystemWebApi.API.Swagger;
 using TournamentPlatformSystemWebApi.API.Middleware;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
+using Microsoft.AspNetCore.Http;
 using TournamentPlatformSystemWebApi.API.Endpoints;
 using TournamentPlatformSystemWebApi.Infrastructure.Services;
 using TournamentPlatformSystemWebApi.Application.Interfaces;
@@ -19,6 +21,30 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
+
+// Return validation errors in unified ErrorResponseDto format
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var errors = string.Join("; ", context.ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+
+        var errorDto = new ErrorResponseDto
+        {
+            Error = new ErrorDetail
+            {
+                Code = StatusCodes.Status400BadRequest,
+                Type = "BadRequest",
+                Message = string.IsNullOrWhiteSpace(errors) ? "Bad request" : errors,
+                Path = context.HttpContext.Request.Path,
+                Timestamp = DateTime.UtcNow.ToString("o"),
+                TraceId = context.HttpContext.TraceIdentifier
+            }
+        };
+
+        return new BadRequestObjectResult(errorDto);
+    };
+});
 builder.Services.AddEndpointsApiExplorer();
 
 // Add db repositories and state checker
