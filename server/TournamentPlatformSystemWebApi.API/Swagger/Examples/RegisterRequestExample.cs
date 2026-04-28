@@ -1,21 +1,19 @@
 using System;
 using Swashbuckle.AspNetCore.Filters;
-using TournamentPlatformSystemWebApi.Application.DTOs.Auth;
+using TournamentPlatformSystem.Application.DTOs.Auth;
 
 namespace TournamentPlatformSystemWebApi.API.Swagger.Examples
 {
-    public class RegisterUserRequestExample : IExamplesProvider<RegisterUserRequest>
+    public class RegisterRequestExample : IExamplesProvider<RegisterRequestDto>
     {
-        public RegisterUserRequest GetExamples()
+        public RegisterRequestDto GetExamples()
         {
-            return new RegisterUserRequest
+            return new RegisterRequestDto
             {
                 Email = "organizer@example.com",
                 Password = "P@ssw0rd!",
-                FullName = "Olena Organizer",
-                Role = "Organizer",
-                DateOfBirth = DateOnly.FromDateTime(DateTime.Now).AddYears(-20),
-                PhoneNumber = "+380661234567"
+                Name = "Olena Organizer",
+                Role = "Organizer"
             };
         }
     }

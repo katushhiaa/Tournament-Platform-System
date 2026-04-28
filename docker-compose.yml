@@ -44,7 +44,6 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: "Server=db;Port=5432;Database=${POSTGRES_DB};User Id=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};"
-      FRONTEND_ORIGIN: "http://localhost:5173"
     ports:
       - "5050:80"
     # Do not mount over /app for the runtime image; that hides published files.
@@ -62,7 +61,7 @@ services:
     volumes:
       - ./client:/app
       - /app/node_modules
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    command: npm run dev -- --host 0.0.0.0
     depends_on:
       - app
 

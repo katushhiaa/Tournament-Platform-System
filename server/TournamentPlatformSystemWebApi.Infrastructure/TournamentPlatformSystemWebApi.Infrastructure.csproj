@@ -7,15 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../TournamentPlatformSystemWebApi.Application/TournamentPlatformSystemWebApi.Application.csproj" />
+    <ProjectReference Include="../TournamentPlatformSystem.Application/TournamentPlatformSystemWebApi.Application.csproj" />
     <ProjectReference Include="../TournamentPlatformSystemWebApi.Core/TournamentPlatformSystemWebApi.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- <PackageReference Include="Npgsql" Version="7.1.0" /> -->
-    <PackageReference Include="AutoMapper" Version="12.0.1" />
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.2" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.38.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -24,7 +21,6 @@
     <Folder Include="ExternalServices/" />
     <Folder Include="Migrations/" />
     <Folder Include="Repositories/" />
-    <Folder Include="Services/" />
   </ItemGroup>
 
   <ItemGroup>
