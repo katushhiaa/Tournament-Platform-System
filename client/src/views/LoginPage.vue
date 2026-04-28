@@ -1,43 +1,65 @@
 <template>
-  <section class="login-page">
-    <div class="login-page__box">
-      <h1>Login Page</h1>
-      <p>This page will be implemented in the next task.</p>
+  <main class="login-page" :style="{ backgroundImage: `url(${heroBg})` }">
+    <div class="login-page__overlay"></div>
+
+    <div class="login-page__header">
+      <AppHeader />
     </div>
-  </section>
+
+    <LoginForm />
+  </main>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import AppHeader from '../components/AppHeader.vue';
+import LoginForm from '../components/forms/LoginForm.vue';
+import heroBg from '../assets/hero-bg.png';
+</script>
 
 <style scoped>
 .login-page {
+  position: relative;
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #252e35;
-  padding: 24px;
+  overflow-x: hidden;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
-.login-page__box {
-  width: 100%;
-  max-width: 420px;
-  padding: 40px 24px;
-  border: 1px solid #1531ce;
-  border-radius: 20px;
-  background: rgba(37, 46, 53, 0.92);
-  color: #fffcf2;
-  text-align: center;
+.login-page__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 8, 24, 0.45);
 }
 
-.login-page__box h1 {
-  margin: 0 0 12px;
-  font-size: 32px;
+.login-page__header {
+  position: relative;
+  z-index: 2;
 }
 
-.login-page__box p {
-  margin: 0;
-  font-size: 16px;
-  opacity: 0.9;
+.login-page :deep(.header) {
+  position: absolute;
+  top: 22px;
+  left: 28px;
+  right: 28px;
+  width: auto;
+  max-width: none;
+}
+
+.login-page :deep(.login-form) {
+  position: relative;
+  z-index: 1;
+  padding-top: 170px;
+}
+
+@media (max-width: 768px) {
+  .login-page :deep(.header) {
+    position: static;
+    margin: 16px;
+  }
+
+  .login-page :deep(.login-form) {
+    padding-top: 56px;
+  }
 }
 </style>
