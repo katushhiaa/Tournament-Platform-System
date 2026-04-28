@@ -21,6 +21,13 @@ namespace TournamentPlatformSystemWebApi.API.Swagger
                     Description = "Система автоматизації турнірних сіток та управління змаганнями."
                 });
 
+                // Document configured frontend origin for CORS in the Swagger description
+                var frontendOrigin = Environment.GetEnvironmentVariable("FRONTEND_ORIGIN") ?? "http://localhost:5173";
+                // Use Markdown to highlight the allowed origin in Swagger description
+                var corsMessage = "**Allowed origin:** `" + frontendOrigin + "`";
+                c.DocumentFilter<AddCorsInfoDocumentFilter>(corsMessage);
+
+
                 c.EnableAnnotations();
 
                 var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";

@@ -1,0 +1,8 @@
+using TournamentPlatformSystemWebApi.Application.DTOs.Auth;
+
+namespace TournamentPlatformSystemWebApi.Application.Interfaces;
+
+public interface IAuthenticationService
+{
+    Task<RegisterUserResponse> RegisterAsync(RegisterUserRequest request);
+}
