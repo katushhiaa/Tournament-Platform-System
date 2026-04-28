@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using TournamentPlatformSystemWebApi.Common.Helpers;
 
 namespace TournamentPlatformSystemWebApi.Infrastructure.Entities;
 
-public partial class UserPhoneModel : BaseDbEntity
+public partial class UserPhoneModel
 {
+    public Guid Id { get; set; }
+
     public Guid UserId { get; set; }
 
     public string PhoneNumber { get; set; } = null!;

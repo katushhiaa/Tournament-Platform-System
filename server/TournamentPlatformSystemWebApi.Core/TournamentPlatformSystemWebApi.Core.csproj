@@ -8,12 +8,9 @@
 
   <ItemGroup>
     <Folder Include="Common/" />
+    <Folder Include="Entities/" />
     <Folder Include="Exceptions/" />
     <Folder Include="Logic/" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="../TournamentPlatformSystemWebApi.Common/TournamentPlatformSystemWebApi.Common.csproj" />
   </ItemGroup>
 
 </Project>

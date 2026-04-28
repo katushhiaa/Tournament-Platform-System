@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using TournamentPlatformSystemWebApi.Common.Helpers;
 
 namespace TournamentPlatformSystemWebApi.Infrastructure.Entities;
 
-public partial class UserModel : BaseDbEntity
+public partial class UserModel
 {
+    public Guid Id { get; set; }
+
     public string FullName { get; set; } = null!;
 
     public string PasswordHash { get; set; } = null!;
