@@ -1,9 +1,9 @@
-import { authStore } from '../state/authStore';
 import type {
     IApiError,
     IAuthResponse,
     ILoginRequest,
     IRegisterRequest,
+    IUserProfileResponse,
     UserRole,
 } from '../types/Auth';
 
@@ -28,6 +28,14 @@ const normalizeRole = (role: string): UserRole => {
 
 const toBackendRole = (role: string): 'Organizer' | 'Player' => {
     return role.toLowerCase() === 'organizer' ? 'Organizer' : 'Player';
+};
+
+const parseErrorBody = async (response: Response): Promise<BackendErrorResponse> => {
+    try {
+        return (await response.json()) as BackendErrorResponse;
+    } catch {
+        return {};
+    }
 };
 
 class AuthService {
@@ -56,16 +64,9 @@ class AuthService {
             });
 
             if (!response.ok) {
-                let errorBody: BackendErrorResponse = {};
-
-                try {
-                    errorBody = (await response.json()) as BackendErrorResponse;
-                } catch {
-                    errorBody = {};
-                }
+                const errorBody = await parseErrorBody(response);
 
                 let errorCode = 'INTERNAL_ERROR';
-                const errorMessage = errorBody.error?.message ?? 'Server error. Please try again later.';
 
                 if (response.status === 400) {
                     errorCode = 'VALIDATION_ERROR';
@@ -77,24 +78,14 @@ class AuthService {
                     errorCode = errorBody.error.type;
                 }
 
-                const apiError: IApiError = {
+                throw {
                     errorCode,
-                    message: errorMessage,
-                };
-
-                if (import.meta.env.DEV) {
-                    console.error('[authService] error response', apiError);
-                }
-
-                throw apiError;
+                    message: errorBody.error?.message ?? 'Server error. Please try again later.',
+                } satisfies IApiError;
             }
 
             const successBody = (await response.json()) as Partial<IAuthResponse> &
                 Partial<BackendTokenOnlyResponse>;
-
-            if (import.meta.env.DEV) {
-                console.log('[authService] response', successBody);
-            }
 
             if (!successBody.token) {
                 throw {
@@ -104,23 +95,30 @@ class AuthService {
             }
 
             const result: IAuthResponse = {
-                userId: typeof successBody.userId === 'string' ? successBody.userId : crypto.randomUUID(),
+                userId:
+                    typeof successBody.userId === 'string'
+                        ? successBody.userId
+                        : crypto.randomUUID(),
                 email: typeof successBody.email === 'string' ? successBody.email : payload.email,
                 fullName:
-                    typeof successBody.fullName === 'string' ? successBody.fullName : payload.fullName,
-                role: normalizeRole(typeof successBody.role === 'string' ? successBody.role : payload.role),
+                    typeof successBody.fullName === 'string'
+                        ? successBody.fullName
+                        : payload.fullName,
+                role: normalizeRole(
+                    typeof successBody.role === 'string' ? successBody.role : payload.role,
+                ),
                 token: successBody.token,
+                refreshToken: successBody.refreshToken ?? null,
             };
 
-            authStore.setAuth(result);
-
             if (import.meta.env.DEV) {
-                console.log('[authService] normalized response', result);
+                console.log('[authService] register response', result);
             }
+
             return result;
         } catch (error) {
             if (import.meta.env.DEV) {
-                console.error('[authService] network/runtime error', error);
+                console.error('[authService] register error', error);
             }
 
             const apiError = error as Partial<IApiError>;
@@ -130,14 +128,6 @@ class AuthService {
                 message: apiError.message ?? 'Server error. Please try again later.',
             } satisfies IApiError;
         }
-    }
-
-    async checkEmailUnique(email: string): Promise<boolean> {
-        if (import.meta.env.DEV) {
-            console.log('[authService] checkEmailUnique fallback', email);
-        }
-
-        return true;
     }
 
     async login(data: ILoginRequest): Promise<IAuthResponse> {
@@ -161,13 +151,7 @@ class AuthService {
             });
 
             if (!loginResponse.ok) {
-                let errorBody: BackendErrorResponse = {};
-
-                try {
-                    errorBody = (await loginResponse.json()) as BackendErrorResponse;
-                } catch {
-                    errorBody = {};
-                }
+                const errorBody = await parseErrorBody(loginResponse);
 
                 let errorCode = 'INTERNAL_ERROR';
 
@@ -175,8 +159,10 @@ class AuthService {
                     errorCode = 'VALIDATION_ERROR';
                 } else if (loginResponse.status === 401) {
                     errorCode = 'INVALID_CREDENTIALS';
-                } else if (loginResponse.status === 423) {
+                } else if (loginResponse.status === 403) {
                     errorCode = 'ACCOUNT_LOCKED';
+                } else if (loginResponse.status === 429) {
+                    errorCode = 'TOO_MANY_ATTEMPTS';
                 } else if (loginResponse.status >= 500) {
                     errorCode = 'INTERNAL_ERROR';
                 }
@@ -187,7 +173,7 @@ class AuthService {
                 } satisfies IApiError;
             }
 
-            const loginResult = (await loginResponse.json()) as { token: string };
+            const loginResult = (await loginResponse.json()) as BackendTokenOnlyResponse;
 
             if (!loginResult.token) {
                 throw {
@@ -211,25 +197,19 @@ class AuthService {
                 } satisfies IApiError;
             }
 
-            const profile = (await profileResponse.json()) as {
-                id: string;
-                email: string;
-                name: string;
-                role: string;
-            };
+            const profile = (await profileResponse.json()) as IUserProfileResponse;
 
             const result: IAuthResponse = {
                 userId: profile.id,
                 email: profile.email,
                 fullName: profile.name,
-                role: profile.role.toLowerCase() === 'organizer' ? 'organizer' : 'player',
+                role: normalizeRole(profile.role),
                 token: loginResult.token,
+                refreshToken: null,
             };
 
-            authStore.setAuth(result);
-
             if (import.meta.env.DEV) {
-                console.log('[authService] login successful', result);
+                console.log('[authService] login response', result);
             }
 
             return result;
@@ -245,6 +225,14 @@ class AuthService {
                 message: apiError.message ?? 'Server error. Please try again later.',
             } satisfies IApiError;
         }
+    }
+
+    async checkEmailUnique(email: string): Promise<boolean> {
+        if (import.meta.env.DEV) {
+            console.log('[authService] checkEmailUnique fallback', email);
+        }
+
+        return true;
     }
 }
 

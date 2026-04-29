@@ -1,11 +1,11 @@
-import { createRouter, createWebHistory } from 'vue-router';
 import { h } from 'vue';
+import { createRouter, createWebHistory } from 'vue-router';
 import HomePage from '../views/HomePage.vue';
 import RegisterPage from '../views/RegisterPage.vue';
 import LoginPage from '../views/LoginPage.vue';
 import OrganizerDashboardPage from '../views/OrganizerDashboardPage.vue';
 import PlayerDashboardPage from '../views/PlayerDashboardPage.vue';
-import { authStore } from '../state/authStore';
+import { useAuthStore } from '../stores/authStore';
 
 const router = createRouter({
     history: createWebHistory(),
@@ -59,11 +59,20 @@ const router = createRouter({
 });
 
 router.beforeEach((to) => {
-    const isAuthenticated = authStore.state.isAuthenticated;
-    const role = authStore.state.user?.role;
+    const authStore = useAuthStore();
+
+    if (!authStore.token) {
+        authStore.initializeAuth();
+    }
+
+    const isAuthenticated = authStore.isAuthenticated;
+    const role = authStore.currentUser?.role;
 
     if (to.meta.requiresAuth && !isAuthenticated) {
-        return '/register';
+        return {
+            path: '/login',
+            query: { redirect: to.fullPath },
+        };
     }
 
     if (to.meta.guestOnly && isAuthenticated && role) {

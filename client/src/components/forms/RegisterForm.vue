@@ -437,7 +437,7 @@
 import { computed, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { authService } from '../../services/authService';
-import { authStore } from '../../state/authStore';
+import { useAuthStore } from '../../stores/authStore';
 
 import type { IApiError, IRegisterFormValues, IRegisterRequest } from '../../types/Auth';
 
@@ -445,6 +445,7 @@ import type { IApiError, IRegisterFormValues, IRegisterRequest } from '../../typ
 type FormErrors = Partial<Record<keyof IRegisterFormValues, string>>;
 
 const router = useRouter();
+const authStore = useAuthStore();
 
 const form = reactive<IRegisterFormValues>({
   fullName: '',
@@ -505,7 +506,7 @@ const handlePhoneInput = (event: Event) => {
 
 
 const fullNameRegex =
-  /^[A-Za-zА-Яа-яІіЇїЄєҐґ'’-]+(?:\s+[A-Za-zА-Яа-яІіЇїЄєҐґ'’-]+){2,}$/u;
+  /^[A-Za-zА-Яа-яІіЇїЄєҐґ'’-]+(?:\s+[A-Za-zА-Яа-яІіЇїЄєҐґ'’-]+){1,2}$/u;
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^\+380\s\d{2}\s\d{3}\s\d{2}\s\d{2}$/;
 const backendPhoneRegex = /^\+380\d{9}$/;
@@ -563,7 +564,7 @@ const validateField = (field: keyof IRegisterFormValues) => {
       } else if (form.fullName.length > 255) {
         errors.fullName = 'Maximum length is 255 characters';
       } else if (!fullNameRegex.test(form.fullName.trim())) {
-        errors.fullName = 'Enter your full name';
+        errors.fullName = 'Enter first name and last name';
       } else {
         errors.fullName = '';
       }
