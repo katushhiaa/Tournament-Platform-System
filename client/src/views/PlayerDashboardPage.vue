@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import AppHeader from '../components/AppHeader.vue';
 import TournamentCard from '../components/TournamentCard.vue';
 import SiteFooter from '../components/SiteFooter.vue';
-import { authStore } from '../state/authStore';
+import { useAuthStore } from '../stores/authStore';
 
 import dashboardBg from '../assets/hero-bg.png';
 import cs2Card from '../assets/cs2-card.png';
@@ -11,8 +11,9 @@ import tennisCard from '../assets/tennis-card.png';
 import forzaCard from '../assets/forza-card.png';
 import chessCard from '../assets/chess-card.png';
 
+const authStore = useAuthStore();
 const userName = computed(() => {
-  const fullName = authStore.state.user?.fullName?.trim() || '';
+  const fullName = authStore.currentUser?.fullName?.trim() || '';
 
   if (!fullName) return 'User';
 
