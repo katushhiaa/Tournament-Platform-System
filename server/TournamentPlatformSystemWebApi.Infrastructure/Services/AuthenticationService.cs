@@ -17,7 +17,6 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Services;
 public class AuthenticationService : IAuthenticationService
 {
     private readonly IUserRepository _userRepository;
-    private readonly TournamentdbContext _db;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IMemoryCache _cache;
