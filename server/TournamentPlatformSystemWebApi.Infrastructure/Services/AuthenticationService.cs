@@ -1,19 +1,15 @@
 using System;
 using System.ComponentModel.DataAnnotations;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Caching.Memory;
 using TournamentPlatformSystemWebApi.Application.DTOs.Auth;
 using TournamentPlatformSystemWebApi.Application.Interfaces;
 using TournamentPlatformSystemWebApi.Common.Exceptions;
 using TournamentPlatformSystemWebApi.Core.Entities;
 using TournamentPlatformSystemWebApi.Infrastructure.Context;
-using TournamentPlatformSystemWebApi.Infrastructure.Entities;
 using TournamentPlatformSystemWebApi.Infrastructure.Security;
 
 namespace TournamentPlatformSystemWebApi.Infrastructure.Services;
@@ -21,16 +17,17 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Services;
 public class AuthenticationService : IAuthenticationService
 {
     private readonly IUserRepository _userRepository;
-    private readonly TournamentdbContext _db;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenService _jwtTokenService;
+    private readonly IMemoryCache _cache;
 
-    public AuthenticationService(IUserRepository userRepository, TournamentdbContext db, IPasswordHasher passwordHasher, TournamentPlatformSystemWebApi.Infrastructure.Security.IJwtTokenService jwtTokenService)
+    public AuthenticationService(IUserRepository userRepository, TournamentdbContext db, IPasswordHasher passwordHasher, IJwtTokenService jwtTokenService, IMemoryCache? cache = null)
     {
         _userRepository = userRepository;
         _db = db;
         _passwordHasher = passwordHasher;
         _jwtTokenService = jwtTokenService;
+        _cache = cache ?? new MemoryCache(new MemoryCacheOptions());
     }
 
     public async Task<RegisterUserResponse> RegisterAsync(RegisterUserRequest request)
@@ -69,13 +66,13 @@ public class AuthenticationService : IAuthenticationService
             throw new ValidationException("Phone number must match +380XXXXXXXXX");
         }
 
-        var userEntity = new TournamentPlatformSystemWebApi.Core.Entities.User
+        var userEntity = new User
         {
             Id = Guid.NewGuid(),
             FullName = request.FullName,
             IsOrganizer = string.Equals(request.Role, "Organizer", StringComparison.OrdinalIgnoreCase),
             Password = request.Password,
-            UserDetail = new TournamentPlatformSystemWebApi.Core.Entities.UserDetail
+            UserDetail = new UserDetail
             {
                 Email = request.Email,
                 DateOfBirth = request.DateOfBirth.Value,
@@ -85,8 +82,9 @@ public class AuthenticationService : IAuthenticationService
 
         var createdUserId = await _userRepository.CreateAsync(userEntity);
 
-        // generate jwt
-        var token = _jwtTokenService.GenerateToken(createdUserId, request.Email, request.Role);
+        var isOrganizer = string.Equals(request.Role, "organizer", StringComparison.OrdinalIgnoreCase);
+        var token = _jwtTokenService.GenerateToken(createdUserId, request.Email, request.Role, isOrganizer);
+        var refreshToken = _jwtTokenService.GenerateRefreshToken();
 
         return new RegisterUserResponse
         {
@@ -94,9 +92,90 @@ public class AuthenticationService : IAuthenticationService
             Email = request.Email,
             FullName = request.FullName,
             Role = request.Role,
-            Token = token
+            Tokens = new TokensResponseDto
+            {
+                AccessToken = token,
+                RefreshToken = refreshToken
+            }
         };
     }
 
+    public async Task<LoginResponseDto> LoginAsync(LoginRequestDto request)
+    {
+        if (request.Email == null || request.Password == null)
+        {
+            throw new ValidationException("Missing email or password");
+        }
 
+        var emailKey = request.Email.ToLowerInvariant();
+        var blockedKey = $"login_blocked:{emailKey}";
+        var failedKey = $"login_failed:{emailKey}";
+
+        if (_cache.TryGetValue(blockedKey, out _))
+        {
+            throw new TooManyLoginAttemptsException("Too many failed login attempts. Try again later.");
+        }
+
+        var user = await _userRepository.GetByEmailAsync(request.Email);
+        if (user == null)
+        {
+            LoginFailedAttempt(failedKey, blockedKey);
+            throw new InvalidCredentialsException("Invalid email or password");
+        }
+
+        var storedHash = await _userRepository.GetPasswordHashByEmailAsync(request.Email) ?? string.Empty;
+        var verified = _passwordHasher.VerifyPassword(request.Password, storedHash);
+        if (!verified)
+        {
+            LoginFailedAttempt(failedKey, blockedKey);
+            throw new InvalidCredentialsException("Invalid email or password");
+        }
+
+        _cache.Remove(failedKey);
+        _cache.Remove(blockedKey);
+
+        if (!user.IsActive)
+        {
+            throw new ForbiddenException("User account is inactive. Please contact support.");
+        }
+
+        var isOrganizer = user.IsOrganizer ?? false;
+        var access = _jwtTokenService.GenerateToken(user.Id, user.UserDetail?.Email ?? string.Empty, isOrganizer ? "organizer" : "player", isOrganizer);
+
+        var refresh = request.RememberMe ? _jwtTokenService.GenerateRefreshToken() : null;
+
+        var response = new LoginResponseDto
+        {
+            User = new UserDto
+            {
+                Id = user.Id,
+                Email = user.UserDetail?.Email,
+                Role = isOrganizer ? "organizer" : "player",
+                FullName = user.FullName
+            },
+            Tokens = new TokensResponseDto { AccessToken = access, RefreshToken = refresh }
+        };
+        return response;
+    }
+
+    private void LoginFailedAttempt(string failedKey, string blockedKey)
+    {
+        const int maxAttempts = 5;
+        var attempts = 0;
+        if (_cache.TryGetValue(failedKey, out var obj) && obj is int current)
+        {
+            attempts = current;
+        }
+        attempts++;
+
+        if (attempts >= maxAttempts)
+        {
+            _cache.Set(blockedKey, true, TimeSpan.FromMinutes(5));
+            _cache.Remove(failedKey);
+        }
+        else
+        {
+            _cache.Set(failedKey, attempts, TimeSpan.FromMinutes(5));
+        }
+    }
 }

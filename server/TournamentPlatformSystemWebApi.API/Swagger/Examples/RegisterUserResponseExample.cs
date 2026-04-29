@@ -14,7 +14,11 @@ public class RegisterUserResponseExample : IExamplesProvider<RegisterUserRespons
             Email = "user email",
             FullName = "user name",
             Role = "user role",
-            Token = "some token",
+            Tokens = new TokensResponseDto
+            {
+                AccessToken = "some access token",
+                RefreshToken = "some refresh token"
+            }
         };
     }
 

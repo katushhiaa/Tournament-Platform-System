@@ -15,12 +15,14 @@ using TournamentPlatformSystemWebApi.Infrastructure.Configurations;
 using TournamentPlatformSystemWebApi.Infrastructure.Repositories;
 using TournamentPlatformSystemWebApi.Infrastructure.Security;
 using TournamentPlatformSystemWebApi.Application.DTOs.Auth;
-using TournamentPlatformSystemWebApi.Application.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
+
+// Add in-memory cache for rate-limiting login attempts
+builder.Services.AddMemoryCache();
 
 // Return validation errors in unified ErrorResponseDto format
 builder.Services.Configure<ApiBehaviorOptions>(options =>
@@ -79,7 +81,7 @@ var jwtSection = builder.Configuration.GetSection("Jwt");
 var jwtOptions = new JwtTokenOptions(
     jwtSection["Key"] ?? "default-development-key-change-in-production",
     jwtSection["Issuer"] ?? "tournament-api",
-    int.TryParse(jwtSection["ExpirationDays"], out var d) ? d : 1
+    int.TryParse(jwtSection["ExpirationMinutes"], out var m) ? m : 10
 );
 
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>(sp => new JwtTokenService(jwtOptions));

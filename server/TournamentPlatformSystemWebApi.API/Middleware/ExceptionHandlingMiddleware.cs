@@ -37,7 +37,7 @@ public class ExceptionHandlingMiddleware
                     Code = (int)HttpStatusCode.InternalServerError,
                     Type = "InternalServerError",
                     Message = ex.Message,
-                    Path = context.GetEndpoint().DisplayName,
+                    Path = context.GetEndpoint()?.DisplayName,
                     Timestamp = DateTime.UtcNow.ToString("o"),
                     TraceId = context.TraceIdentifier
                 }

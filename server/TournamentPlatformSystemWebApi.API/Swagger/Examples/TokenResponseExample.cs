@@ -3,13 +3,15 @@ using TournamentPlatformSystemWebApi.Application.DTOs.Auth;
 
 namespace TournamentPlatformSystemWebApi.API.Swagger.Examples
 {
-    public class TokenResponseExample : IExamplesProvider<TokenResponseDto>
+    public class TokenResponseExample : IExamplesProvider<TokensResponseDto>
     {
-        public TokenResponseDto GetExamples()
+        public TokensResponseDto GetExamples()
         {
-            return new TokenResponseDto
+            return new TokensResponseDto
             {
-                Token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                AccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                RefreshToken = "123124784y19472hjskbfkjsdcqsuycghqbf9uoikjca"
+
             };
         }
     }

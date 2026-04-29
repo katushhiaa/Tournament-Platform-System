@@ -26,6 +26,7 @@ namespace TournamentPlatformSystemWebApi.Application.DTOs.Auth
         public DateOnly? DateOfBirth { get; set; }
 
         [Required]
+        [RegularExpression("^(organizer|player)$", ErrorMessage = "Role must be 'organizer' or 'player'")]
         public string? Role { get; set; }
     }
 }
