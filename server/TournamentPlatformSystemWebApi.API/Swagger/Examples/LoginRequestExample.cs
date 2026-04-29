@@ -10,7 +10,8 @@ namespace TournamentPlatformSystemWebApi.API.Swagger.Examples
             return new LoginRequestDto
             {
                 Email = "player@example.com",
-                Password = "PlayerPass123"
+                Password = "PlayerPass123",
+                RememberMe = true
             };
         }
     }
