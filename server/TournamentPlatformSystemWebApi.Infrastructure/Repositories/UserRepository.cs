@@ -132,5 +132,16 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Repositories
 
             return _mapper.Map<User>(dbModel);
         }
+
+        public async Task<string?> GetPasswordHashByEmailAsync(string email)
+        {
+            var hash = await _context.Set<UserModel>()
+                .AsNoTracking()
+                .Where(x => x.UserDetail != null && x.UserDetail.Email == email)
+                .Select(x => x.PasswordHash)
+                .FirstOrDefaultAsync();
+
+            return hash;
+        }
     }
 }

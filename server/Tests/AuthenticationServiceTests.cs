@@ -39,7 +39,7 @@ namespace Tests
             using var db = CreateInMemoryContext();
             var hasherMock = new Mock<IPasswordHasher>();
             var jwtMock = new Mock<IJwtTokenService>();
-            jwtMock.Setup(j => j.GenerateToken(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>())).Returns("test-token");
+            jwtMock.Setup(j => j.GenerateToken(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>())).Returns("test-token");
 
             var svc = new AuthenticationService(repoMock.Object, db, hasherMock.Object, jwtMock.Object);
 
@@ -57,7 +57,7 @@ namespace Tests
 
             Assert.Equal(userId, res.UserId);
             Assert.Equal(req.Email, res.Email);
-            Assert.False(string.IsNullOrWhiteSpace(res.Token));
+            Assert.False(string.IsNullOrWhiteSpace(res.Tokens?.AccessToken));
             repoMock.Verify(r => r.CreateAsync(It.IsAny<User>()), Times.Once);
         }
 
@@ -70,7 +70,7 @@ namespace Tests
             using var db = CreateInMemoryContext();
             var hasherMock = new Mock<IPasswordHasher>();
             var jwtMock = new Mock<IJwtTokenService>();
-            jwtMock.Setup(j => j.GenerateToken(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>())).Returns("test-token");
+            jwtMock.Setup(j => j.GenerateToken(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>())).Returns("test-token");
 
             var svc = new AuthenticationService(repoMock.Object, db, hasherMock.Object, jwtMock.Object);
 

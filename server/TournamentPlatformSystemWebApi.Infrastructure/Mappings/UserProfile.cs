@@ -23,7 +23,7 @@ public class UserProfile : Profile
             .ForMember(d => d.UserDetail, o => o.MapFrom(s => s.UserDetail))
             .ForMember(d => d.Password, o => o.Ignore())
             // populate UserDetail.Phones from the flat UserPhones collection on the user
-            .ForPath(d => d.UserDetail.Phones, o => o.MapFrom(s => s.UserPhones));
+            .ForPath(d => d.UserDetail!.Phones, o => o.MapFrom(s => s.UserPhones));
 
         // Reverse maps: ignore DB-only navigation properties where Core model lacks them
         CreateMap<User, UserModel>()
