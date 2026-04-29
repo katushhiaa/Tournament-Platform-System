@@ -32,3 +32,26 @@ export interface IApiError {
     errorCode: string;
     message: string;
 }
+
+export interface ILoginFormValues {
+    email: string;
+    password: string;
+    rememberMe: boolean;
+}
+
+export interface ILoginRequest {
+    email: string;
+    password: string;
+}
+
+export interface ILoginResponse {
+    token: string;
+}
+
+export interface IUserProfileResponse {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+    stats?: string;
+}
