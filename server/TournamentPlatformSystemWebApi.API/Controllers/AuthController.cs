@@ -90,7 +90,7 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
 
         [HttpPost("login")]
         [SwaggerOperation(Summary = "Авторизація користувача", Description = "Авторизує користувача за email/password. Роль: Guest.")]
-        [SwaggerResponse(200, Type = typeof(TokensResponseDto), Description = "Успішна авторизація")]
+        [SwaggerResponse(200, Type = typeof(LoginResponseDto), Description = "Успішна авторизація")]
         [SwaggerResponse(400, Type = typeof(ErrorResponseDto), Description = "Помилка валідації")]
         [SwaggerResponse(401, Type = typeof(ErrorResponseDto), Description = "Невірний логін/пароль")]
         [SwaggerRequestExample(typeof(LoginRequestDto), typeof(Swagger.Examples.LoginRequestExample))]
