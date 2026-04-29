@@ -50,8 +50,8 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Security
             {
                 rng.GetBytes(randomNumber);
             }
-            // Use base64url-friendly string
-            return Convert.ToBase64String(randomNumber);
+            // Use a Base64Url-encoded string that is safe for URLs, cookies, and headers.
+            return Base64UrlEncoder.Encode(randomNumber);
         }
 
         public ClaimsPrincipal ValidateToken(string token)
