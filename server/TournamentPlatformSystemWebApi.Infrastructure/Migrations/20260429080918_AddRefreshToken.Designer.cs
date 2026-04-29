@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using TournamentPlatformSystemWebApi.Infrastructure.Context;
@@ -11,9 +12,11 @@ using TournamentPlatformSystemWebApi.Infrastructure.Context;
 namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
 {
     [DbContext(typeof(TournamentdbContext))]
-    partial class TournamentdbContextModelSnapshot : ModelSnapshot
+    [Migration("20260429080918_AddRefreshToken")]
+    partial class AddRefreshToken
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
