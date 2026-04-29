@@ -47,6 +47,19 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 });
 builder.Services.AddEndpointsApiExplorer();
 
+// Configure CORS to allow requests from frontend origin (set via configuration or env var)
+var frontendOrigin = Environment.GetEnvironmentVariable("FRONTEND_ORIGIN") ?? "http://localhost:5173";
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendPolicy", policy =>
+    {
+        policy.WithOrigins(frontendOrigin)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
 // Add db repositories and state checker
 var dbConnectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
 // configure db
@@ -85,6 +98,9 @@ app.UseResponseWrapping();
 
 // Use swagger middleware from extensions
 app.UseConfiguredSwagger();
+
+// Enable CORS using policy that allows the frontend origin
+app.UseCors("FrontendPolicy");
 
 // Health endpoint for liveness/readiness checks
 app.MapGet("health", HealthHandler.HandleAsync);
