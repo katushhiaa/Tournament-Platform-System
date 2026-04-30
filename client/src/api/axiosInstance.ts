@@ -1,16 +1,14 @@
 import axios from 'axios';
 import { useAuthStore } from '../stores/authStore';
-import router from '../router';
 
-// 👉 базовий URL (через proxy у vite)
 const axiosInstance = axios.create({
     baseURL: '/api/v1',
     headers: {
         'Content-Type': 'application/json',
+        Accept: 'application/json',
     },
 });
 
-// 🔹 REQUEST INTERCEPTOR
 axiosInstance.interceptors.request.use((config) => {
     const authStore = useAuthStore();
 
@@ -21,25 +19,22 @@ axiosInstance.interceptors.request.use((config) => {
     return config;
 });
 
-// 🔹 RESPONSE INTERCEPTOR
 axiosInstance.interceptors.response.use(
     (response) => response,
     (error) => {
         const authStore = useAuthStore();
+        const status = error.response?.status;
 
-        if (error.response) {
-            const status = error.response.status;
+        if (status === 401) {
+            authStore.clearAuth();
 
-            // ❗ 401 → logout + redirect
-            if (status === 401) {
-                authStore.clearAuth();
-                router.push('/login');
+            if (window.location.pathname !== '/login') {
+                window.location.href = '/login';
             }
+        }
 
-            // ❗ 403 → доступ заборонений
-            if (status === 403) {
-                alert('Доступ заборонений');
-            }
+        if (status === 403) {
+            alert('Доступ заборонений');
         }
 
         return Promise.reject(error);
