@@ -1,3 +1,5 @@
+import axios from 'axios';
+import axiosInstance from '../api/axiosInstance';
 import type {
     IApiError,
     IAuthResponse,
@@ -30,12 +32,46 @@ const toBackendRole = (role: string): 'Organizer' | 'Player' => {
     return role.toLowerCase() === 'organizer' ? 'Organizer' : 'Player';
 };
 
-const parseErrorBody = async (response: Response): Promise<BackendErrorResponse> => {
-    try {
-        return (await response.json()) as BackendErrorResponse;
-    } catch {
-        return {};
+const buildApiError = (
+    status: number | undefined,
+    data: BackendErrorResponse | undefined,
+    fallbackMessage: string,
+): IApiError => {
+    let errorCode = 'INTERNAL_ERROR';
+
+    if (status === 400) {
+        errorCode = 'VALIDATION_ERROR';
+    } else if (status === 401) {
+        errorCode = 'INVALID_CREDENTIALS';
+    } else if (status === 403) {
+        errorCode = 'ACCESS_FORBIDDEN';
+    } else if (status === 409) {
+        errorCode = 'EMAIL_TAKEN';
+    } else if (status === 429) {
+        errorCode = 'TOO_MANY_ATTEMPTS';
+    } else if (status && status >= 500) {
+        errorCode = 'INTERNAL_ERROR';
+    } else if (data?.error?.type) {
+        errorCode = data.error.type;
     }
+
+    return {
+        errorCode,
+        message: data?.error?.message ?? fallbackMessage,
+    };
+};
+
+const handleAxiosError = (error: unknown, fallbackMessage: string): IApiError => {
+    if (axios.isAxiosError<BackendErrorResponse>(error)) {
+        return buildApiError(error.response?.status, error.response?.data, fallbackMessage);
+    }
+
+    const apiError = error as Partial<IApiError>;
+
+    return {
+        errorCode: apiError.errorCode ?? 'INTERNAL_ERROR',
+        message: apiError.message ?? fallbackMessage,
+    };
 };
 
 class AuthService {
@@ -54,38 +90,11 @@ class AuthService {
         }
 
         try {
-            const response = await fetch('/api/v1/auth/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                },
-                body: JSON.stringify(payload),
-            });
+            const response = await axiosInstance.post<
+                Partial<IAuthResponse> & BackendTokenOnlyResponse
+            >('/auth/register', payload);
 
-            if (!response.ok) {
-                const errorBody = await parseErrorBody(response);
-
-                let errorCode = 'INTERNAL_ERROR';
-
-                if (response.status === 400) {
-                    errorCode = 'VALIDATION_ERROR';
-                } else if (response.status === 409) {
-                    errorCode = 'EMAIL_TAKEN';
-                } else if (response.status >= 500) {
-                    errorCode = 'INTERNAL_ERROR';
-                } else if (errorBody.error?.type) {
-                    errorCode = errorBody.error.type;
-                }
-
-                throw {
-                    errorCode,
-                    message: errorBody.error?.message ?? 'Server error. Please try again later.',
-                } satisfies IApiError;
-            }
-
-            const successBody = (await response.json()) as Partial<IAuthResponse> &
-                Partial<BackendTokenOnlyResponse>;
+            const successBody = response.data;
 
             if (!successBody.token) {
                 throw {
@@ -117,16 +126,13 @@ class AuthService {
 
             return result;
         } catch (error) {
+            const apiError = handleAxiosError(error, 'Server error. Please try again later.');
+
             if (import.meta.env.DEV) {
-                console.error('[authService] register error', error);
+                console.error('[authService] register error', apiError);
             }
 
-            const apiError = error as Partial<IApiError>;
-
-            throw {
-                errorCode: apiError.errorCode ?? 'INTERNAL_ERROR',
-                message: apiError.message ?? 'Server error. Please try again later.',
-            } satisfies IApiError;
+            throw apiError;
         }
     }
 
@@ -141,39 +147,12 @@ class AuthService {
         }
 
         try {
-            const loginResponse = await fetch('/api/v1/auth/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                },
-                body: JSON.stringify(payload),
-            });
+            const loginResponse = await axiosInstance.post<BackendTokenOnlyResponse>(
+                '/auth/login',
+                payload,
+            );
 
-            if (!loginResponse.ok) {
-                const errorBody = await parseErrorBody(loginResponse);
-
-                let errorCode = 'INTERNAL_ERROR';
-
-                if (loginResponse.status === 400) {
-                    errorCode = 'VALIDATION_ERROR';
-                } else if (loginResponse.status === 401) {
-                    errorCode = 'INVALID_CREDENTIALS';
-                } else if (loginResponse.status === 403) {
-                    errorCode = 'ACCOUNT_LOCKED';
-                } else if (loginResponse.status === 429) {
-                    errorCode = 'TOO_MANY_ATTEMPTS';
-                } else if (loginResponse.status >= 500) {
-                    errorCode = 'INTERNAL_ERROR';
-                }
-
-                throw {
-                    errorCode,
-                    message: errorBody.error?.message ?? 'Login failed. Please try again.',
-                } satisfies IApiError;
-            }
-
-            const loginResult = (await loginResponse.json()) as BackendTokenOnlyResponse;
+            const loginResult = loginResponse.data;
 
             if (!loginResult.token) {
                 throw {
@@ -182,22 +161,13 @@ class AuthService {
                 } satisfies IApiError;
             }
 
-            const profileResponse = await fetch('/api/v1/users/me', {
-                method: 'GET',
+            const profileResponse = await axiosInstance.get<IUserProfileResponse>('/users/me', {
                 headers: {
                     Authorization: `Bearer ${loginResult.token}`,
-                    Accept: 'application/json',
                 },
             });
 
-            if (!profileResponse.ok) {
-                throw {
-                    errorCode: 'PROFILE_LOAD_ERROR',
-                    message: 'Unable to load user profile.',
-                } satisfies IApiError;
-            }
-
-            const profile = (await profileResponse.json()) as IUserProfileResponse;
+            const profile = profileResponse.data;
 
             const result: IAuthResponse = {
                 userId: profile.id,
@@ -214,16 +184,13 @@ class AuthService {
 
             return result;
         } catch (error) {
+            const apiError = handleAxiosError(error, 'Server error. Please try again later.');
+
             if (import.meta.env.DEV) {
-                console.error('[authService] login error', error);
+                console.error('[authService] login error', apiError);
             }
 
-            const apiError = error as Partial<IApiError>;
-
-            throw {
-                errorCode: apiError.errorCode ?? 'INTERNAL_ERROR',
-                message: apiError.message ?? 'Server error. Please try again later.',
-            } satisfies IApiError;
+            throw apiError;
         }
     }
 
