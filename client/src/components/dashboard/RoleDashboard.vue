@@ -84,7 +84,7 @@ import { computed } from 'vue';
 import AppHeader from '../AppHeader.vue';
 import TournamentCard from '../TournamentCard.vue';
 import SiteFooter from '../SiteFooter.vue';
-import { authStore } from '../../state/authStore';
+import { useAuthStore } from '../../stores/authStore';
 
 import heroBg from '../../assets/hero-bg.png';
 import cs2Card from '../../assets/cs2-card.png';
@@ -99,8 +99,9 @@ defineProps<{
   showCreateButton: boolean;
 }>();
 
+const authStore = useAuthStore();
 const firstName = computed(() => {
-  const fullName = authStore.state.user?.fullName?.trim();
+  const fullName = authStore.currentUser?.fullName?.trim();
   if (!fullName) return 'Name';
   return fullName.split(' ')[0];
 });

@@ -147,8 +147,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { authService } from '../../services/authService';
-import { authStore } from '../../state/authStore';
+import { useAuthStore } from '../../stores/authStore';
 import type { ILoginFormValues } from '../../types/Auth';
 
 import emailIcon from '../../assets/icons/System Icons.png';
@@ -158,7 +157,7 @@ type FormErrors = Partial<Record<keyof ILoginFormValues, string>>;
 
 const router = useRouter();
 const route = useRoute();
-
+const authStore = useAuthStore();
 const form = reactive<ILoginFormValues>({
   email: '',
   password: '',
@@ -213,9 +212,9 @@ const handleSubmit = async () => {
   isSubmitting.value = true;
 
   try {
-    const response = await authService.login({
-      email: form.email,
-      password: form.password,
+    const response = await authStore.login({
+    email: form.email,
+    password: form.password,
     });
 
     const redirectPath =

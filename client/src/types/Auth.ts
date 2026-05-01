@@ -26,6 +26,7 @@ export interface IAuthResponse {
     email: string;
     role: UserRole;
     token: string;
+    refreshToken?: string | null;
 }
 
 export interface IApiError {

@@ -48,15 +48,15 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { authStore } from '../state/authStore';
+import { useAuthStore } from '../stores/authStore';
 
 const router = useRouter();
+const authStore = useAuthStore();
 
-const isAuthenticated = computed(() => authStore.state.isAuthenticated);
+const isAuthenticated = computed(() => authStore.isAuthenticated);
 
 const homeRoute = computed(() => {
-  const rawRole = authStore.state.user?.role ?? '';
-  const role = String(rawRole).toLowerCase();
+  const role = authStore.currentUser?.role ?? '';
 
   if (role === 'organizer') {
     return { name: 'organizer-dashboard' };
