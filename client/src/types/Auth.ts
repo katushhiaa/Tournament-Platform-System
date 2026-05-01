@@ -46,7 +46,16 @@ export interface ILoginRequest {
 }
 
 export interface ILoginResponse {
-    token: string;
+    tokens: {
+        accessToken: string;
+        refreshToken: string;
+    };
+    user: {
+        id: string;
+        email: string;
+        fullName: string;
+        role: string;
+    };
 }
 
 export interface IUserProfileResponse {
