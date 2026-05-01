@@ -45,7 +45,7 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Repositories
                 // if account state not provided, try to resolve "active"
                 if (dbModel.AccountStateId == Guid.Empty)
                 {
-                    var activeState = await _context.Set<AccountStateModel>().FirstOrDefaultAsync(s => s.Name == "active");
+                    var activeState = await _context.Set<AccountStateModel>().FirstOrDefaultAsync(s => s.IsActive ?? false);
                     if (activeState != null)
                     {
                         dbModel.AccountStateId = activeState.Id;
@@ -110,6 +110,7 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Repositories
         public async Task<User> GetUserWithDetails(Guid id)
         {
             var dbModel = await _context.Set<UserModel>()
+            .Include(x => x.AccountState)
             .Include(x => x.UserDetail)
             .Include(x => x.UserPhones)
             .AsNoTracking()
@@ -126,6 +127,7 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Repositories
         public async Task<User> GetByEmailAsync(string email)
         {
             var dbModel = await _context.Set<UserModel>()
+            .Include(x => x.AccountState)
             .Include(x => x.UserDetail)
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.UserDetail != null && x.UserDetail.Email == email);

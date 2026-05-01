@@ -28,9 +28,9 @@ const normalizeRole = (role: string): UserRole => {
     return role.toLowerCase() === 'organizer' ? 'organizer' : 'player';
 };
 
-const toBackendRole = (role: string): 'Organizer' | 'Player' => {
-    return role.toLowerCase() === 'organizer' ? 'Organizer' : 'Player';
-};
+const toBackendRole = (role: string): 'organizer' | 'player' => {
+    return role.toLowerCase() === 'organizer' ? 'organizer' : 'player';
+}; // [serhii] Бекенд чекає роль в lower case форматі. Виправив
 
 const buildApiError = (
     status: number | undefined,
@@ -96,7 +96,7 @@ class AuthService {
 
             const successBody = response.data;
 
-            if (!successBody.token) {
+            if (!successBody.tokens.accessToken) {
                 throw {
                     errorCode: 'INVALID_RESPONSE',
                     message: 'Token is missing in server response.',
@@ -116,8 +116,7 @@ class AuthService {
                 role: normalizeRole(
                     typeof successBody.role === 'string' ? successBody.role : payload.role,
                 ),
-                token: successBody.token,
-                refreshToken: successBody.refreshToken ?? null,
+                tokens: successBody.tokens
             };
 
             if (import.meta.env.DEV) {

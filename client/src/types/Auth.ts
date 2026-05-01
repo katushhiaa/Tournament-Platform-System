@@ -25,8 +25,10 @@ export interface IAuthResponse {
     fullName: string;
     email: string;
     role: UserRole;
-    token: string;
-    refreshToken?: string | null;
+    tokens: {
+        accessToken: string;
+        refreshToken: string;
+    };
 }
 
 export interface IApiError {

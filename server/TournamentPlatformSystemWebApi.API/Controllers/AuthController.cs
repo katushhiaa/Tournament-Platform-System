@@ -150,7 +150,11 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
                 };
                 return BadRequest(err);
             }
-            catch (Exception)
+            catch (ForbiddenException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (Exception ex)
             {
                 var err = new ErrorResponseDto
                 {
@@ -158,7 +162,7 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
                     {
                         Code = 500,
                         Type = "InternalServerError",
-                        Message = "Internal server error",
+                        Message = ex.Message,
                         Path = HttpContext.GetEndpoint()?.DisplayName,
                         Timestamp = DateTime.UtcNow.ToString("o"),
                         TraceId = HttpContext.TraceIdentifier
