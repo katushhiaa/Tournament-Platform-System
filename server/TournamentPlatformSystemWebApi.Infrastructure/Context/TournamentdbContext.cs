@@ -25,6 +25,7 @@ public partial class TournamentdbContext : DbContext
     public virtual DbSet<UserDetailModel> UserDetails { get; set; }
     public virtual DbSet<UserPhoneModel> UserPhones { get; set; }
     public virtual DbSet<UserTeamModel> UserTeams { get; set; }
+    public virtual DbSet<RefreshTokenModel> RefreshTokens { get; set; }
     // OnConfiguring removed. Use dependency-injected DbContextOptions or the design-time factory.
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -386,11 +387,38 @@ public partial class TournamentdbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("user_team_user_id_fkey");
         });
+        modelBuilder.Entity<RefreshTokenModel>(entity => 
+        {
+            entity.HasKey(e=>e.Id).HasName("refresh_token_pkey");
+            entity.ToTable("refresh_token");
+            entity.Property(e=>e.Id)
+                .HasDefaultValueSql("gen_random_uuid()")
+                .HasColumnName("id");
+            entity.Property(e=>e.UserId).HasColumnName("user_id");    
+            entity.Property(e=>e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e=>e.ExpiresAt)
+                .HasColumnName("expires_at")
+                .HasColumnType("timestamp without time zone");
+            entity.Property(e=>e.Token).HasColumnName("token").HasMaxLength(255);
+            entity.Property(e=>e.IsRevoked)
+                .HasDefaultValue(false)
+                .HasColumnName("is_revoked");
+            entity.Property(e=>e.IsUsed)
+                .HasDefaultValue(false)
+                .HasColumnName("is_used");
+            entity.Property(e=>e.JwtId).HasColumnName("jwt_id").HasMaxLength(255);
+            entity.HasOne(d => d.User).WithMany(p => p.RefreshTokens)    
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("refresh_token_user_id_fkey");
+        });
     
 
 
 
-  
+
     OnModelCreatingPartial(modelBuilder);
 
 }

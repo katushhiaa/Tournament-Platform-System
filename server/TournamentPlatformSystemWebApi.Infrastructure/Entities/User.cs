@@ -29,4 +29,6 @@ public partial class UserModel : BaseDbEntity
     public virtual ICollection<UserPhoneModel> UserPhones { get; set; } = new List<UserPhoneModel>();
 
     public virtual ICollection<UserTeamModel> UserTeams { get; set; } = new List<UserTeamModel>();
+
+    public virtual ICollection<RefreshTokenModel> RefreshTokens { get; set; } = new List<RefreshTokenModel>();
 }
