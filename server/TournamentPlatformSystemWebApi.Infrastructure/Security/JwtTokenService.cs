@@ -28,7 +28,7 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Security
             var claims = new[] {
                 new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, email),
-                new Claim(ClaimTypes.Role, role ?? string.Empty),
+                new Claim("role", role),
                 new Claim("isOrganizer", isOrganizer.ToString())
             };
 
