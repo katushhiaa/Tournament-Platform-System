@@ -18,6 +18,7 @@ type BackendErrorResponse = {
         timestamp?: string;
         traceId?: string;
     };
+    errors?: Record<string, string[] | string>;
 };
 
 type BackendTokenOnlyResponse = {
@@ -31,6 +32,15 @@ const normalizeRole = (role: string): UserRole => {
 const toBackendRole = (role: string): 'organizer' | 'player' => {
     return role.toLowerCase() === 'organizer' ? 'organizer' : 'player';
 }; // [serhii] Бекенд чекає роль в lower case форматі. Виправив
+
+const normalizeFieldName = (field: string) => {
+    const normalized = field.charAt(0).toLowerCase() + field.slice(1);
+
+    if (normalized === 'phone') return 'phoneNumber';
+    if (normalized === 'name') return 'fullName';
+
+    return normalized;
+};
 
 const buildApiError = (
     status: number | undefined,
@@ -55,9 +65,18 @@ const buildApiError = (
         errorCode = data.error.type;
     }
 
+    const fieldErrors: Record<string, string> = {};
+
+    if (data?.errors) {
+        Object.entries(data.errors).forEach(([field, value]) => {
+            fieldErrors[normalizeFieldName(field)] = Array.isArray(value) ? value[0] : value;
+        });
+    }
+
     return {
         errorCode,
         message: data?.error?.message ?? fallbackMessage,
+        fieldErrors: Object.keys(fieldErrors).length ? fieldErrors : undefined,
     };
 };
 
@@ -71,6 +90,7 @@ const handleAxiosError = (error: unknown, fallbackMessage: string): IApiError =>
     return {
         errorCode: apiError.errorCode ?? 'INTERNAL_ERROR',
         message: apiError.message ?? fallbackMessage,
+        fieldErrors: apiError.fieldErrors,
     };
 };
 
@@ -96,14 +116,14 @@ class AuthService {
 
             const successBody = response.data;
 
-            if (!successBody.tokens.accessToken) {
+            if (!successBody.token) {
                 throw {
                     errorCode: 'INVALID_RESPONSE',
                     message: 'Token is missing in server response.',
                 } satisfies IApiError;
             }
 
-            const result: IAuthResponse = {
+            return {
                 userId:
                     typeof successBody.userId === 'string'
                         ? successBody.userId
@@ -116,14 +136,9 @@ class AuthService {
                 role: normalizeRole(
                     typeof successBody.role === 'string' ? successBody.role : payload.role,
                 ),
-                tokens: successBody.tokens
+                token: successBody.token,
+                refreshToken: successBody.refreshToken ?? null,
             };
-
-            if (import.meta.env.DEV) {
-                console.log('[authService] register response', result);
-            }
-
-            return result;
         } catch (error) {
             const apiError = handleAxiosError(error, 'Server error. Please try again later.');
 
@@ -141,13 +156,8 @@ class AuthService {
             password: data.password,
         };
 
-        if (import.meta.env.DEV) {
-            console.log('[authService] login request', { email: payload.email });
-        }
-
         try {
             const loginResponse = await axiosInstance.post<ILoginResponse>('/auth/login', payload);
-
             const loginResult = loginResponse.data;
 
             if (!loginResult.tokens?.accessToken) {
@@ -164,7 +174,7 @@ class AuthService {
                 } satisfies IApiError;
             }
 
-            const result: IAuthResponse = {
+            return {
                 userId: loginResult.user.id,
                 email: loginResult.user.email,
                 fullName: loginResult.user.fullName,
@@ -172,12 +182,6 @@ class AuthService {
                 token: loginResult.tokens.accessToken,
                 refreshToken: loginResult.tokens.refreshToken ?? null,
             };
-
-            if (import.meta.env.DEV) {
-                console.log('[authService] login response', result);
-            }
-
-            return result;
         } catch (error) {
             const apiError = handleAxiosError(error, 'Server error. Please try again later.');
 

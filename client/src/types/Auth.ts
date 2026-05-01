@@ -25,15 +25,14 @@ export interface IAuthResponse {
     fullName: string;
     email: string;
     role: UserRole;
-    tokens: {
-        accessToken: string;
-        refreshToken: string;
-    };
+    token: string;
+    refreshToken?: string | null;
 }
 
 export interface IApiError {
     errorCode: string;
     message: string;
+    fieldErrors?: Record<string, string>;
 }
 
 export interface ILoginFormValues {
