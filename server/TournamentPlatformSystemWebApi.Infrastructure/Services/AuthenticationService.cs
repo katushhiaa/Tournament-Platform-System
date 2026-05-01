@@ -24,7 +24,6 @@ public class AuthenticationService : IAuthenticationService
     public AuthenticationService(IUserRepository userRepository, TournamentdbContext db, IPasswordHasher passwordHasher, IJwtTokenService jwtTokenService, IMemoryCache? cache = null)
     {
         _userRepository = userRepository;
-        _db = db;
         _passwordHasher = passwordHasher;
         _jwtTokenService = jwtTokenService;
         _cache = cache ?? new MemoryCache(new MemoryCacheOptions());

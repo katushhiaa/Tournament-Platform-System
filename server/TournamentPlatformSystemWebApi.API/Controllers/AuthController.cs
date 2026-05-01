@@ -94,7 +94,7 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
         [SwaggerResponse(400, Type = typeof(ErrorResponseDto), Description = "Помилка валідації")]
         [SwaggerResponse(401, Type = typeof(ErrorResponseDto), Description = "Невірний логін/пароль")]
         [SwaggerRequestExample(typeof(LoginRequestDto), typeof(Swagger.Examples.LoginRequestExample))]
-        [SwaggerResponseExample(200, typeof(Swagger.Examples.TokenResponseExample))]
+        [SwaggerResponseExample(200, typeof(Swagger.Examples.LoginResponseExample))]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto dto)
         {
             try
