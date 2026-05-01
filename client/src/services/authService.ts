@@ -4,8 +4,8 @@ import type {
     IApiError,
     IAuthResponse,
     ILoginRequest,
+    ILoginResponse,
     IRegisterRequest,
-    IUserProfileResponse,
     UserRole,
 } from '../types/Auth';
 
@@ -28,9 +28,9 @@ const normalizeRole = (role: string): UserRole => {
     return role.toLowerCase() === 'organizer' ? 'organizer' : 'player';
 };
 
-const toBackendRole = (role: string): 'Organizer' | 'Player' => {
-    return role.toLowerCase() === 'organizer' ? 'Organizer' : 'Player';
-};
+const toBackendRole = (role: string): 'organizer' | 'player' => {
+    return role.toLowerCase() === 'organizer' ? 'organizer' : 'player';
+}; // [serhii] Бекенд чекає роль в lower case форматі. Виправив
 
 const buildApiError = (
     status: number | undefined,
@@ -96,7 +96,7 @@ class AuthService {
 
             const successBody = response.data;
 
-            if (!successBody.token) {
+            if (!successBody.tokens.accessToken) {
                 throw {
                     errorCode: 'INVALID_RESPONSE',
                     message: 'Token is missing in server response.',
@@ -116,8 +116,7 @@ class AuthService {
                 role: normalizeRole(
                     typeof successBody.role === 'string' ? successBody.role : payload.role,
                 ),
-                token: successBody.token,
-                refreshToken: successBody.refreshToken ?? null,
+                tokens: successBody.tokens
             };
 
             if (import.meta.env.DEV) {
@@ -147,35 +146,31 @@ class AuthService {
         }
 
         try {
-            const loginResponse = await axiosInstance.post<BackendTokenOnlyResponse>(
-                '/auth/login',
-                payload,
-            );
+            const loginResponse = await axiosInstance.post<ILoginResponse>('/auth/login', payload);
 
             const loginResult = loginResponse.data;
 
-            if (!loginResult.token) {
+            if (!loginResult.tokens?.accessToken) {
                 throw {
                     errorCode: 'INVALID_RESPONSE',
-                    message: 'Token is missing in server response.',
+                    message: 'Access token is missing in server response.',
                 } satisfies IApiError;
             }
 
-            const profileResponse = await axiosInstance.get<IUserProfileResponse>('/users/me', {
-                headers: {
-                    Authorization: `Bearer ${loginResult.token}`,
-                },
-            });
-
-            const profile = profileResponse.data;
+            if (!loginResult.user) {
+                throw {
+                    errorCode: 'INVALID_RESPONSE',
+                    message: 'User is missing in server response.',
+                } satisfies IApiError;
+            }
 
             const result: IAuthResponse = {
-                userId: profile.id,
-                email: profile.email,
-                fullName: profile.name,
-                role: normalizeRole(profile.role),
-                token: loginResult.token,
-                refreshToken: null,
+                userId: loginResult.user.id,
+                email: loginResult.user.email,
+                fullName: loginResult.user.fullName,
+                role: normalizeRole(loginResult.user.role),
+                token: loginResult.tokens.accessToken,
+                refreshToken: loginResult.tokens.refreshToken ?? null,
             };
 
             if (import.meta.env.DEV) {

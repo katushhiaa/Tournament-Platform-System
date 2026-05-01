@@ -25,8 +25,10 @@ export interface IAuthResponse {
     fullName: string;
     email: string;
     role: UserRole;
-    token: string;
-    refreshToken?: string | null;
+    tokens: {
+        accessToken: string;
+        refreshToken: string;
+    };
 }
 
 export interface IApiError {
@@ -46,7 +48,16 @@ export interface ILoginRequest {
 }
 
 export interface ILoginResponse {
-    token: string;
+    tokens: {
+        accessToken: string;
+        refreshToken: string;
+    };
+    user: {
+        id: string;
+        email: string;
+        fullName: string;
+        role: string;
+    };
 }
 
 export interface IUserProfileResponse {
