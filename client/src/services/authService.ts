@@ -6,6 +6,7 @@ import type {
     ILoginRequest,
     ILoginResponse,
     IRegisterRequest,
+    IRegisterResponse,
     UserRole,
 } from '../types/Auth';
 
@@ -21,9 +22,6 @@ type BackendErrorResponse = {
     errors?: Record<string, string[] | string>;
 };
 
-type BackendTokenOnlyResponse = {
-    token: string;
-};
 
 const normalizeRole = (role: string): UserRole => {
     return role.toLowerCase() === 'organizer' ? 'organizer' : 'player';
@@ -110,35 +108,26 @@ class AuthService {
         }
 
         try {
-            const response = await axiosInstance.post<
-                Partial<IAuthResponse> & BackendTokenOnlyResponse
-            >('/auth/register', payload);
-
+            const response = await axiosInstance.post<IRegisterResponse>('/auth/register', payload);
             const successBody = response.data;
 
-            if (!successBody.token) {
+            if (!successBody.tokens?.accessToken) {
                 throw {
                     errorCode: 'INVALID_RESPONSE',
-                    message: 'Token is missing in server response.',
+                    message: 'Access token is missing in server response.',
                 } satisfies IApiError;
             }
 
-            return {
-                userId:
-                    typeof successBody.userId === 'string'
-                        ? successBody.userId
-                        : crypto.randomUUID(),
-                email: typeof successBody.email === 'string' ? successBody.email : payload.email,
-                fullName:
-                    typeof successBody.fullName === 'string'
-                        ? successBody.fullName
-                        : payload.fullName,
-                role: normalizeRole(
-                    typeof successBody.role === 'string' ? successBody.role : payload.role,
-                ),
-                token: successBody.token,
-                refreshToken: successBody.refreshToken ?? null,
+            const result: IAuthResponse = {
+                userId: successBody.userId,
+                email: successBody.email,
+                fullName: successBody.fullName,
+                role: normalizeRole(successBody.role),
+                token: successBody.tokens.accessToken,
+                refreshToken: successBody.tokens.refreshToken ?? null,
             };
+
+            return result;
         } catch (error) {
             const apiError = handleAxiosError(error, 'Server error. Please try again later.');
 
@@ -202,5 +191,4 @@ class AuthService {
         return true;
     }
 }
-
 export const authService = new AuthService();

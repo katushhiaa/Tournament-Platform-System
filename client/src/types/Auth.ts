@@ -9,6 +9,17 @@ export interface IRegisterRequest {
     password: string;
 }
 
+export interface IRegisterResponse {
+    userId: string;
+    email: string;
+    fullName: string;
+    role: string;
+    tokens: {
+        accessToken: string;
+        refreshToken: string;
+    };
+}
+
 export interface IRegisterFormValues extends IRegisterRequest {
     confirmPassword: string;
 }
