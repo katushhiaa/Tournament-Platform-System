@@ -19,12 +19,14 @@
 
           <input
             id="email"
+            ref="emailInput"
             v-model.trim="form.email"
             type="email"
             class="login-form__input"
             placeholder="Enter your email"
             autocomplete="email"
             @blur="validateField('email')"
+            @input="validateField('email')"
           />
         </div>
 
@@ -59,12 +61,14 @@
 
           <input
             id="password"
+            ref="passwordInput"
             v-model="form.password"
             :type="showPassword ? 'text' : 'password'"
             class="login-form__input login-form__input--password"
             placeholder="Enter your password"
             autocomplete="current-password"
             @blur="validateField('password')"
+            @input="validateField('password')"
           />
 
           <button
@@ -110,7 +114,11 @@
         <span class="login-form__forgot">Forgot password?</span>
       </div>
 
-      <button type="submit" class="login-form__submit" :disabled="isSubmitting">
+      <button
+        type="submit"
+        class="login-form__submit"
+        :disabled="isSubmitting || isLoginBlocked"
+      >
         {{ isSubmitting ? 'Logging In...' : 'Log In' }}
       </button>
 
@@ -139,6 +147,7 @@
         </p>
       </div>
 
+      <p v-if="toastMessage" class="login-form__toast">{{ toastMessage }}</p>
       <p v-if="submitError" class="login-form__submit-error">{{ submitError }}</p>
     </div>
   </form>
@@ -158,8 +167,10 @@ type FormErrors = Partial<Record<keyof ILoginFormValues, string>>;
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
+const isLoginBlocked = ref(false);
+
 const form = reactive<ILoginFormValues>({
-  email: '',
+  email: localStorage.getItem('login_email') ?? '',
   password: '',
   rememberMe: true,
 });
@@ -167,9 +178,33 @@ const form = reactive<ILoginFormValues>({
 const errors = reactive<FormErrors>({});
 const isSubmitting = ref(false);
 const submitError = ref('');
+const toastMessage = ref('');
 const showPassword = ref(false);
 
+const emailInput = ref<HTMLInputElement | null>(null);
+const passwordInput = ref<HTMLInputElement | null>(null);
+
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const focusFirstError = () => {
+  if (errors.email) {
+    emailInput.value?.focus();
+    return;
+  }
+
+  if (errors.password) {
+    passwordInput.value?.focus();
+  }
+};
+
+const applyBackendErrors = (fieldErrors?: Record<string, string>) => {
+  if (!fieldErrors) return;
+
+  if (fieldErrors.email) errors.email = fieldErrors.email;
+  if (fieldErrors.password) errors.password = fieldErrors.password;
+
+  focusFirstError();
+};
 
 const validateField = (field: keyof ILoginFormValues) => {
   switch (field) {
@@ -181,6 +216,7 @@ const validateField = (field: keyof ILoginFormValues) => {
       } else {
         errors.email = '';
       }
+      localStorage.setItem('login_email', form.email);
       break;
 
     case 'password':
@@ -205,16 +241,22 @@ const validateForm = () => {
 
 const handleSubmit = async () => {
   submitError.value = '';
+  toastMessage.value = '';
 
   const isValid = validateForm();
-  if (!isValid) return;
+
+  if (!isValid) {
+    focusFirstError();
+    return;
+  }
 
   isSubmitting.value = true;
 
   try {
     const response = await authStore.login({
-    email: form.email,
-    password: form.password,
+      email: form.email,
+      password: form.password,
+      rememberMe: form.rememberMe,
     });
 
     const redirectPath =
@@ -224,16 +266,33 @@ const handleSubmit = async () => {
 
     await router.push(redirectPath);
   } catch (error: unknown) {
-    const apiError = error as { errorCode?: string; message?: string };
+    const apiError = error as {
+      errorCode?: string;
+      message?: string;
+      fieldErrors?: Record<string, string>;
+    };
 
     if (apiError.errorCode === 'INVALID_CREDENTIALS') {
       submitError.value = 'Invalid email or password';
+    } else if (apiError.errorCode === 'TOO_MANY_ATTEMPTS') {
+      submitError.value =
+        apiError.message ?? 'Too many failed login attempts. Try again later.';
+      isLoginBlocked.value = true;
+      window.setTimeout(
+        () => {
+          isLoginBlocked.value = false;
+          submitError.value = '';
+        },
+        5 * 60 * 1000,
+      );
     } else if (apiError.errorCode === 'ACCOUNT_LOCKED') {
       submitError.value = 'Account is locked. Please contact support.';
     } else if (apiError.errorCode === 'VALIDATION_ERROR') {
+      applyBackendErrors(apiError.fieldErrors);
       submitError.value = apiError.message ?? 'Validation error';
     } else {
-      submitError.value = 'Server error. Please try again later.';
+      toastMessage.value = 'Помилка сервера';
+      submitError.value = apiError.message ?? 'Server error. Please try again later.';
     }
   } finally {
     isSubmitting.value = false;
@@ -242,7 +301,6 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
-
 .login-form__input:-webkit-autofill,
 .login-form__input:-webkit-autofill:hover,
 .login-form__input:-webkit-autofill:focus {
@@ -388,12 +446,12 @@ const handleSubmit = async () => {
   display: none;
 }
 
-.login-form__input[type="password"]::-webkit-credentials-auto-fill-button,
-.login-form__input[type="password"]::-webkit-textfield-decoration-container {
+.login-form__input[type='password']::-webkit-credentials-auto-fill-button,
+.login-form__input[type='password']::-webkit-textfield-decoration-container {
   display: none !important;
 }
 
-input[type="password"]::-webkit-credentials-auto-fill-button {
+input[type='password']::-webkit-credentials-auto-fill-button {
   visibility: hidden;
   display: none !important;
 }
@@ -451,23 +509,6 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
-  transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.login-form__submit:hover {
-  background: #ff9800;
-  color: #fffcf2;
-}
-
-.login-form__submit:active,
-.login-form__submit:focus-visible {
-  background: transparent;
-  color: #ff9800;
-  border-color: #ff9800;
-  outline: none;
 }
 
 .login-form__submit:disabled {
@@ -523,18 +564,6 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
   font-size: 15px;
   font-weight: 700;
   text-decoration: none;
-  transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.login-form__create-account:active,
-.login-form__create-account:focus-visible {
-  background: #1531CE;
-  border-color: #1531CE;
-  color: #fffcf2;
-  outline: none;
 }
 
 .login-form__privacy {
@@ -569,17 +598,27 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
   opacity: 0.9;
 }
 
+.login-form__toast,
 .login-form__submit-error {
   width: 433px;
   max-width: 100%;
-  margin: 22px 0 0;
-  border: 1px solid rgba(255, 107, 107, 0.45);
+  margin: 18px 0 0;
   border-radius: 12px;
-  background: rgba(255, 107, 107, 0.12);
-  color: #ff6b6b;
   padding: 14px 16px;
   font-size: 14px;
   line-height: 1.5;
+}
+
+.login-form__toast {
+  border: 1px solid rgba(255, 152, 0, 0.45);
+  background: rgba(255, 152, 0, 0.12);
+  color: #ff9800;
+}
+
+.login-form__submit-error {
+  border: 1px solid rgba(255, 107, 107, 0.45);
+  background: rgba(255, 107, 107, 0.12);
+  color: #ff6b6b;
 }
 
 @media (max-width: 640px) {
