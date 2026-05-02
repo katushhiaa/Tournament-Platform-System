@@ -44,6 +44,7 @@ export interface ILoginFormValues {
 export interface ILoginRequest {
     email: string;
     password: string;
+    rememberMe: boolean;
 }
 
 export interface ILoginResponse {

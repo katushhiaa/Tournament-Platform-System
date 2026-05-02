@@ -114,7 +114,11 @@
         <span class="login-form__forgot">Forgot password?</span>
       </div>
 
-      <button type="submit" class="login-form__submit" :disabled="isSubmitting">
+      <button
+        type="submit"
+        class="login-form__submit"
+        :disabled="isSubmitting || isLoginBlocked"
+      >
         {{ isSubmitting ? 'Logging In...' : 'Log In' }}
       </button>
 
@@ -163,6 +167,7 @@ type FormErrors = Partial<Record<keyof ILoginFormValues, string>>;
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
+const isLoginBlocked = ref(false);
 
 const form = reactive<ILoginFormValues>({
   email: localStorage.getItem('login_email') ?? '',
@@ -251,6 +256,7 @@ const handleSubmit = async () => {
     const response = await authStore.login({
       email: form.email,
       password: form.password,
+      rememberMe: form.rememberMe,
     });
 
     const redirectPath =
@@ -268,6 +274,17 @@ const handleSubmit = async () => {
 
     if (apiError.errorCode === 'INVALID_CREDENTIALS') {
       submitError.value = 'Invalid email or password';
+    } else if (apiError.errorCode === 'TOO_MANY_ATTEMPTS') {
+      submitError.value =
+        apiError.message ?? 'Too many failed login attempts. Try again later.';
+      isLoginBlocked.value = true;
+      window.setTimeout(
+        () => {
+          isLoginBlocked.value = false;
+          submitError.value = '';
+        },
+        5 * 60 * 1000,
+      );
     } else if (apiError.errorCode === 'ACCOUNT_LOCKED') {
       submitError.value = 'Account is locked. Please contact support.';
     } else if (apiError.errorCode === 'VALIDATION_ERROR') {

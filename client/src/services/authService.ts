@@ -154,6 +154,7 @@ class AuthService {
         const payload = {
             email: data.email.trim(),
             password: data.password,
+            rememberMe: data.rememberMe,
         };
 
         try {
