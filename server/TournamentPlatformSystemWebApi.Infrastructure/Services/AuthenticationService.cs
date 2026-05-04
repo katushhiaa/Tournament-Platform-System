@@ -100,9 +100,11 @@ public class AuthenticationService : IAuthenticationService
         {
             throw new ValidationException("Missing required fields");
         }
+        // normalize email (case-insensitive handling)
+        var email = request.Email.ToLowerInvariant();
 
         // check duplicate email
-        if (await _userRepository.ExistsByEmailAsync(request.Email))
+        if (await _userRepository.ExistsByEmailAsync(email))
         {
             throw new DuplicateEmailException("Email is already in use");
         }
@@ -138,7 +140,7 @@ public class AuthenticationService : IAuthenticationService
             Password = request.Password,
             UserDetail = new UserDetail
             {
-                Email = request.Email,
+                Email = email,
                 DateOfBirth = request.DateOfBirth.Value,
                 Phones = new List<string> { request.PhoneNumber }
             }
@@ -157,7 +159,7 @@ public class AuthenticationService : IAuthenticationService
         return new RegisterUserResponse
         {
             UserId = createdUserId,
-            Email = request.Email,
+            Email = email,
             FullName = request.FullName,
             Role = request.Role,
             Tokens = new TokensResponseDto
@@ -174,8 +176,8 @@ public class AuthenticationService : IAuthenticationService
         {
             throw new ValidationException("Missing email or password");
         }
-
-        var emailKey = request.Email.ToLowerInvariant();
+        var email = request.Email.ToLowerInvariant();
+        var emailKey = email;
         var blockedKey = $"login_blocked:{emailKey}";
         var failedKey = $"login_failed:{emailKey}";
 
@@ -183,15 +185,13 @@ public class AuthenticationService : IAuthenticationService
         {
             throw new TooManyLoginAttemptsException("Too many failed login attempts. Try again later.");
         }
-
-        var user = await _userRepository.GetByEmailAsync(request.Email);
+        var user = await _userRepository.GetByEmailAsync(email);
         if (user == null)
         {
             LoginFailedAttempt(failedKey, blockedKey);
             throw new InvalidCredentialsException("Invalid email or password");
         }
-
-        var storedHash = await _userRepository.GetPasswordHashByEmailAsync(request.Email) ?? string.Empty;
+        var storedHash = await _userRepository.GetPasswordHashByEmailAsync(email) ?? string.Empty;
         var verified = _passwordHasher.VerifyPassword(request.Password, storedHash);
         if (!verified)
         {

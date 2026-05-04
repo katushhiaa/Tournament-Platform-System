@@ -32,7 +32,7 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Security
                 new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, jwtId),
                 new Claim(JwtRegisteredClaimNames.Email, email),
-                new Claim(ClaimTypes.Role, role ?? string.Empty),
+                new Claim("role", role),
                 new Claim("isOrganizer", isOrganizer.ToString())
             };
 
