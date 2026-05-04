@@ -1,5 +1,6 @@
 using System;
 using System.Data.Common;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using TournamentPlatformSystemWebApi.Infrastructure.Entities;
@@ -144,6 +145,78 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Repositories
                 .FirstOrDefaultAsync();
 
             return hash;
+        }
+
+        public async Task SetRefreshTokenForUser(Guid userId, string token, string jwtId, DateTime expiresAt)
+        {
+
+            await RevokeUserTokens(userId);
+
+            var refreshModel = new RefreshTokenModel
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                Token = token,
+                JwtId = jwtId,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                ExpiresAt = DateTime.SpecifyKind(expiresAt, DateTimeKind.Unspecified),
+                IsUsed = false,
+                IsRevoked = false
+            };
+
+            await _context.Set<RefreshTokenModel>().AddAsync(refreshModel);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<bool> ValidateRefreshTokenForUser(Guid userId, string token, string jwtId)
+        {
+
+            var refresh = await _context.Set<RefreshTokenModel>()
+                .FirstOrDefaultAsync(x => x.Token == token && x.UserId == userId);
+
+            if (refresh == null)
+            {
+                return false;
+            }
+
+            if (refresh.UserId != userId || refresh.JwtId != jwtId)
+            {
+                return false;
+            }
+
+            if (refresh.IsUsed || refresh.IsRevoked)
+            {
+                return false;
+            }
+
+            if (refresh.ExpiresAt <= DateTime.UtcNow)
+            {
+                return false;
+            }
+
+            refresh.IsUsed = true;
+            _context.Set<RefreshTokenModel>().Update(refresh);
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        // Revoke any existing (non-revoked) refresh tokens for user
+        public async Task RevokeUserTokens(Guid userId)
+        {
+            var existing = await _context.Set<RefreshTokenModel>()
+                .Where(x => x.UserId == userId && !x.IsRevoked)
+                .ToListAsync();
+
+            if (existing.Any())
+            {
+                foreach (var t in existing)
+                {
+                    t.IsRevoked = true;
+                }
+
+                _context.Set<RefreshTokenModel>().UpdateRange(existing);
+            }
         }
     }
 }

@@ -5,12 +5,15 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using TournamentPlatformSystemWebApi.Application.DTOs.Auth;
 using TournamentPlatformSystemWebApi.Application.Interfaces;
+using System.Security.Claims;
 using TournamentPlatformSystemWebApi.Common.Exceptions;
 using TournamentPlatformSystemWebApi.Core.Entities;
 using TournamentPlatformSystemWebApi.Infrastructure.Context;
 using TournamentPlatformSystemWebApi.Infrastructure.Security;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace TournamentPlatformSystemWebApi.Infrastructure.Services;
 
@@ -20,13 +23,75 @@ public class AuthenticationService : IAuthenticationService
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IMemoryCache _cache;
+    private readonly int _refreshTokenDays;
 
-    public AuthenticationService(IUserRepository userRepository, TournamentdbContext db, IPasswordHasher passwordHasher, IJwtTokenService jwtTokenService, IMemoryCache? cache = null)
+    public AuthenticationService(IUserRepository userRepository, IPasswordHasher passwordHasher, IJwtTokenService jwtTokenService, IConfiguration configuration, IMemoryCache? cache = null)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
         _jwtTokenService = jwtTokenService;
         _cache = cache ?? new MemoryCache(new MemoryCacheOptions());
+        var daysStr = configuration["REFRESH_TOKEN_DAYS"];
+        if (!int.TryParse(daysStr, out _refreshTokenDays))
+        {
+            _refreshTokenDays = 7;
+        }
+    }
+
+    public async Task<TokensResponseDto> RefreshAsync(string refreshToken, string accessToken)
+    {
+        if (string.IsNullOrWhiteSpace(refreshToken))
+        {
+            throw new InvalidCredentialsException("Refresh token missing");
+        }
+
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            throw new InvalidCredentialsException("Access token missing");
+        }
+
+        // strip Bearer prefix if present
+        if (accessToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            accessToken = accessToken.Substring(7).Trim();
+        }
+
+        JwtSecurityToken jwt;
+        try
+        {
+            var handler = new JwtSecurityTokenHandler();
+            jwt = handler.ReadJwtToken(accessToken);
+        }
+        catch
+        {
+            throw new InvalidCredentialsException("Invalid access token");
+        }
+
+        var jti = jwt.Id;
+        var sub = jwt.Subject;
+        if (string.IsNullOrWhiteSpace(jti) || string.IsNullOrWhiteSpace(sub))
+        {
+            throw new InvalidCredentialsException("Invalid token claims");
+        }
+
+        if (!Guid.TryParse(sub, out var userId))
+        {
+            throw new InvalidCredentialsException("Invalid user id in token");
+        }
+
+        var valid = await _userRepository.ValidateRefreshTokenForUser(userId, refreshToken, jti);
+        if (!valid)
+        {
+            throw new InvalidCredentialsException("Invalid or expired refresh token");
+        }
+
+        var (newAccess, newJwtId, expiresAt) = _jwtTokenService.GenerateToken(userId, jwt.Payload[JwtRegisteredClaimNames.Email]?.ToString() ?? string.Empty, jwt.Payload[ClaimTypes.Role]?.ToString() ?? "player", jwt.Payload["isOrganizer"]?.ToString() == "True");
+
+        var newRefresh = _jwtTokenService.GenerateRefreshToken();
+        var refreshExpires = DateTime.UtcNow.AddDays(_refreshTokenDays);
+        await _userRepository.SetRefreshTokenForUser(userId, newRefresh, newJwtId, refreshExpires);
+
+        return new TokensResponseDto { AccessToken = newAccess, RefreshToken = newRefresh };
     }
 
     public async Task<RegisterUserResponse> RegisterAsync(RegisterUserRequest request)
@@ -82,8 +147,12 @@ public class AuthenticationService : IAuthenticationService
         var createdUserId = await _userRepository.CreateAsync(userEntity);
 
         var isOrganizer = string.Equals(request.Role, "organizer", StringComparison.OrdinalIgnoreCase);
-        var token = _jwtTokenService.GenerateToken(createdUserId, request.Email, request.Role, isOrganizer);
+        var (token, jwtId, accessExpires) = _jwtTokenService.GenerateToken(createdUserId, request.Email, request.Role, isOrganizer);
         var refreshToken = _jwtTokenService.GenerateRefreshToken();
+
+        // persist refresh token (7 days expiry)
+        var refreshExpires = DateTime.UtcNow.AddDays(_refreshTokenDays);
+        await _userRepository.SetRefreshTokenForUser(createdUserId, refreshToken, jwtId, refreshExpires);
 
         return new RegisterUserResponse
         {
@@ -139,9 +208,18 @@ public class AuthenticationService : IAuthenticationService
         }
 
         var isOrganizer = user.IsOrganizer ?? false;
-        var access = _jwtTokenService.GenerateToken(user.Id, user.UserDetail?.Email ?? string.Empty, isOrganizer ? "organizer" : "player", isOrganizer);
+        var (access, jwtId, accessExpires) = _jwtTokenService.GenerateToken(user.Id, user.UserDetail?.Email ?? string.Empty, isOrganizer ? "organizer" : "player", isOrganizer);
 
         var refresh = request.RememberMe ? _jwtTokenService.GenerateRefreshToken() : null;
+        if (refresh != null)
+        {
+            var refreshExpires = DateTime.UtcNow.AddDays(_refreshTokenDays);
+            await _userRepository.SetRefreshTokenForUser(user.Id, refresh, jwtId, refreshExpires);
+        }
+        else
+        {
+            await _userRepository.RevokeUserTokens(user.Id);
+        }
 
         var response = new LoginResponseDto
         {

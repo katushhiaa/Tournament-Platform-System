@@ -9,6 +9,8 @@ public interface IUserRepository : IRepository<User, Guid>
     Task<User> GetByEmailAsync(string email);
     Task<string?> GetPasswordHashByEmailAsync(string email);
     Task<bool> ExistsByEmailAsync(string email);
-
+    Task SetRefreshTokenForUser(Guid userId, string token, string jwtId, DateTime expiresAt);
+    Task<bool> ValidateRefreshTokenForUser(Guid userId, string token, string jwtId);
+    Task RevokeUserTokens(Guid userId);
 
 }

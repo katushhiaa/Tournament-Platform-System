@@ -176,26 +176,61 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
         /// Refreshes the access token using a refresh token stored in an HttpOnly cookie.
         /// </summary>
         /// <remarks>
-        /// Client must send the refresh token in a cookie named "refresh_token" (HttpOnly, Secure recommended).
-        /// The endpoint validates the refresh token and, on success, returns a new access token and a new refresh token in the response body.
+        /// WARNING! This endpoint cannot be tested through swagger because it will not be possible to pass cookies. Client must send the refresh token in a cookie named "refresh_token" (HttpOnly, Secure recommended).
+        /// The endpoint validates the refresh, access tokens and, on success, returns a new access token and a new refresh token in the response body.
         /// </remarks>
         [HttpPost("refresh")]
         [AllowAnonymous]
-        [SwaggerOperation(Summary = "Refresh access token", Description = "Refreshes the access token using the refresh token stored in an HttpOnly cookie named 'refresh_token'.")]
+        [SwaggerOperation(Summary = "Refresh access token", Description = "WARNING! This endpoint cannot be tested through swagger because it will not be possible to pass cookies. Refreshes the access token using the refresh token stored in an HttpOnly cookie named 'refresh_token'.")]
         [Produces("application/json")]
         [ProducesResponseType(typeof(TokensResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status400BadRequest)]
         [SwaggerResponseExample(200, typeof(Swagger.Examples.TokenResponseExample))]
-        public IActionResult Refresh()
+        public async Task<IActionResult> Refresh()
         {
-            // Implementation note: the server should read the refresh token from Request.Cookies["refresh_token"],
-            // validate it, issue a new access token (and optionally rotate the refresh token),
-            // and return the tokens in the response body. If the refresh token is missing/invalid/expired, return 401.
-            var tokens = new TokensResponseDto { AccessToken = "new-token-sample", RefreshToken = "new-token-sample" };
-            return Ok(tokens);
+            try
+            {
+                var refreshToken = Request.Cookies["refresh_token"];
+                var authHeader = Request.Headers["Authorization"].ToString();
+                var tokens = await _authenticationService.RefreshAsync(refreshToken, authHeader);
+                return Ok(tokens);
+            }
+            catch (TournamentPlatformSystemWebApi.Common.Exceptions.InvalidCredentialsException ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status401Unauthorized,
+                        Type = "Unauthorized",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+                return Unauthorized(err);
+            }
+            catch (Exception ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = 500,
+                        Type = "InternalServerError",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+                return StatusCode(500, err);
+            }
         }
 
+        [Authorize]
         [HttpGet("/api/v1/users/me")]
         [SwaggerOperation(Summary = "Отримання даних поточного користувача", Description = "Повертає профіль поточного користувача. Роль: Player/Organizer.")]
         [SwaggerResponse(200, Type = typeof(UserDto), Description = "Дані користувача")]
