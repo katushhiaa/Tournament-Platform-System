@@ -1,30 +1,27 @@
 <template>
   <form class="create-tournament-form" @submit.prevent="handleSubmit">
     <div class="create-tournament-form__top-card">
-      <div class="create-tournament-form__upload">
-                <button
-          type="button"
-          class="create-tournament-form__upload"
-          @click="handleBannerClick"
-        >
-          <input
-            ref="bannerInput"
-            type="file"
-            accept="image/png,image/jpeg"
-            class="create-tournament-form__file-input"
-            @change="handleBannerChange"
-          />
+      <button
+        type="button"
+        class="create-tournament-form__upload"
+        @click="handleBannerClick"
+      >
+        <input
+          ref="bannerInput"
+          type="file"
+          accept="image/png,image/jpeg"
+          class="create-tournament-form__file-input"
+          @change="handleBannerChange"
+        />
 
-          <img :src="uploadBannerIcon" alt="" class="create-tournament-form__upload-icon" />
+        <img :src="uploadBannerIcon" alt="" class="create-tournament-form__upload-icon" />
 
-          <p class="create-tournament-form__upload-title">
-            {{ bannerFileName || 'Upload Banner' }}
-          </p>
-          <p class="create-tournament-form__upload-text">PNG, JPG up to 5MB</p>
-          <p class="create-tournament-form__upload-text">Recommended 16:9</p>
-        </button>
-        
-      </div>
+        <p class="create-tournament-form__upload-title">
+          {{ bannerFileName || 'Upload Banner' }}
+        </p>
+        <p class="create-tournament-form__upload-text">PNG, JPG up to 5MB</p>
+        <p class="create-tournament-form__upload-text">Recommended 16:9</p>
+      </button>
 
       <div class="create-tournament-form__grid">
         <div class="create-tournament-form__field">
@@ -125,13 +122,16 @@
               ref="maxParticipantsInput"
               v-model.number="form.maxParticipants"
               type="number"
-              min="2"
+              min="4"
+              step="1"
               placeholder="e.g. 32"
               @blur="validateField('maxParticipants')"
               @input="validateField('maxParticipants')"
             />
           </div>
-          <p class="create-tournament-form__error">{{ errors.maxParticipants || '' }}</p>
+          <p class="create-tournament-form__error">
+            {{ errors.maxParticipants || '' }}
+          </p>
         </div>
 
         <div class="create-tournament-form__field">
@@ -188,7 +188,7 @@
       <button
         type="submit"
         class="create-tournament-form__submit"
-        :disabled="isSubmitting"
+        :disabled="isSubmitting || !isParticipantsLimitValid"
       >
         <img :src="createIcon" alt="" class="create-tournament-form__button-icon" />
         {{ isSubmitting ? 'Creating...' : 'Create tournament' }}
@@ -202,12 +202,11 @@
         Cancel
       </button>
     </div>
-
   </form>
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import uploadBannerIcon from '../../assets/icons/Upload Banner.png';
 import nameIcon from '../../assets/icons/Name.png';
@@ -221,10 +220,6 @@ import { tournamentService } from '../../services/tournamentService';
 import type { IThemeOption, ITournamentCreate, ITournamentResponse } from '../../types/Tournament';
 import type { IApiError } from '../../types/Auth';
 
-const emit = defineEmits<{
-  created: [tournament: ITournamentResponse];
-}>();
-
 type CreateTournamentFormValues = {
   title: string;
   sport: string;
@@ -236,27 +231,24 @@ type CreateTournamentFormValues = {
   conditions: string;
 };
 
-const bannerInput = ref<HTMLInputElement | null>(null);
-const bannerFileName = ref('');
-
-const handleBannerClick = () => {
-  bannerInput.value?.click();
-};
-
-const handleBannerChange = (event: Event) => {
-  const input = event.target as HTMLInputElement;
-  const file = input.files?.[0];
-
-  if (!file) return;
-
-  bannerFileName.value = file.name;
-};
-
 type FormErrors = Partial<Record<keyof CreateTournamentFormValues, string>>;
+
+const props = withDefaults(
+  defineProps<{
+    registeredParticipantsCount?: number;
+  }>(),
+  {
+    registeredParticipantsCount: 0,
+  },
+);
+
+const emit = defineEmits<{
+  created: [tournament: ITournamentResponse];
+}>();
 
 const router = useRouter();
 
-const minTeams = 2;
+const minTeams = 4;
 
 const form = reactive<CreateTournamentFormValues>({
   title: '',
@@ -274,13 +266,43 @@ const themes = ref<IThemeOption[]>([]);
 const isSubmitting = ref(false);
 const toastMessage = ref('');
 const successMessage = ref('');
+const bannerFileName = ref('');
 
+const bannerInput = ref<HTMLInputElement | null>(null);
 const titleInput = ref<HTMLInputElement | null>(null);
 const sportInput = ref<HTMLSelectElement | null>(null);
 const startDateInput = ref<HTMLInputElement | null>(null);
 const endDateInput = ref<HTMLInputElement | null>(null);
 const registrationCloseDateInput = ref<HTMLInputElement | null>(null);
 const maxParticipantsInput = ref<HTMLInputElement | null>(null);
+
+const isPowerOfTwo = (value: number) => {
+  return Number.isInteger(value) && value > 0 && (value & (value - 1)) === 0;
+};
+
+const isParticipantsLimitValid = computed(() => {
+  const value = Number(form.maxParticipants);
+
+  return (
+    Boolean(form.maxParticipants) &&
+    value >= minTeams &&
+    isPowerOfTwo(value) &&
+    value >= props.registeredParticipantsCount
+  );
+});
+
+const handleBannerClick = () => {
+  bannerInput.value?.click();
+};
+
+const handleBannerChange = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+
+  if (!file) return;
+
+  bannerFileName.value = file.name;
+};
 
 const toIsoDate = (value: string) => new Date(value).toISOString();
 
@@ -339,15 +361,25 @@ const validateField = (field: keyof CreateTournamentFormValues) => {
       }
       break;
 
-    case 'maxParticipants':
+    case 'maxParticipants': {
+      const value = Number(form.maxParticipants);
+
       if (!form.maxParticipants) {
         errors.maxParticipants = 'Participants max count is required';
-      } else if (form.maxParticipants < minTeams) {
+      } else if (!Number.isInteger(value)) {
+        errors.maxParticipants = 'Participants max count must be an integer';
+      } else if (value < minTeams) {
         errors.maxParticipants = `Participants max count must be at least ${minTeams}`;
+      } else if (!isPowerOfTwo(value)) {
+        errors.maxParticipants = 'Кількість учасників має бути степенем 2';
+      } else if (value < props.registeredParticipantsCount) {
+        errors.maxParticipants =
+          'Participants limit cannot be less than current registered participants count';
       } else {
         errors.maxParticipants = '';
       }
       break;
+    }
 
     default:
       break;
@@ -461,6 +493,7 @@ onMounted(async () => {
 .create-tournament-form__button-icon {
   filter: brightness(0) invert(1);
 }
+
 .create-tournament-form__upload-icon {
   width: 64px;
   height: 64px;
@@ -478,26 +511,6 @@ onMounted(async () => {
   margin: 0;
   font-size: 14px;
   opacity: 0.9;
-}
-
-.create-tournament-form__dropdown-icon {
-  position: absolute;
-  top: 50%;
-  right: 14px;
-  width: 24px;
-  height: 24px;
-  transform: translateY(-50%);
-  pointer-events: none;
-  object-fit: contain;
-}
-
-.create-tournament-form__input-wrapper input[type='datetime-local']::-webkit-calendar-picker-indicator {
-  opacity: 0;
-  position: absolute;
-  right: 12px;
-  width: 24px;
-  height: 24px;
-  cursor: pointer;
 }
 
 .create-tournament-form__grid {
@@ -533,6 +546,12 @@ onMounted(async () => {
   outline: none;
 }
 
+.create-tournament-form__input-wrapper input::placeholder,
+.create-tournament-form__card textarea::placeholder {
+  color: rgba(255, 252, 242, 0.65);
+  font-size: 13px;
+}
+
 .create-tournament-form__select {
   appearance: none;
   -webkit-appearance: none;
@@ -548,12 +567,6 @@ onMounted(async () => {
 .create-tournament-form__select option {
   background: #1531ce;
   color: #fffcf2;
-}
-
-.create-tournament-form__input-wrapper input::placeholder,
-.create-tournament-form__card textarea::placeholder {
-  color: rgba(255, 252, 242, 0.65);
-  font-size: 13px;
 }
 
 .create-tournament-form__icon {
@@ -574,6 +587,13 @@ onMounted(async () => {
   height: 24px;
   transform: translateY(-50%);
   pointer-events: none;
+  object-fit: contain;
+}
+
+.create-tournament-form__input-wrapper input[type='datetime-local']::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  display: none;
+  -webkit-appearance: none;
 }
 
 .create-tournament-form__card {
@@ -629,6 +649,11 @@ onMounted(async () => {
   gap: 5px;
 }
 
+.create-tournament-form__submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .create-tournament-form__button-icon {
   width: 24px;
   height: 22px;
@@ -659,6 +684,27 @@ onMounted(async () => {
   font-size: 12px;
 }
 
+.create-tournament-form__toast,
+.create-tournament-form__success {
+  margin: 24px 0 0 auto;
+  width: min(420px, 100%);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 14px;
+}
+
+.create-tournament-form__toast {
+  border: 1px solid rgba(255, 107, 107, 0.45);
+  background: rgba(255, 107, 107, 0.12);
+  color: #ff6b6b;
+}
+
+.create-tournament-form__success {
+  border: 1px solid rgba(132, 192, 130, 0.45);
+  background: rgba(132, 192, 130, 0.12);
+  color: #84c082;
+}
+
 @media (max-width: 1100px) {
   .create-tournament-form {
     width: calc(100% - 32px);
@@ -667,6 +713,7 @@ onMounted(async () => {
   .create-tournament-form__top-card {
     grid-template-columns: 1fr;
     width: 100%;
+    padding: 32px 24px;
   }
 
   .create-tournament-form__upload {
@@ -680,6 +727,20 @@ onMounted(async () => {
   .create-tournament-form__input-wrapper,
   .create-tournament-form__input-wrapper input,
   .create-tournament-form__input-wrapper select {
+    width: 100%;
+  }
+
+  .create-tournament-form__card {
+    width: 100%;
+    padding: 28px 24px;
+  }
+
+  .create-tournament-form__actions {
+    flex-direction: column;
+  }
+
+  .create-tournament-form__submit,
+  .create-tournament-form__cancel {
     width: 100%;
   }
 }
