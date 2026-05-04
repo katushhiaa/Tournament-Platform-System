@@ -6,6 +6,7 @@ import type {
     ILoginRequest,
     ILoginResponse,
     IRegisterRequest,
+    IRegisterResponse,
     UserRole,
 } from '../types/Auth';
 
@@ -18,10 +19,7 @@ type BackendErrorResponse = {
         timestamp?: string;
         traceId?: string;
     };
-};
-
-type BackendTokenOnlyResponse = {
-    token: string;
+    errors?: Record<string, string[] | string>;
 };
 
 const normalizeRole = (role: string): UserRole => {
@@ -30,7 +28,16 @@ const normalizeRole = (role: string): UserRole => {
 
 const toBackendRole = (role: string): 'organizer' | 'player' => {
     return role.toLowerCase() === 'organizer' ? 'organizer' : 'player';
-}; // [serhii] Бекенд чекає роль в lower case форматі. Виправив
+};
+
+const normalizeFieldName = (field: string) => {
+    const normalized = field.charAt(0).toLowerCase() + field.slice(1);
+
+    if (normalized === 'phone') return 'phoneNumber';
+    if (normalized === 'name') return 'fullName';
+
+    return normalized;
+};
 
 const buildApiError = (
     status: number | undefined,
@@ -55,9 +62,18 @@ const buildApiError = (
         errorCode = data.error.type;
     }
 
+    const fieldErrors: Record<string, string> = {};
+
+    if (data?.errors) {
+        Object.entries(data.errors).forEach(([field, value]) => {
+            fieldErrors[normalizeFieldName(field)] = Array.isArray(value) ? value[0] : value;
+        });
+    }
+
     return {
         errorCode,
         message: data?.error?.message ?? fallbackMessage,
+        fieldErrors: Object.keys(fieldErrors).length ? fieldErrors : undefined,
     };
 };
 
@@ -71,6 +87,7 @@ const handleAxiosError = (error: unknown, fallbackMessage: string): IApiError =>
     return {
         errorCode: apiError.errorCode ?? 'INTERNAL_ERROR',
         message: apiError.message ?? fallbackMessage,
+        fieldErrors: apiError.fieldErrors,
     };
 };
 
@@ -90,33 +107,23 @@ class AuthService {
         }
 
         try {
-            const response = await axiosInstance.post<
-                Partial<IAuthResponse> & BackendTokenOnlyResponse
-            >('/auth/register', payload);
-
+            const response = await axiosInstance.post<IRegisterResponse>('/auth/register', payload);
             const successBody = response.data;
 
-            if (!successBody.tokens.accessToken) {
+            if (!successBody.tokens?.accessToken) {
                 throw {
                     errorCode: 'INVALID_RESPONSE',
-                    message: 'Token is missing in server response.',
+                    message: 'Access token is missing in server response.',
                 } satisfies IApiError;
             }
 
             const result: IAuthResponse = {
-                userId:
-                    typeof successBody.userId === 'string'
-                        ? successBody.userId
-                        : crypto.randomUUID(),
-                email: typeof successBody.email === 'string' ? successBody.email : payload.email,
-                fullName:
-                    typeof successBody.fullName === 'string'
-                        ? successBody.fullName
-                        : payload.fullName,
-                role: normalizeRole(
-                    typeof successBody.role === 'string' ? successBody.role : payload.role,
-                ),
-                tokens: successBody.tokens
+                userId: successBody.userId,
+                email: successBody.email,
+                fullName: successBody.fullName,
+                role: normalizeRole(successBody.role),
+                token: successBody.tokens.accessToken,
+                refreshToken: successBody.tokens.refreshToken ?? null,
             };
 
             if (import.meta.env.DEV) {
@@ -139,6 +146,7 @@ class AuthService {
         const payload = {
             email: data.email.trim(),
             password: data.password,
+            rememberMe: data.rememberMe,
         };
 
         if (import.meta.env.DEV) {
@@ -147,7 +155,6 @@ class AuthService {
 
         try {
             const loginResponse = await axiosInstance.post<ILoginResponse>('/auth/login', payload);
-
             const loginResult = loginResponse.data;
 
             if (!loginResult.tokens?.accessToken) {

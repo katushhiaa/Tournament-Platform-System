@@ -6,6 +6,7 @@ import LoginPage from '../views/LoginPage.vue';
 import OrganizerDashboardPage from '../views/OrganizerDashboardPage.vue';
 import PlayerDashboardPage from '../views/PlayerDashboardPage.vue';
 import { useAuthStore } from '../stores/authStore';
+import CreateTournamentPage from '../views/CreateTournamentPage.vue';
 
 const router = createRouter({
     history: createWebHistory(),
@@ -55,6 +56,29 @@ const router = createRouter({
                 },
             },
         },
+        {
+            path: '/tournaments/create',
+            name: 'create-tournament',
+            component: CreateTournamentPage,
+            meta: { requiresAuth: true, role: 'organizer' },
+        },
+        {
+            path: '/my-tournaments',
+            name: 'my-tournaments',
+            component: {
+                render() {
+                    return h(
+                        'main',
+                        {
+                            style:
+                                'min-height:100vh;background:#252e35;color:#fffcf2;display:flex;align-items:center;justify-content:center;font-size:32px;',
+                        },
+                        'My tournaments page is under development',
+                    );
+                },
+            },
+        },
+
     ],
 });
 

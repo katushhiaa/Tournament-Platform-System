@@ -25,15 +25,14 @@ export interface IAuthResponse {
     fullName: string;
     email: string;
     role: UserRole;
-    tokens: {
-        accessToken: string;
-        refreshToken: string;
-    };
+    token: string;
+    refreshToken?: string | null;
 }
 
 export interface IApiError {
     errorCode: string;
     message: string;
+    fieldErrors?: Record<string, string>;
 }
 
 export interface ILoginFormValues {
@@ -45,13 +44,24 @@ export interface ILoginFormValues {
 export interface ILoginRequest {
     email: string;
     password: string;
+    rememberMe: boolean;
+}
+
+export interface ITokensResponse {
+    accessToken: string;
+    refreshToken: string;
+}
+
+export interface IRegisterResponse {
+    userId: string;
+    email: string;
+    fullName: string;
+    role: string;
+    tokens: ITokensResponse;
 }
 
 export interface ILoginResponse {
-    tokens: {
-        accessToken: string;
-        refreshToken: string;
-    };
+    tokens: ITokensResponse;
     user: {
         id: string;
         email: string;
@@ -63,7 +73,6 @@ export interface ILoginResponse {
 export interface IUserProfileResponse {
     id: string;
     email: string;
-    name: string;
+    fullName: string;
     role: string;
-    stats?: string;
 }
