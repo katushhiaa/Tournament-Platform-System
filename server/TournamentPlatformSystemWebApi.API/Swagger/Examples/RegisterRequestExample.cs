@@ -13,7 +13,7 @@ namespace TournamentPlatformSystemWebApi.API.Swagger.Examples
                 Email = "organizer@example.com",
                 Password = "P@ssw0rd!",
                 FullName = "Olena Organizer",
-                Role = "Organizer",
+                Role = "organizer",
                 DateOfBirth = DateOnly.FromDateTime(DateTime.Now).AddYears(-20),
                 PhoneNumber = "+380661234567"
             };

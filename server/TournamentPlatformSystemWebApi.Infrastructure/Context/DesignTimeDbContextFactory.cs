@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
+using Npgsql;
+using TournamentPlatformSystemWebApi.Infrastructure.Entities;
 
 namespace TournamentPlatformSystemWebApi.Infrastructure.Context;
 
@@ -49,6 +51,8 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<Tournament
                 throw new ArgumentException();
 
             var optionsBuilder = new DbContextOptionsBuilder<TournamentdbContext>();
+            // Register enum mapping for design-time operations so EF generates correct SQL/types
+            NpgsqlConnection.GlobalTypeMapper.MapEnum<TournamentStatusType>("tournament_status");
             optionsBuilder.UseNpgsql(connectionString);
 
             System.Console.WriteLine(connectionString);

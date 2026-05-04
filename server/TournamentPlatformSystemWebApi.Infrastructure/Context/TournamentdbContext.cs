@@ -30,7 +30,6 @@ public partial class TournamentdbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.HasPostgresEnum<TournamentStatusType>("tournament_status");
         modelBuilder.Entity<AccountStateModel>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("account_state_pkey");
@@ -179,12 +178,8 @@ public partial class TournamentdbContext : DbContext
             entity.HasIndex(e => e.ThemeId, "idx_tournament_theme_id");
 
             entity.Property(e => e.Status)
-             .HasColumnName("status")
-             .HasColumnType("tournament_status")
-              .HasConversion(
-                  v => v.ToString(),  
-                  v => Enum.Parse<TournamentStatusType>(v)
-              );
+                .HasColumnName("status")
+                .HasColumnType("int");
             entity.Property(e => e.Id)
                 .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("id");
@@ -387,41 +382,41 @@ public partial class TournamentdbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("user_team_user_id_fkey");
         });
-        modelBuilder.Entity<RefreshTokenModel>(entity => 
+        modelBuilder.Entity<RefreshTokenModel>(entity =>
         {
-            entity.HasKey(e=>e.Id).HasName("refresh_token_pkey");
+            entity.HasKey(e => e.Id).HasName("refresh_token_pkey");
             entity.ToTable("refresh_token");
-            entity.Property(e=>e.Id)
+            entity.Property(e => e.Id)
                 .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("id");
-            entity.Property(e=>e.UserId).HasColumnName("user_id");    
-            entity.Property(e=>e.CreatedAt)
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("created_at");
-            entity.Property(e=>e.ExpiresAt)
+            entity.Property(e => e.ExpiresAt)
                 .HasColumnName("expires_at")
                 .HasColumnType("timestamp without time zone");
-            entity.Property(e=>e.Token).HasColumnName("token").HasMaxLength(255);
-            entity.Property(e=>e.IsRevoked)
+            entity.Property(e => e.Token).HasColumnName("token").HasMaxLength(255);
+            entity.Property(e => e.IsRevoked)
                 .HasDefaultValue(false)
                 .HasColumnName("is_revoked");
-            entity.Property(e=>e.IsUsed)
+            entity.Property(e => e.IsUsed)
                 .HasDefaultValue(false)
                 .HasColumnName("is_used");
-            entity.Property(e=>e.JwtId).HasColumnName("jwt_id").HasMaxLength(255);
-            entity.HasOne(d => d.User).WithMany(p => p.RefreshTokens)    
+            entity.Property(e => e.JwtId).HasColumnName("jwt_id").HasMaxLength(255);
+            entity.HasOne(d => d.User).WithMany(p => p.RefreshTokens)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("refresh_token_user_id_fkey");
         });
-    
 
 
 
 
-    OnModelCreatingPartial(modelBuilder);
 
-}
+        OnModelCreatingPartial(modelBuilder);
+
+    }
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }
 

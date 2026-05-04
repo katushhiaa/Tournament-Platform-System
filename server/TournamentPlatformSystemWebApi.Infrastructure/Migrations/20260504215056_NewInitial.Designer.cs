@@ -12,8 +12,8 @@ using TournamentPlatformSystemWebApi.Infrastructure.Context;
 namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
 {
     [DbContext(typeof(TournamentdbContext))]
-    [Migration("20260429080918_AddRefreshToken")]
-    partial class AddRefreshToken
+    [Migration("20260504215056_NewInitial")]
+    partial class NewInitial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -23,7 +23,6 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                 .HasAnnotation("ProductVersion", "9.0.15")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tournament_status", "tournament_status_type", new[] { "registration_open", "registration_closed", "in_progress", "completed" });
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("TournamentPlatformSystemWebApi.Infrastructure.Entities.AccountStateModel", b =>
@@ -308,9 +307,8 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("start_date");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("tournament_status")
+                    b.Property<int>("Status")
+                        .HasColumnType("int")
                         .HasColumnName("status");
 
                     b.Property<Guid>("ThemeId")

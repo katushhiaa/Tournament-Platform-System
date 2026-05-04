@@ -6,12 +6,11 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class NewInitial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-
             migrationBuilder.CreateTable(
                 name: "account_state",
                 columns: table => new
@@ -64,6 +63,30 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "refresh_token",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "gen_random_uuid()"),
+                    user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    token = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    jwt_id = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp without time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    expires_at = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                    is_used = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    is_revoked = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("refresh_token_pkey", x => x.id);
+                    table.ForeignKey(
+                        name: "refresh_token_user_id_fkey",
+                        column: x => x.user_id,
+                        principalTable: "user",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "tournament",
                 columns: table => new
                 {
@@ -78,6 +101,7 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                     end_date = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     description = table.Column<string>(type: "text", nullable: true),
                     conditions = table.Column<string>(type: "text", nullable: true),
+                    status = table.Column<int>(type: "int", nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamp without time zone", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP"),
                     updated_at = table.Column<DateTime>(type: "timestamp without time zone", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP")
                 },
@@ -278,6 +302,11 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_refresh_token_user_id",
+                table: "refresh_token",
+                column: "user_id");
+
+            migrationBuilder.CreateIndex(
                 name: "idx_team_is_disqualified",
                 table: "team",
                 column: "is_disqualified");
@@ -388,6 +417,9 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
         {
             migrationBuilder.DropTable(
                 name: "match");
+
+            migrationBuilder.DropTable(
+                name: "refresh_token");
 
             migrationBuilder.DropTable(
                 name: "user_details");
