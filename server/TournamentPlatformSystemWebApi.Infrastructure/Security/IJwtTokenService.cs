@@ -5,7 +5,7 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Security
 {
     public interface IJwtTokenService
     {
-        string GenerateToken(Guid userId, string email, string role, bool isOrganizer);
+        (string Token, string JwtId, DateTime ExpiresAt) GenerateToken(Guid userId, string email, string role, bool isOrganizer);
         ClaimsPrincipal ValidateToken(string token);
         string GenerateRefreshToken();
     }

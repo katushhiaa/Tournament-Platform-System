@@ -17,7 +17,7 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Security
             _options = options;
         }
 
-        public string GenerateToken(Guid userId, string email, string role, bool isOrganizer)
+        public (string Token, string JwtId, DateTime ExpiresAt) GenerateToken(Guid userId, string email, string role, bool isOrganizer)
         {
             var key = _options.Key ?? "default-development-key-change-in-production";
             var issuer = _options.Issuer ?? "tournament-api";
@@ -25,8 +25,12 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Security
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
+            var jwtId = Guid.NewGuid().ToString();
+            var expiresAt = DateTime.UtcNow.AddMinutes(_options.ExpirationMinutes);
+
             var claims = new[] {
                 new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, jwtId),
                 new Claim(JwtRegisteredClaimNames.Email, email),
                 new Claim("role", role),
                 new Claim("isOrganizer", isOrganizer.ToString())
@@ -36,11 +40,12 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Security
                 issuer: issuer,
                 audience: issuer,
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(_options.ExpirationMinutes),
+                expires: expiresAt,
                 signingCredentials: credentials
             );
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+            return (tokenString, jwtId, expiresAt);
         }
 
         public string GenerateRefreshToken()
