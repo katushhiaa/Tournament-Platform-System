@@ -52,13 +52,14 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useRouter } from 'vue-router';
 
 const props = defineProps<{
   tournamentId: string;
 }>();
 
-const router = useRouter();
+const emit = defineEmits<{
+  close: [];
+}>();
 const searchQuery = ref('');
 const isCopied = ref(false);
 
@@ -78,7 +79,7 @@ const handleAdd = () => {
 };
 
 const handleCancel = () => {
-  router.push('/my-tournaments');
+  emit('close');
 };
 </script>
 
