@@ -858,6 +858,12 @@ const handleSubmit = async () => {
   box-shadow: none;
 }
 
+.register-form__input-wrapper--error .register-form__input,
+.register-form__input-wrapper--error .register-form__input:focus,
+.register-form__input-wrapper--error .register-form__input:active {
+  border-color: #ff6b6b;
+}
+
 .register-form__input[type='password']::-ms-reveal,
 .register-form__input[type='password']::-ms-clear {
   display: none;
