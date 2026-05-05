@@ -11,7 +11,7 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Services;
 // Note: requires NuGet package: Google.Cloud.Storage.V1 and Google.Apis.Auth
 public class GoogleDriveStorageService : IStorageService
 {
-    private readonly StorageClient _storageClient;
+    private readonly StorageClient? _storageClient;
     private readonly string _bucketName;
 
     public GoogleDriveStorageService(IConfiguration configuration)
@@ -20,18 +20,23 @@ public class GoogleDriveStorageService : IStorageService
         var serviceAccountJson = gd["ServiceAccountJson"] ?? string.Empty;
         _bucketName = gd["BucketName"] ?? string.Empty;
 
-        if (string.IsNullOrWhiteSpace(serviceAccountJson))
-            throw new ArgumentException("Google Cloud service account JSON must be configured (GoogleCloud:ServiceAccountJson)");
-
-        if (string.IsNullOrWhiteSpace(_bucketName))
-            throw new ArgumentException("Google Cloud bucket name must be configured (GoogleCloud:BucketName)");
-
-        var credential = GoogleCredential.FromJson(serviceAccountJson);
-        _storageClient = StorageClient.Create(credential);
+        if (!string.IsNullOrWhiteSpace(serviceAccountJson) && !string.IsNullOrWhiteSpace(_bucketName))
+        {
+            var credential = GoogleCredential.FromJson(serviceAccountJson);
+            _storageClient = StorageClient.Create(credential);
+        }
+        else
+        {
+            _storageClient = null;
+        }
     }
 
     public async Task<StorageUploadResult> UploadAsync(Stream stream, string fileName, string contentType)
     {
+        if (_storageClient == null || string.IsNullOrWhiteSpace(_bucketName))
+        {
+            throw new ArgumentNullException("Service unavaible. Configuration not provided");
+        }
         try
         {
             if (stream.CanSeek)

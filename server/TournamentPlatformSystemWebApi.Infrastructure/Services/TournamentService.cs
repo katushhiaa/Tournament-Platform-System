@@ -52,6 +52,8 @@ public class TournamentService : ITournamentService
 
         var createdId = await _tournamentRepository.CreateAsync(entity);
 
+        var newTournamentWithDetails = await _tournamentRepository.GetByIdAsync(createdId);
+
         var result = new TournamentDto
         {
             Id = createdId,
@@ -61,10 +63,12 @@ public class TournamentService : ITournamentService
             StartDate = entity.StartDate,
             EndDate = entity.EndDate,
             RegistrationCloseDate = entity.RegistrationDeadline,
-            Sport = null,
+            SportId = newTournamentWithDetails.ThemeId,
+            SportName = newTournamentWithDetails.ThemeName,
             MaxParticipants = entity.MaxTeams,
-            Status = "draft",
-            OrganizerId = organizerId
+            Status = "registration_open",
+            OrganizerId = organizerId,
+            OrganizerName = newTournamentWithDetails.OrganizerName
         };
 
         return result;

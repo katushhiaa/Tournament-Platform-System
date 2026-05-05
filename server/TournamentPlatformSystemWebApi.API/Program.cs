@@ -1,30 +1,17 @@
 
 using TournamentPlatformSystemWebApi.API.Swagger;
 using TournamentPlatformSystemWebApi.API.Middleware;
-using System.Text.Json;
-using System.IO;
 using Microsoft.AspNetCore.Mvc;
-using System.Linq;
-using Microsoft.AspNetCore.Http;
 using TournamentPlatformSystemWebApi.API.Endpoints;
 using TournamentPlatformSystemWebApi.Infrastructure.Services;
 using TournamentPlatformSystemWebApi.Application.Interfaces;
 using TournamentPlatformSystemWebApi.Common.Models;
-using Microsoft.AspNetCore.Http.HttpResults;
-using System.Net;
 using TournamentPlatformSystemWebApi.Infrastructure.Configurations;
-using Npgsql;
-using TournamentPlatformSystemWebApi.Infrastructure.Entities;
 using TournamentPlatformSystemWebApi.Infrastructure.Repositories;
 using TournamentPlatformSystemWebApi.Infrastructure.Security;
-using TournamentPlatformSystemWebApi.Application.Interfaces;
-using TournamentPlatformSystemWebApi.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using TournamentPlatformSystemWebApi.Application.DTOs.Auth;
-using TournamentPlatformSystemWebApi.Application.Interfaces;
-using TournamentPlatformSystemWebApi.Infrastructure.Services;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -33,14 +20,15 @@ var builder = WebApplication.CreateBuilder(args);
 // Load optional secrets file from project root (useful in Docker or local mounts)
 // The file should be named `tournament-platform-system-secrets.json` and contain valid JSON
 // matching the expected configuration structure).
-var secretsFile = Path.Combine(Directory.GetCurrentDirectory(), "tournament-platform-system-secrets.json");
+var secretsFile = "tournament-platform-system-secrets.json";
 if (File.Exists(secretsFile))
 {
     builder.Configuration.AddJsonFile(secretsFile, optional: true, reloadOnChange: false);
 }
 else
 {
-    throw new ArgumentNullException("`tournament-platform-system-secrets.json` not provided");
+    System.Console.WriteLine("`tournament-platform-system-secrets.json` not provided");
+    builder.Configuration.AddJsonFile(secretsFile, optional: true, reloadOnChange: false);
 }
 
 // Add services to the container.

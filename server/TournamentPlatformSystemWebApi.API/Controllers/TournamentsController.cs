@@ -142,7 +142,7 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
                 StartDate = DateTime.UtcNow.AddDays(14),
                 EndDate = DateTime.UtcNow.AddDays(16),
                 RegistrationCloseDate = DateTime.UtcNow.AddDays(7),
-                Sport = Guid.Parse("a1b2c3d4-e5f6-7a8b-9c0d-111213141516"),
+                SportId = Guid.Parse("a1b2c3d4-e5f6-7a8b-9c0d-111213141516"),
                 MaxParticipants = 16,
                 Status = "active"
             };
