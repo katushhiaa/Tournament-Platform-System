@@ -10,9 +10,10 @@
 
       <div class="register-form__field-group">
         <label class="register-form__label" for="fullName">Name &amp; Surname</label>
+
         <div
           class="register-form__input-wrapper"
-          :class="{ 'register-form__input-wrapper--error': errors.email }"
+          :class="{ 'register-form__input-wrapper--error': errors.fullName }"
         >
           <span class="register-form__icon">
             <svg viewBox="0 0 24 24" fill="none">
@@ -40,12 +41,17 @@
             @blur="validateField('fullName')"
           />
         </div>
+
         <p class="register-form__error">{{ errors.fullName || '' }}</p>
       </div>
 
       <div class="register-form__field-group">
         <label class="register-form__label" for="phoneNumber">Phone</label>
-        <div class="register-form__input-wrapper">
+
+        <div
+          class="register-form__input-wrapper"
+          :class="{ 'register-form__input-wrapper--error': errors.phoneNumber }"
+        >
           <span class="register-form__icon">
             <svg viewBox="0 0 24 24" fill="none">
               <path
@@ -60,19 +66,24 @@
           <input
             id="phoneNumber"
             :value="form.phoneNumber"
-            @input="handlePhoneInput"
             type="tel"
             class="register-form__input"
             placeholder="+380 XX XXX XX XX"
+            @input="handlePhoneInput"
             @blur="validateField('phoneNumber')"
           />
-          </div>
+        </div>
+
         <p class="register-form__error">{{ errors.phoneNumber || '' }}</p>
       </div>
 
       <div class="register-form__field-group">
         <label class="register-form__label" for="email">Email</label>
-        <div class="register-form__input-wrapper">
+
+        <div
+          class="register-form__input-wrapper"
+          :class="{ 'register-form__input-wrapper--error': errors.email }"
+        >
           <span class="register-form__icon">
             <svg viewBox="0 0 24 24" fill="none">
               <path
@@ -117,7 +128,11 @@
 
       <div class="register-form__field-group">
         <label class="register-form__label" for="dateOfBirth">Date of birth</label>
-        <div class="register-form__input-wrapper register-form__input-wrapper--date">
+
+        <div
+          class="register-form__input-wrapper register-form__input-wrapper--date"
+          :class="{ 'register-form__input-wrapper--error': errors.dateOfBirth }"
+        >
           <span class="register-form__icon">
             <svg viewBox="0 0 24 24" fill="none">
               <path d="M7 2V6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
@@ -170,6 +185,7 @@
             </svg>
           </span>
         </div>
+
         <p class="register-form__error">{{ errors.dateOfBirth || '' }}</p>
       </div>
 
@@ -257,7 +273,11 @@
 
       <div class="register-form__field-group">
         <label class="register-form__label" for="password">Password</label>
-        <div class="register-form__input-wrapper">
+
+        <div
+          class="register-form__input-wrapper"
+          :class="{ 'register-form__input-wrapper--error': errors.password }"
+        >
           <span class="register-form__icon">
             <svg viewBox="0 0 24 24" fill="none">
               <rect
@@ -332,7 +352,11 @@
 
       <div class="register-form__field-group">
         <label class="register-form__label" for="confirmPassword">Confirm Password</label>
-        <div class="register-form__input-wrapper">
+
+        <div
+          class="register-form__input-wrapper"
+          :class="{ 'register-form__input-wrapper--error': errors.confirmPassword }"
+        >
           <span class="register-form__icon">
             <svg viewBox="0 0 24 24" fill="none">
               <rect
@@ -391,6 +415,7 @@
             </svg>
           </button>
         </div>
+
         <p class="register-form__error">{{ errors.confirmPassword || '' }}</p>
       </div>
 
@@ -421,6 +446,7 @@
             />
           </svg>
         </div>
+
         <div>
           <p class="register-form__privacy-title">Your data is protected</p>
           <p class="register-form__privacy-text">
@@ -442,9 +468,7 @@ import { computed, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { authService } from '../../services/authService';
 import { useAuthStore } from '../../stores/authStore';
-
 import type { IApiError, IRegisterFormValues, IRegisterRequest } from '../../types/Auth';
-
 
 type FormErrors = Partial<Record<keyof IRegisterFormValues, string>>;
 
@@ -472,22 +496,21 @@ const submitSuccess = ref(false);
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 
+const fullNameRegex =
+  /^[A-Za-zА-Яа-яІіЇїЄєҐґ'’-]+(?:\s+[A-Za-zА-Яа-яІіЇїЄєҐґ'’-]+){1,2}$/u;
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const phoneRegex = /^\+380\s\d{2}\s\d{3}\s\d{2}\s\d{2}$/;
+const backendPhoneRegex = /^\+380\d{9}$/;
+
+const normalizePhoneNumber = (value: string) => value.replace(/\s+/g, '');
 
 const formatPhone = (digits: string) => {
   let formatted = '+380';
 
-  if (digits.length > 0) {
-    formatted += ' ' + digits.substring(0, 2);
-  }
-  if (digits.length >= 3) {
-    formatted += ' ' + digits.substring(2, 5);
-  }
-  if (digits.length >= 6) {
-    formatted += ' ' + digits.substring(5, 7);
-  }
-  if (digits.length >= 8) {
-    formatted += ' ' + digits.substring(7, 9);
-  }
+  if (digits.length > 0) formatted += ' ' + digits.substring(0, 2);
+  if (digits.length >= 3) formatted += ' ' + digits.substring(2, 5);
+  if (digits.length >= 6) formatted += ' ' + digits.substring(5, 7);
+  if (digits.length >= 8) formatted += ' ' + digits.substring(7, 9);
 
   return formatted;
 };
@@ -501,21 +524,11 @@ const handlePhoneInput = (event: Event) => {
     digits = '380' + digits;
   }
 
-  digits = digits.substring(3);
-
-  digits = digits.substring(0, 9);
-
+  digits = digits.substring(3, 12);
   form.phoneNumber = formatPhone(digits);
+
+  validateField('phoneNumber');
 };
-
-
-const fullNameRegex =
-  /^[A-Za-zА-Яа-яІіЇїЄєҐґ'’-]+(?:\s+[A-Za-zА-Яа-яІіЇїЄєҐґ'’-]+){1,2}$/u;
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const phoneRegex = /^\+380\s\d{2}\s\d{3}\s\d{2}\s\d{2}$/;
-const backendPhoneRegex = /^\+380\d{9}$/;
-
-const normalizePhoneNumber = (value: string) => value.replace(/\s+/g, '');
 
 const passwordStrengthScore = computed(() => {
   let score = 0;
@@ -540,9 +553,11 @@ const strengthClass = computed(() => {
   if (!form.password || passwordStrengthScore.value <= 2) {
     return 'register-form__strength-fill--weak';
   }
+
   if (passwordStrengthScore.value === 3) {
     return 'register-form__strength-fill--medium';
   }
+
   return 'register-form__strength-fill--strong';
 });
 
@@ -607,11 +622,7 @@ const validateField = (field: keyof IRegisterFormValues) => {
       break;
 
     case 'role':
-      if (!form.role) {
-        errors.role = 'Role is required';
-      } else {
-        errors.role = '';
-      }
+      errors.role = form.role ? '' : 'Role is required';
       break;
 
     case 'password':
@@ -658,7 +669,7 @@ const validateForm = async () => {
     }
   }
 
-  return !Object.values(errors).some((value) => value);
+  return !Object.values(errors).some(Boolean);
 };
 
 const handleEmailInput = () => {
@@ -676,6 +687,7 @@ const handleEmailBlur = async () => {
   }
 
   isCheckingEmail.value = true;
+
   try {
     const isUnique = await authService.checkEmailUnique(form.email.trim());
     emailIsUnique.value = isUnique;
@@ -719,7 +731,6 @@ const handleSubmit = async () => {
 
     const response = await authService.register(payload);
 
-
     authStore.setAuth(response);
     submitSuccess.value = true;
 
@@ -727,15 +738,20 @@ const handleSubmit = async () => {
       router.push(authStore.getDashboardRouteByRole(response.role));
     }, 900);
   } catch (error: unknown) {
-
     const apiError = error as IApiError;
-
 
     if (apiError.errorCode === 'EMAIL_TAKEN') {
       const message = apiError.message || 'Email is already in use';
 
       emailIsUnique.value = false;
       errors.email = message;
+      submitError.value = '';
+    } else if (apiError.fieldErrors) {
+      Object.entries(apiError.fieldErrors).forEach(([field, message]) => {
+        const fieldName = field as keyof IRegisterFormValues;
+        errors[fieldName] = message;
+      });
+
       submitError.value = '';
     } else if (apiError.errorCode === 'VALIDATION_ERROR') {
       submitError.value = apiError.message ?? 'Validation error';
@@ -747,6 +763,7 @@ const handleSubmit = async () => {
   }
 };
 </script>
+
 
 <style scoped>
 .register-form {
@@ -810,10 +827,6 @@ const handleSubmit = async () => {
 
 .register-form__input-wrapper--date {
   position: relative;
-}
-
-.register-form__input-wrapper--error .register-form__input {
-  border-color: #ff6b6b;
 }
 
 .register-form__icon {
@@ -882,6 +895,13 @@ const handleSubmit = async () => {
   -webkit-box-shadow: 0 0 0 1000px rgba(21, 49, 206, 0.47) inset;
   transition: background-color 9999s ease-in-out 0s;
   border: 1px solid #1531ce;
+}
+
+.register-form__input-wrapper--error .register-form__input:-webkit-autofill,
+.register-form__input-wrapper--error .register-form__input:-webkit-autofill:hover,
+.register-form__input-wrapper--error .register-form__input:-webkit-autofill:focus,
+.register-form__input-wrapper--error .register-form__input:-webkit-autofill:active {
+  border-color: #ff6b6b;
 }
 
 .register-form__input::placeholder {
@@ -1070,7 +1090,9 @@ const handleSubmit = async () => {
   height: 100%;
   width: 35%;
   border-radius: 999px;
-  transition: width 0.2s ease, background 0.2s ease;
+  transition:
+    width 0.2s ease,
+    background 0.2s ease;
 }
 
 .register-form__strength-fill--weak {
@@ -1105,7 +1127,10 @@ const handleSubmit = async () => {
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .register-form__submit:hover {
@@ -1227,3 +1252,4 @@ const handleSubmit = async () => {
   }
 }
 </style>
+
