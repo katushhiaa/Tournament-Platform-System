@@ -11,6 +11,8 @@ import type {
 } from '../types/Auth';
 
 type BackendErrorResponse = {
+    errorCode?: string;
+    message?: string;
     error?: {
         code?: number;
         type?: string;
@@ -44,7 +46,7 @@ const buildApiError = (
     data: BackendErrorResponse | undefined,
     fallbackMessage: string,
 ): IApiError => {
-    let errorCode = 'INTERNAL_ERROR';
+    let errorCode = data?.errorCode ?? 'INTERNAL_ERROR';
 
     if (status === 400) {
         errorCode = 'VALIDATION_ERROR';
@@ -72,7 +74,7 @@ const buildApiError = (
 
     return {
         errorCode,
-        message: data?.error?.message ?? fallbackMessage,
+        message: data?.message ?? data?.error?.message ?? fallbackMessage,
         fieldErrors: Object.keys(fieldErrors).length ? fieldErrors : undefined,
     };
 };
