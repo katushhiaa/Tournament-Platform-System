@@ -10,7 +10,10 @@
 
       <div class="register-form__field-group">
         <label class="register-form__label" for="fullName">Name &amp; Surname</label>
-        <div class="register-form__input-wrapper">
+        <div
+          class="register-form__input-wrapper"
+          :class="{ 'register-form__input-wrapper--error': errors.email }"
+        >
           <span class="register-form__icon">
             <svg viewBox="0 0 24 24" fill="none">
               <path
@@ -93,6 +96,7 @@
             type="email"
             class="register-form__input"
             placeholder="example@email.com"
+            @input="handleEmailInput"
             @blur="handleEmailBlur"
           />
         </div>
@@ -102,7 +106,7 @@
           <p v-else-if="emailIsUnique === true" class="register-form__success-text">
             Email is available
           </p>
-          <p v-else-if="emailIsUnique === false" class="register-form__error">
+          <p v-else-if="emailIsUnique === false && !errors.email" class="register-form__error">
             Email is already registered
           </p>
           <p v-else class="register-form__hint"></p>
@@ -657,6 +661,12 @@ const validateForm = async () => {
   return !Object.values(errors).some((value) => value);
 };
 
+const handleEmailInput = () => {
+  emailIsUnique.value = null;
+  errors.email = '';
+  submitError.value = '';
+};
+
 const handleEmailBlur = async () => {
   validateField('email');
 
@@ -722,8 +732,11 @@ const handleSubmit = async () => {
 
 
     if (apiError.errorCode === 'EMAIL_TAKEN') {
-      submitError.value = 'Email is already registered';
-      errors.email = 'Email is already registered';
+      const message = apiError.message || 'Email is already in use';
+
+      emailIsUnique.value = false;
+      errors.email = message;
+      submitError.value = '';
     } else if (apiError.errorCode === 'VALIDATION_ERROR') {
       submitError.value = apiError.message ?? 'Validation error';
     } else {
@@ -797,6 +810,10 @@ const handleSubmit = async () => {
 
 .register-form__input-wrapper--date {
   position: relative;
+}
+
+.register-form__input-wrapper--error .register-form__input {
+  border-color: #ff6b6b;
 }
 
 .register-form__icon {
