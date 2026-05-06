@@ -39,6 +39,7 @@ appsettings.Development.json
 # Секрети та оточення
 .env
 .env.local
+*secrets.json
 
 # IDE
 .vscode/

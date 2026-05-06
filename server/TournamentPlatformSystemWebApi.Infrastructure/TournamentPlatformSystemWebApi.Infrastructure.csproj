@@ -15,6 +15,9 @@
     <!-- <PackageReference Include="Npgsql" Version="7.1.0" /> -->
     <PackageReference Include="AutoMapper" Version="12.0.1" />
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.2" />
+    <PackageReference Include="Google.Apis.Auth" Version="1.74.0" />
+    <PackageReference Include="Google.Apis.Drive.v3" Version="1.9.2.10" />
+    <PackageReference Include="Google.Cloud.Storage.V1" Version="4.14.0" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.38.0" />
   </ItemGroup>
 
@@ -23,7 +26,6 @@
     <Folder Include="Entities/" />
     <Folder Include="ExternalServices/" />
     <Folder Include="Migrations/" />
-    <Folder Include="Repositories/" />
     <Folder Include="Services/" />
   </ItemGroup>
 

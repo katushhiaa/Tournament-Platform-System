@@ -152,7 +152,20 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
             }
             catch (ForbiddenException ex)
             {
-                return Forbid(ex.Message);
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status403Forbidden,
+                        Type = "Forbidden",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return StatusCode(StatusCodes.Status403Forbidden, err);
             }
             catch (Exception ex)
             {
