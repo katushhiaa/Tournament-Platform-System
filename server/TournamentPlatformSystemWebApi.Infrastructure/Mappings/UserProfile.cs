@@ -37,6 +37,7 @@ public class UserProfile : Profile
             .ForMember(d => d.AccountStateId, o => o.Ignore())
             .ForMember(d => d.CreatedAt, o => o.Ignore())
             .ForMember(d => d.UpdatedAt, o => o.Ignore())
+            .ForMember(d => d.RefreshTokens, o => o.Ignore())
             .ForMember(d => d.DeletedAt, o => o.Ignore());
     }
 }

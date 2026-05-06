@@ -35,13 +35,15 @@ namespace Tests
             var repoMock = new Mock<IUserRepository>();
             repoMock.Setup(r => r.ExistsByEmailAsync(It.IsAny<string>())).ReturnsAsync(false);
             repoMock.Setup(r => r.CreateAsync(It.IsAny<User>())).ReturnsAsync(userId);
+            repoMock.Setup(r => r.SetRefreshTokenForUser(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>())).Returns(Task.CompletedTask);
 
             using var db = CreateInMemoryContext();
             var hasherMock = new Mock<IPasswordHasher>();
             var jwtMock = new Mock<IJwtTokenService>();
-            jwtMock.Setup(j => j.GenerateToken(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>())).Returns("test-token");
+            jwtMock.Setup(j => j.GenerateToken(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>())).Returns(("test-token", "test-jti", DateTime.UtcNow.AddMinutes(60)));
 
-            var svc = new AuthenticationService(repoMock.Object, db, hasherMock.Object, jwtMock.Object);
+            var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string> { { "Auth:RefreshTokenDays", "7" } }).Build();
+            var svc = new AuthenticationService(repoMock.Object, hasherMock.Object, jwtMock.Object, configuration);
 
             var req = new RegisterUserRequest
             {
@@ -66,13 +68,15 @@ namespace Tests
         {
             var repoMock = new Mock<IUserRepository>();
             repoMock.Setup(r => r.ExistsByEmailAsync(It.IsAny<string>())).ReturnsAsync(true);
+            repoMock.Setup(r => r.SetRefreshTokenForUser(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>())).Returns(Task.CompletedTask);
 
             using var db = CreateInMemoryContext();
             var hasherMock = new Mock<IPasswordHasher>();
             var jwtMock = new Mock<IJwtTokenService>();
-            jwtMock.Setup(j => j.GenerateToken(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>())).Returns("test-token");
+            jwtMock.Setup(j => j.GenerateToken(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>())).Returns(("test-token", "test-jti", DateTime.UtcNow.AddMinutes(60)));
 
-            var svc = new AuthenticationService(repoMock.Object, db, hasherMock.Object, jwtMock.Object);
+            var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string> { { "Auth:RefreshTokenDays", "7" } }).Build();
+            var svc = new AuthenticationService(repoMock.Object, hasherMock.Object, jwtMock.Object, configuration);
 
             var req = new RegisterUserRequest
             {
