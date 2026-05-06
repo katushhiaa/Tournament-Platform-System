@@ -12,14 +12,16 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Services;
 public class TournamentService : ITournamentService
 {
     private readonly ITournamentRepository _tournamentRepository;
+    private readonly IThemeRepository _themeRepository;
     private readonly IMapper _mapper;
     private readonly TournamentPlatformSystemWebApi.Application.Interfaces.IStorageService _storageService;
 
-    public TournamentService(ITournamentRepository tournamentRepository, IMapper mapper, TournamentPlatformSystemWebApi.Application.Interfaces.IStorageService storageService)
+    public TournamentService(ITournamentRepository tournamentRepository, IThemeRepository themeRepository, IMapper mapper, TournamentPlatformSystemWebApi.Application.Interfaces.IStorageService storageService)
     {
         _tournamentRepository = tournamentRepository;
         _mapper = mapper;
         _storageService = storageService;
+        _themeRepository = themeRepository;
     }
 
     public async Task<TournamentDto> CreateTournamentAsync(TournamentCreateDto dto, Guid organizerId)
@@ -50,6 +52,11 @@ public class TournamentService : ITournamentService
             OrganizerId = organizerId,
             ThemeId = dto.Sport
         };
+
+        if (!dto.Sport.HasValue || !await _themeRepository.IsSportWithId(dto.Sport.Value))
+        {
+            throw new ArgumentException("Sport with this Id not found");
+        }
 
         var createdId = await _tournamentRepository.CreateAsync(entity);
 
