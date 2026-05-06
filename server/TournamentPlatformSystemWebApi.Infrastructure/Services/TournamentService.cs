@@ -5,6 +5,7 @@ using TournamentPlatformSystemWebApi.Application.DTOs;
 using TournamentPlatformSystemWebApi.Application.Interfaces;
 using TournamentPlatformSystemWebApi.Core.Entities;
 using System.ComponentModel.DataAnnotations;
+using TournamentPlatformSystemWebApi.Common.Exceptions;
 
 namespace TournamentPlatformSystemWebApi.Infrastructure.Services;
 
@@ -33,7 +34,7 @@ public class TournamentService : ITournamentService
         // Ensure unique title per organizer
         var unique = await _tournamentRepository.IsTitleUniqueAsync(title, organizerId);
         if (!unique)
-            throw new ValidationException("Tournament title must be unique for the organizer");
+            throw new DuplicateTournamentTitleException("Tournament title must be unique for the organizer");
 
         var entity = new Tournament
         {

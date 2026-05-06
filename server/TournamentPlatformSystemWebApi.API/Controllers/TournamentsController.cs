@@ -11,6 +11,7 @@ using System.Security.Claims;
 using System.IO;
 using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
+using TournamentPlatformSystemWebApi.Common.Exceptions;
 namespace TournamentPlatformSystemWebApi.API.Controllers
 {
     [ApiController]
@@ -31,6 +32,8 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
         [SwaggerResponse(201, Type = typeof(TournamentDto), Description = "Створено")]
         [SwaggerResponse(400, Type = typeof(ErrorResponseDto), Description = "Невалідні дані")]
         [SwaggerResponse(401, Type = typeof(ErrorResponseDto), Description = "Не авторизований")]
+        [SwaggerResponse(403, Type = typeof(ErrorResponseDto), Description = "Forbidden")]
+        [SwaggerResponse(409, Type = typeof(ErrorResponseDto), Description = "Турнір з такою назвою вже створений цим організатором")]
         [SwaggerRequestExample(typeof(TournamentCreateDto), typeof(Swagger.Examples.TournamentCreateExample))]
         [SwaggerResponseExample(201, typeof(Swagger.Examples.TournamentDtoExample))]
         public async Task<IActionResult> CreateTournament([FromBody] TournamentCreateDto dto)
@@ -61,34 +64,141 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
             }
             catch (ValidationException ex)
             {
-                return BadRequest(new ErrorResponseDto { Error = new ErrorDetail { Message = ex.Message, Code = 400 } });
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status400BadRequest,
+                        Type = "ValidationError",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return BadRequest(err);
+            }
+            catch (DuplicateTournamentTitleException ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status409Conflict,
+                        Type = "Conflict",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return Conflict(err);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ErrorResponseDto { Error = new ErrorDetail { Message = ex.Message, Code = 500 } });
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status500InternalServerError,
+                        Type = "InternalServerError",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return StatusCode(500, err);
             }
         }
 
         [HttpPost("{id}/image")]
         [Authorize(Roles = "organizer")]
         [SwaggerOperation(Summary = "Upload tournament image", Description = "Uploads image to configured storage and attaches to tournament. Role: Organizer.")]
+        [SwaggerResponse(200, Type = typeof(object), Description = "Upload successful; returns URL and file id")]
+        [SwaggerResponse(400, Type = typeof(ErrorResponseDto), Description = "File is required, invalid or too large")]
+        [SwaggerResponse(401, Type = typeof(ErrorResponseDto), Description = "Unauthorized")]
+        [SwaggerResponse(403, Type = typeof(ErrorResponseDto), Description = "Forbidden")]
+        [SwaggerResponse(404, Type = typeof(ErrorResponseDto), Description = "Tournament not found")]
+        [SwaggerResponse(500, Type = typeof(ErrorResponseDto), Description = "Internal server error")]
         public async Task<IActionResult> UploadImage(Guid id, IFormFile file)
         {
             if (file == null)
-                return BadRequest(new ErrorResponseDto { Error = new ErrorDetail { Message = "File is required", Code = 400 } });
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status400BadRequest,
+                        Type = "BadRequest",
+                        Message = "File is required",
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return BadRequest(err);
+            }
 
             // Check size and content type
             var allowed = new[] { "image/jpeg", "image/png", "image/webp" };
             if (file.Length == 0 || file.Length > 5 * 1024 * 1024)
-                return BadRequest(new ErrorResponseDto { Error = new ErrorDetail { Message = "File is empty or too large (max 5MB)", Code = 400 } });
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status400BadRequest,
+                        Type = "BadRequest",
+                        Message = "File is empty or too large (max 5MB)",
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return BadRequest(err);
+            }
             if (Array.IndexOf(allowed, file.ContentType) < 0)
-                return BadRequest(new ErrorResponseDto { Error = new ErrorDetail { Message = "Unsupported file type", Code = 400 } });
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status400BadRequest,
+                        Type = "BadRequest",
+                        Message = "Unsupported file type",
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return BadRequest(err);
+            }
 
             // organizer id from token
             var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
             if (!Guid.TryParse(sub, out var organizerId))
             {
-                return Unauthorized(new ErrorResponseDto { Error = new ErrorDetail { Message = "Invalid user", Code = 401 } });
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status401Unauthorized,
+                        Type = "Unauthorized",
+                        Message = "Invalid user",
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return Unauthorized(err);
             }
 
             // Copy to memory stream and delegate upload to service
@@ -103,19 +213,71 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
             }
             catch (ValidationException ex)
             {
-                return BadRequest(new ErrorResponseDto { Error = new ErrorDetail { Message = ex.Message, Code = 400 } });
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status400BadRequest,
+                        Type = "ValidationError",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return BadRequest(err);
             }
             catch (KeyNotFoundException)
             {
-                return NotFound(new ErrorResponseDto { Error = new ErrorDetail { Message = "Tournament not found", Code = 404 } });
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status404NotFound,
+                        Type = "NotFound",
+                        Message = "Tournament not found",
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return NotFound(err);
             }
             catch (UnauthorizedAccessException)
             {
-                return Forbid();
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status403Forbidden,
+                        Type = "Forbidden",
+                        Message = "Forbidden",
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return StatusCode(StatusCodes.Status403Forbidden, err);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ErrorResponseDto { Error = new ErrorDetail { Message = ex.Message, Code = 500 } });
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status500InternalServerError,
+                        Type = "InternalServerError",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return StatusCode(500, err);
             }
         }
 
