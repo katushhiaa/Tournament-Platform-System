@@ -40,14 +40,6 @@ const normalizeFieldName = (field: string) => {
     return normalized;
 };
 
-const normalizeFieldName = (field: string) => {
-    const normalized = field.charAt(0).toLowerCase() + field.slice(1);
-
-    if (normalized === 'phone') return 'phoneNumber';
-    if (normalized === 'name') return 'fullName';
-
-    return normalized;
-};
 
 const buildApiError = (
     status: number | undefined,
