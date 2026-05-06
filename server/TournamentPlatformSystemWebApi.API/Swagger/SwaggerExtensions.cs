@@ -76,6 +76,8 @@ namespace TournamentPlatformSystemWebApi.API.Swagger
                 app.UseSwaggerUI(c =>
                 {
                     c.SwaggerEndpoint("/swagger/v1.0.0/swagger.json", "ZVYTYAHA API v1.0.0");
+                    // Include cookies in requests from Swagger UI (so HttpOnly cookies set by the server are sent)
+                    c.ConfigObject.AdditionalItems["requestCredentials"] = "include";
                 });
             }
 
