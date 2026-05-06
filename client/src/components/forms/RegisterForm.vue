@@ -33,6 +33,7 @@
 
           <input
             id="fullName"
+            ref="fullNameInput"
             v-model.trim="form.fullName"
             type="text"
             class="register-form__input"
@@ -65,6 +66,7 @@
 
           <input
             id="phoneNumber"
+            ref="phoneNumberInput"
             :value="form.phoneNumber"
             type="tel"
             class="register-form__input"
@@ -103,6 +105,7 @@
 
           <input
             id="email"
+            ref="emailInput"
             v-model.trim="form.email"
             type="email"
             class="register-form__input"
@@ -157,6 +160,7 @@
 
           <input
             id="dateOfBirth"
+            ref="dateOfBirthInput"
             v-model="form.dateOfBirth"
             type="date"
             class="register-form__input register-form__input--date"
@@ -299,6 +303,7 @@
 
           <input
             id="password"
+            ref="passwordInput"
             v-model="form.password"
             :type="showPassword ? 'text' : 'password'"
             class="register-form__input register-form__input--password"
@@ -378,6 +383,7 @@
 
           <input
             id="confirmPassword"
+            ref="confirmPasswordInput"
             v-model="form.confirmPassword"
             :type="showConfirmPassword ? 'text' : 'password'"
             class="register-form__input register-form__input--password"
@@ -493,6 +499,15 @@ const isSubmitting = ref(false);
 const submitError = ref('');
 const submitSuccess = ref(false);
 
+const fullNameInput = ref<HTMLInputElement | null>(null);
+const phoneNumberInput = ref<HTMLInputElement | null>(null);
+const emailInput = ref<HTMLInputElement | null>(null);
+const dateOfBirthInput = ref<HTMLInputElement | null>(null);
+const passwordInput = ref<HTMLInputElement | null>(null);
+const confirmPasswordInput = ref<HTMLInputElement | null>(null);
+
+const serverRejectedEmail = ref('');
+
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 
@@ -503,6 +518,25 @@ const phoneRegex = /^\+380\s\d{2}\s\d{3}\s\d{2}\s\d{2}$/;
 const backendPhoneRegex = /^\+380\d{9}$/;
 
 const normalizePhoneNumber = (value: string) => value.replace(/\s+/g, '');
+const focusFirstError = () => {
+  const target =
+    errors.fullName
+      ? fullNameInput.value
+      : errors.phoneNumber
+        ? phoneNumberInput.value
+        : errors.email
+          ? emailInput.value
+          : errors.dateOfBirth
+            ? dateOfBirthInput.value
+            : errors.password
+              ? passwordInput.value
+              : errors.confirmPassword
+                ? confirmPasswordInput.value
+                : null;
+
+  target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  target?.focus();
+};
 
 const formatPhone = (digits: string) => {
   let formatted = '+380';
@@ -673,13 +707,29 @@ const validateForm = async () => {
 };
 
 const handleEmailInput = () => {
+  const currentEmail = form.email.trim().toLowerCase();
+  const rejectedEmail = serverRejectedEmail.value.toLowerCase();
+
+  submitError.value = '';
+
+  if (currentEmail === rejectedEmail) {
+    emailIsUnique.value = false;
+    errors.email = 'Email is already in use';
+    return;
+  }
+
   emailIsUnique.value = null;
   errors.email = '';
-  submitError.value = '';
 };
 
 const handleEmailBlur = async () => {
   validateField('email');
+
+  if (form.email.trim().toLowerCase() === serverRejectedEmail.value.toLowerCase()) {
+    emailIsUnique.value = false;
+    errors.email = 'Email is already in use';
+    return;
+  }
 
   if (errors.email || !form.email.trim()) {
     emailIsUnique.value = null;
@@ -715,7 +765,11 @@ const handleSubmit = async () => {
   submitSuccess.value = false;
 
   const isValid = await validateForm();
-  if (!isValid) return;
+
+  if (!isValid) {
+    focusFirstError();
+    return;
+  }
 
   isSubmitting.value = true;
 
@@ -743,10 +797,14 @@ const handleSubmit = async () => {
     if (apiError.errorCode === 'EMAIL_TAKEN') {
       const message = apiError.message || 'Email is already in use';
 
+      serverRejectedEmail.value = form.email.trim();
       emailIsUnique.value = false;
       errors.email = message;
       submitError.value = '';
-    } else if (apiError.fieldErrors) {
+
+      focusFirstError();
+    }
+    else if (apiError.fieldErrors) {
       Object.entries(apiError.fieldErrors).forEach(([field, message]) => {
         const fieldName = field as keyof IRegisterFormValues;
         errors[fieldName] = message;
