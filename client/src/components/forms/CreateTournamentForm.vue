@@ -203,10 +203,6 @@
       </button>
     </div>
 
-    <AddPlayersModal
-      v-if="createdTournamentId"
-      :tournament-id="createdTournamentId"
-    />
   </form>
 </template>
 
@@ -221,13 +217,13 @@ import peopleIcon from '../../assets/icons/people.png';
 import dateIcon from '../../assets/icons/date.png';
 import timeIcon from '../../assets/icons/time.png';
 import createIcon from '../../assets/icons/Create.png';
-import AddPlayersModal from '../modals/AddPlayersModal.vue';
-import {
-  tournamentService,
-  type ICreateTournamentRequest,
-  type IThemeOption,
-} from '../../services/tournamentService';
+import { tournamentService } from '../../services/tournamentService';
+import type { IThemeOption, ITournamentCreate, ITournamentResponse } from '../../types/Tournament';
 import type { IApiError } from '../../types/Auth';
+
+const emit = defineEmits<{
+  created: [tournament: ITournamentResponse];
+}>();
 
 type CreateTournamentFormValues = {
   title: string;
@@ -278,7 +274,6 @@ const themes = ref<IThemeOption[]>([]);
 const isSubmitting = ref(false);
 const toastMessage = ref('');
 const successMessage = ref('');
-const createdTournamentId = ref<string | null>(null);
 
 const titleInput = ref<HTMLInputElement | null>(null);
 const sportInput = ref<HTMLSelectElement | null>(null);
@@ -388,7 +383,7 @@ const handleSubmit = async () => {
   isSubmitting.value = true;
 
   try {
-    const payload: ICreateTournamentRequest = {
+    const payload: ITournamentCreate = {
       title: form.title.trim(),
       description: form.description.trim() || null,
       conditions: form.conditions.trim() || null,
@@ -402,7 +397,7 @@ const handleSubmit = async () => {
     const response = await tournamentService.createTournament(payload);
 
     successMessage.value = 'Tournament created successfully';
-    createdTournamentId.value = response.id;
+    emit('created', response);
   } catch (error: unknown) {
     const apiError = error as IApiError;
 
