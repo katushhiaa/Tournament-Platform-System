@@ -116,7 +116,7 @@ const firstName = computed(() => {
 });
 
 const goToCreateTournament = () => {
-  router.push('/create-tournament');
+  router.push({ name: 'create-tournament' });
 };
 
 const activeTournaments = [
