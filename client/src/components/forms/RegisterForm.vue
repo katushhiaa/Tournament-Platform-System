@@ -10,7 +10,10 @@
 
       <div class="register-form__field-group">
         <label class="register-form__label" for="fullName">Name &amp; Surname</label>
-        <div class="register-form__input-wrapper">
+        <div
+          class="register-form__input-wrapper"
+          :class="{ 'register-form__input-wrapper--error': errors.fullName }"
+        >
           <span class="register-form__icon">
             <svg viewBox="0 0 24 24" fill="none">
               <path
@@ -29,12 +32,14 @@
 
           <input
             id="fullName"
+            ref="fullNameInput"
             v-model.trim="form.fullName"
             type="text"
             class="register-form__input"
-            placeholder="Enter your full name"
+            placeholder="Enter first and last name"
             maxlength="255"
             @blur="validateField('fullName')"
+            @input="validateField('fullName')"
           />
         </div>
         <p class="register-form__error">{{ errors.fullName || '' }}</p>
@@ -42,7 +47,10 @@
 
       <div class="register-form__field-group">
         <label class="register-form__label" for="phoneNumber">Phone</label>
-        <div class="register-form__input-wrapper">
+        <div
+          class="register-form__input-wrapper"
+          :class="{ 'register-form__input-wrapper--error': errors.phoneNumber }"
+        >
           <span class="register-form__icon">
             <svg viewBox="0 0 24 24" fill="none">
               <path
@@ -56,20 +64,24 @@
 
           <input
             id="phoneNumber"
+            ref="phoneInput"
             :value="form.phoneNumber"
-            @input="handlePhoneInput"
             type="tel"
             class="register-form__input"
             placeholder="+380 XX XXX XX XX"
+            @input="handlePhoneInput"
             @blur="validateField('phoneNumber')"
           />
-          </div>
+        </div>
         <p class="register-form__error">{{ errors.phoneNumber || '' }}</p>
       </div>
 
       <div class="register-form__field-group">
         <label class="register-form__label" for="email">Email</label>
-        <div class="register-form__input-wrapper">
+        <div
+          class="register-form__input-wrapper"
+          :class="{ 'register-form__input-wrapper--error': errors.email }"
+        >
           <span class="register-form__icon">
             <svg viewBox="0 0 24 24" fill="none">
               <path
@@ -89,10 +101,12 @@
 
           <input
             id="email"
+            ref="emailInput"
             v-model.trim="form.email"
             type="email"
             class="register-form__input"
             placeholder="example@email.com"
+            @input="validateField('email')"
             @blur="handleEmailBlur"
           />
         </div>
@@ -113,17 +127,15 @@
 
       <div class="register-form__field-group">
         <label class="register-form__label" for="dateOfBirth">Date of birth</label>
-        <div class="register-form__input-wrapper register-form__input-wrapper--date">
+        <div
+          class="register-form__input-wrapper register-form__input-wrapper--date"
+          :class="{ 'register-form__input-wrapper--error': errors.dateOfBirth }"
+        >
           <span class="register-form__icon">
             <svg viewBox="0 0 24 24" fill="none">
               <path d="M7 2V6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
               <path d="M17 2V6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-              <path
-                d="M4 9H20"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-              />
+              <path d="M4 9H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
               <rect
                 x="4"
                 y="4"
@@ -138,22 +150,19 @@
 
           <input
             id="dateOfBirth"
+            ref="dateOfBirthInput"
             v-model="form.dateOfBirth"
             type="date"
             class="register-form__input register-form__input--date"
             @blur="validateField('dateOfBirth')"
+            @change="validateField('dateOfBirth')"
           />
 
           <span class="register-form__date-icon">
             <svg viewBox="0 0 24 24" fill="none">
               <path d="M7 2V6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
               <path d="M17 2V6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-              <path
-                d="M4 9H20"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-              />
+              <path d="M4 9H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
               <rect
                 x="4"
                 y="4"
@@ -182,6 +191,7 @@
               type="radio"
               value="organizer"
               class="register-form__radio"
+              @change="validateField('role')"
             />
             <span class="register-form__role-check"></span>
 
@@ -227,6 +237,7 @@
               type="radio"
               value="player"
               class="register-form__radio"
+              @change="validateField('role')"
             />
             <span class="register-form__role-check"></span>
 
@@ -253,7 +264,10 @@
 
       <div class="register-form__field-group">
         <label class="register-form__label" for="password">Password</label>
-        <div class="register-form__input-wrapper">
+        <div
+          class="register-form__input-wrapper"
+          :class="{ 'register-form__input-wrapper--error': errors.password }"
+        >
           <span class="register-form__icon">
             <svg viewBox="0 0 24 24" fill="none">
               <rect
@@ -275,6 +289,7 @@
 
           <input
             id="password"
+            ref="passwordInput"
             v-model="form.password"
             :type="showPassword ? 'text' : 'password'"
             class="register-form__input register-form__input--password"
@@ -328,7 +343,10 @@
 
       <div class="register-form__field-group">
         <label class="register-form__label" for="confirmPassword">Confirm Password</label>
-        <div class="register-form__input-wrapper">
+        <div
+          class="register-form__input-wrapper"
+          :class="{ 'register-form__input-wrapper--error': errors.confirmPassword }"
+        >
           <span class="register-form__icon">
             <svg viewBox="0 0 24 24" fill="none">
               <rect
@@ -350,10 +368,12 @@
 
           <input
             id="confirmPassword"
+            ref="confirmPasswordInput"
             v-model="form.confirmPassword"
             :type="showConfirmPassword ? 'text' : 'password'"
             class="register-form__input register-form__input--password"
             placeholder="Repeat password"
+            @input="validateField('confirmPassword')"
             @blur="validateField('confirmPassword')"
           />
 
@@ -387,6 +407,7 @@
             </svg>
           </button>
         </div>
+
         <p class="register-form__error">{{ errors.confirmPassword || '' }}</p>
       </div>
 
@@ -425,6 +446,7 @@
         </div>
       </div>
 
+      <p v-if="toastMessage" class="register-form__toast">{{ toastMessage }}</p>
       <p v-if="submitError" class="register-form__submit-error">{{ submitError }}</p>
       <p v-if="submitSuccess" class="register-form__submit-success">
         Registration successful. Redirecting...
@@ -438,9 +460,7 @@ import { computed, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { authService } from '../../services/authService';
 import { useAuthStore } from '../../stores/authStore';
-
 import type { IApiError, IRegisterFormValues, IRegisterRequest } from '../../types/Auth';
-
 
 type FormErrors = Partial<Record<keyof IRegisterFormValues, string>>;
 
@@ -448,11 +468,13 @@ const router = useRouter();
 const authStore = useAuthStore();
 
 const form = reactive<IRegisterFormValues>({
-  fullName: '',
-  phoneNumber: '+380',
-  email: '',
-  dateOfBirth: '',
-  role: 'organizer',
+  fullName: localStorage.getItem('register_fullName') ?? '',
+  phoneNumber: localStorage.getItem('register_phoneNumber') ?? '+380',
+  email: localStorage.getItem('register_email') ?? '',
+  dateOfBirth: localStorage.getItem('register_dateOfBirth') ?? '',
+  role:
+    (localStorage.getItem('register_role') as IRegisterFormValues['role'] | null) ??
+    'organizer',
   password: '',
   confirmPassword: '',
 });
@@ -464,46 +486,43 @@ const emailIsUnique = ref<boolean | null>(null);
 const isSubmitting = ref(false);
 const submitError = ref('');
 const submitSuccess = ref(false);
+const toastMessage = ref('');
 
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 
+const fullNameInput = ref<HTMLInputElement | null>(null);
+const phoneInput = ref<HTMLInputElement | null>(null);
+const emailInput = ref<HTMLInputElement | null>(null);
+const dateOfBirthInput = ref<HTMLInputElement | null>(null);
+const passwordInput = ref<HTMLInputElement | null>(null);
+const confirmPasswordInput = ref<HTMLInputElement | null>(null);
 
 const formatPhone = (digits: string) => {
   let formatted = '+380';
 
-  if (digits.length > 0) {
-    formatted += ' ' + digits.substring(0, 2);
-  }
-  if (digits.length >= 3) {
-    formatted += ' ' + digits.substring(2, 5);
-  }
-  if (digits.length >= 6) {
-    formatted += ' ' + digits.substring(5, 7);
-  }
-  if (digits.length >= 8) {
-    formatted += ' ' + digits.substring(7, 9);
-  }
+  if (digits.length > 0) formatted += ` ${digits.substring(0, 2)}`;
+  if (digits.length >= 3) formatted += ` ${digits.substring(2, 5)}`;
+  if (digits.length >= 6) formatted += ` ${digits.substring(5, 7)}`;
+  if (digits.length >= 8) formatted += ` ${digits.substring(7, 9)}`;
 
   return formatted;
 };
 
 const handlePhoneInput = (event: Event) => {
   const input = event.target as HTMLInputElement;
-
   let digits = input.value.replace(/\D/g, '');
 
   if (!digits.startsWith('380')) {
-    digits = '380' + digits;
+    digits = `380${digits}`;
   }
 
-  digits = digits.substring(3);
-
-  digits = digits.substring(0, 9);
-
+  digits = digits.substring(3, 12);
   form.phoneNumber = formatPhone(digits);
-};
 
+  localStorage.setItem('register_phoneNumber', form.phoneNumber);
+  validateField('phoneNumber');
+};
 
 const fullNameRegex =
   /^[A-Za-zА-Яа-яІіЇїЄєҐґ'’-]+(?:\s+[A-Za-zА-Яа-яІіЇїЄєҐґ'’-]+){1,2}$/u;
@@ -536,9 +555,11 @@ const strengthClass = computed(() => {
   if (!form.password || passwordStrengthScore.value <= 2) {
     return 'register-form__strength-fill--weak';
   }
+
   if (passwordStrengthScore.value === 3) {
     return 'register-form__strength-fill--medium';
   }
+
   return 'register-form__strength-fill--strong';
 });
 
@@ -556,6 +577,45 @@ const getAge = (dateString: string) => {
   return age;
 };
 
+const focusFirstError = () => {
+  if (errors.fullName) return fullNameInput.value?.focus();
+  if (errors.phoneNumber) return phoneInput.value?.focus();
+  if (errors.email) return emailInput.value?.focus();
+  if (errors.dateOfBirth) return dateOfBirthInput.value?.focus();
+  if (errors.password) return passwordInput.value?.focus();
+  if (errors.confirmPassword) return confirmPasswordInput.value?.focus();
+
+  return undefined;
+};
+
+const applyBackendErrors = (fieldErrors?: Record<string, string>) => {
+  if (!fieldErrors) return;
+
+  Object.entries(fieldErrors).forEach(([field, message]) => {
+    if (field in errors) {
+      errors[field as keyof IRegisterFormValues] = message;
+    }
+  });
+
+  focusFirstError();
+};
+
+const saveFormDraft = () => {
+  localStorage.setItem('register_fullName', form.fullName);
+  localStorage.setItem('register_phoneNumber', form.phoneNumber);
+  localStorage.setItem('register_email', form.email);
+  localStorage.setItem('register_dateOfBirth', form.dateOfBirth);
+  localStorage.setItem('register_role', form.role);
+};
+
+const clearFormDraft = () => {
+  localStorage.removeItem('register_fullName');
+  localStorage.removeItem('register_phoneNumber');
+  localStorage.removeItem('register_email');
+  localStorage.removeItem('register_dateOfBirth');
+  localStorage.removeItem('register_role');
+};
+
 const validateField = (field: keyof IRegisterFormValues) => {
   switch (field) {
     case 'fullName':
@@ -568,6 +628,8 @@ const validateField = (field: keyof IRegisterFormValues) => {
       } else {
         errors.fullName = '';
       }
+
+      localStorage.setItem('register_fullName', form.fullName);
       break;
 
     case 'phoneNumber':
@@ -580,6 +642,8 @@ const validateField = (field: keyof IRegisterFormValues) => {
       } else {
         errors.phoneNumber = '';
       }
+
+      localStorage.setItem('register_phoneNumber', form.phoneNumber);
       break;
 
     case 'email':
@@ -590,6 +654,8 @@ const validateField = (field: keyof IRegisterFormValues) => {
       } else {
         errors.email = '';
       }
+
+      localStorage.setItem('register_email', form.email);
       break;
 
     case 'dateOfBirth':
@@ -600,6 +666,8 @@ const validateField = (field: keyof IRegisterFormValues) => {
       } else {
         errors.dateOfBirth = '';
       }
+
+      localStorage.setItem('register_dateOfBirth', form.dateOfBirth);
       break;
 
     case 'role':
@@ -608,6 +676,8 @@ const validateField = (field: keyof IRegisterFormValues) => {
       } else {
         errors.role = '';
       }
+
+      localStorage.setItem('register_role', form.role);
       break;
 
     case 'password':
@@ -666,6 +736,7 @@ const handleEmailBlur = async () => {
   }
 
   isCheckingEmail.value = true;
+
   try {
     const isUnique = await authService.checkEmailUnique(form.email.trim());
     emailIsUnique.value = isUnique;
@@ -691,9 +762,16 @@ const handlePasswordInput = () => {
 const handleSubmit = async () => {
   submitError.value = '';
   submitSuccess.value = false;
+  toastMessage.value = '';
+
+  saveFormDraft();
 
   const isValid = await validateForm();
-  if (!isValid) return;
+
+  if (!isValid) {
+    focusFirstError();
+    return;
+  }
 
   isSubmitting.value = true;
 
@@ -709,24 +787,25 @@ const handleSubmit = async () => {
 
     const response = await authService.register(payload);
 
-
     authStore.setAuth(response);
     submitSuccess.value = true;
+    clearFormDraft();
 
     setTimeout(() => {
       router.push(authStore.getDashboardRouteByRole(response.role));
     }, 900);
   } catch (error: unknown) {
-
     const apiError = error as IApiError;
-
 
     if (apiError.errorCode === 'EMAIL_TAKEN') {
       submitError.value = 'Email is already registered';
       errors.email = 'Email is already registered';
+      focusFirstError();
     } else if (apiError.errorCode === 'VALIDATION_ERROR') {
+      applyBackendErrors(apiError.fieldErrors);
       submitError.value = apiError.message ?? 'Validation error';
     } else {
+      toastMessage.value = 'Помилка сервера';
       submitError.value = apiError.message ?? 'Server error. Please try again later.';
     }
   } finally {
@@ -793,6 +872,10 @@ const handleSubmit = async () => {
 
 .register-form__input-wrapper {
   position: relative;
+}
+
+.register-form__input-wrapper--error .register-form__input {
+  border-color: #ff6b6b;
 }
 
 .register-form__input-wrapper--date {
@@ -1156,6 +1239,7 @@ const handleSubmit = async () => {
   opacity: 0.85;
 }
 
+.register-form__toast,
 .register-form__submit-error,
 .register-form__submit-success {
   margin: 18px 0 0;
@@ -1163,6 +1247,12 @@ const handleSubmit = async () => {
   padding: 14px 16px;
   font-size: 14px;
   line-height: 1.5;
+}
+
+.register-form__toast {
+  border: 1px solid rgba(255, 152, 0, 0.45);
+  background: rgba(255, 152, 0, 0.12);
+  color: #ff9800;
 }
 
 .register-form__submit-error {

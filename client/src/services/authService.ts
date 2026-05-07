@@ -22,6 +22,7 @@ type BackendErrorResponse = {
     errors?: Record<string, string[] | string>;
 };
 
+
 const normalizeRole = (role: string): UserRole => {
     return role.toLowerCase() === 'organizer' ? 'organizer' : 'player';
 };
@@ -38,6 +39,7 @@ const normalizeFieldName = (field: string) => {
 
     return normalized;
 };
+
 
 const buildApiError = (
     status: number | undefined,
@@ -126,10 +128,6 @@ class AuthService {
                 refreshToken: successBody.tokens.refreshToken ?? null,
             };
 
-            if (import.meta.env.DEV) {
-                console.log('[authService] register response', result);
-            }
-
             return result;
         } catch (error) {
             const apiError = handleAxiosError(error, 'Server error. Please try again later.');
@@ -149,10 +147,6 @@ class AuthService {
             rememberMe: data.rememberMe,
         };
 
-        if (import.meta.env.DEV) {
-            console.log('[authService] login request', { email: payload.email });
-        }
-
         try {
             const loginResponse = await axiosInstance.post<ILoginResponse>('/auth/login', payload);
             const loginResult = loginResponse.data;
@@ -171,7 +165,7 @@ class AuthService {
                 } satisfies IApiError;
             }
 
-            const result: IAuthResponse = {
+            return {
                 userId: loginResult.user.id,
                 email: loginResult.user.email,
                 fullName: loginResult.user.fullName,
@@ -179,12 +173,6 @@ class AuthService {
                 token: loginResult.tokens.accessToken,
                 refreshToken: loginResult.tokens.refreshToken ?? null,
             };
-
-            if (import.meta.env.DEV) {
-                console.log('[authService] login response', result);
-            }
-
-            return result;
         } catch (error) {
             const apiError = handleAxiosError(error, 'Server error. Please try again later.');
 
@@ -204,5 +192,4 @@ class AuthService {
         return true;
     }
 }
-
 export const authService = new AuthService();

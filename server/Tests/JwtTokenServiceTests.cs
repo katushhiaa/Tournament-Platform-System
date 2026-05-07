@@ -25,7 +25,7 @@ namespace Tests
             var isOrganizer = true;
 
             // Act
-            var tokenString = svc.GenerateToken(userId, email, role, isOrganizer);
+            var (tokenString, jwtId, expiresAt) = svc.GenerateToken(userId, email, role, isOrganizer);
             var handler = new JwtSecurityTokenHandler();
             var token = handler.ReadJwtToken(tokenString);
 
@@ -76,7 +76,7 @@ namespace Tests
             var email = "valid@example.com";
             var role = "player";
 
-            var token = svc.GenerateToken(userId, email, role, false);
+            var (token, jwtId2, expiresAt2) = svc.GenerateToken(userId, email, role, false);
 
             // Act
             var principal = svc.ValidateToken(token);
@@ -100,10 +100,10 @@ namespace Tests
             var options = new JwtTokenOptions(key, issuer, -1);
             var svc = new JwtTokenService(options);
 
-            var token = svc.GenerateToken(Guid.NewGuid(), "a@b.com", "player", false);
+            var (tokenExpired, jwtId3, expiresAt3) = svc.GenerateToken(Guid.NewGuid(), "a@b.com", "player", false);
 
             // Act & Assert
-            Assert.Throws<SecurityTokenExpiredException>(() => svc.ValidateToken(token));
+            Assert.Throws<SecurityTokenExpiredException>(() => svc.ValidateToken(tokenExpired));
         }
 
         [Fact]
@@ -116,10 +116,10 @@ namespace Tests
             var svcA = new JwtTokenService(new JwtTokenOptions(keyA, issuer, 30));
             var svcB = new JwtTokenService(new JwtTokenOptions(keyB, issuer, 30));
 
-            var token = svcA.GenerateToken(Guid.NewGuid(), "x@y.com", "player", false);
+            var (tokenA, jA, eA) = svcA.GenerateToken(Guid.NewGuid(), "x@y.com", "player", false);
 
             // Act & Assert: validation with wrong key should throw invalid signature
-            Assert.Throws<SecurityTokenSignatureKeyNotFoundException>(() => svcB.ValidateToken(token));
+            Assert.Throws<SecurityTokenSignatureKeyNotFoundException>(() => svcB.ValidateToken(tokenA));
         }
     }
 }

@@ -48,6 +48,9 @@ services:
     ports:
       - "5050:80"
     # Do not mount over /app for the runtime image; that hides published files.
+    # Mount optional secrets file from project root into the container app folder
+    volumes:
+      - ./tournament-platform-system-secrets.json:/app/tournament-platform-system-secrets.json:ro
     depends_on:
       db:
         condition: service_healthy
@@ -81,6 +84,9 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # Mount optional secrets file for init container as well
+    volumes:
+      - ./tournament-platform-system-secrets.json:/app/tournament-platform-system-secrets.json:ro
   
 
 volumes:

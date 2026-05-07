@@ -1,22 +1,35 @@
 
 using TournamentPlatformSystemWebApi.API.Swagger;
 using TournamentPlatformSystemWebApi.API.Middleware;
-using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
-using System.Linq;
-using Microsoft.AspNetCore.Http;
 using TournamentPlatformSystemWebApi.API.Endpoints;
 using TournamentPlatformSystemWebApi.Infrastructure.Services;
 using TournamentPlatformSystemWebApi.Application.Interfaces;
 using TournamentPlatformSystemWebApi.Common.Models;
-using Microsoft.AspNetCore.Http.HttpResults;
-using System.Net;
 using TournamentPlatformSystemWebApi.Infrastructure.Configurations;
 using TournamentPlatformSystemWebApi.Infrastructure.Repositories;
 using TournamentPlatformSystemWebApi.Infrastructure.Security;
-using TournamentPlatformSystemWebApi.Application.DTOs.Auth;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Load optional secrets file from project root (useful in Docker or local mounts)
+// The file should be named `tournament-platform-system-secrets.json` and contain valid JSON
+// matching the expected configuration structure).
+var secretsFile = "tournament-platform-system-secrets.json";
+if (File.Exists(secretsFile))
+{
+    builder.Configuration.AddJsonFile(secretsFile, optional: true, reloadOnChange: false);
+}
+else
+{
+    System.Console.WriteLine("`tournament-platform-system-secrets.json` not provided");
+    builder.Configuration.AddJsonFile(secretsFile, optional: true, reloadOnChange: false);
+}
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -74,6 +87,8 @@ builder.Services.AddTransient<IDbStateChecker, DbStateChecker>(serviceProvider =
 
 // infra services
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ITournamentRepository, TournamentRepository>();
+builder.Services.AddScoped<IThemeRepository, ThemeRepository>();
 builder.Services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>(sp => new BcryptPasswordHasher(12));
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 // JWT token options and service
@@ -85,6 +100,42 @@ var jwtOptions = new JwtTokenOptions(
 );
 
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>(sp => new JwtTokenService(jwtOptions));
+
+// Register tournament service
+builder.Services.AddScoped<ITournamentService, TournamentService>();
+
+// Register storage service (Google Drive)
+builder.Services.AddSingleton<IStorageService, GoogleDriveStorageService>();
+
+// Configure JWT authentication and set DefaultChallengeScheme
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    var keyBytes = Encoding.UTF8.GetBytes(jwtOptions.Key ?? "default-development-key-change-in-production");
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
+        ValidateIssuer = true,
+        ValidIssuer = jwtOptions.Issuer ?? "tournament-api",
+        ValidateAudience = true,
+        ValidAudience = jwtOptions.Issuer ?? "tournament-api",
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.FromSeconds(30),
+        // Use the "role" claim emitted by JwtTokenService for role checks
+        RoleClaimType = ClaimTypes.Role,
+        // Use subject as name identifier
+        NameClaimType = JwtRegisteredClaimNames.Sub
+    };
+
+    //eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NzU2MDI1MC01N2UyLTQ4OTgtYWUxMi03OTU1ZTYwMWIxYmQiLCJlbWFpbCI6Im9yZ2FuaXplckBleGFtcGxlLmNvbSIsInJvbGUiOiJvcmdhbml6ZXIiLCJpc09yZ2FuaXplciI6IlRydWUiLCJleHAiOjE3Nzc5MjI1OTIsImlzcyI6InRvdXJuYW1lbnQtYXBpIiwiYXVkIjoidG91cm5hbWVudC1hcGkifQ._lfSPLKLpbs_L5PFEEuVt_CvwABmgdGnN459DS-jb7c
+});
+
+builder.Services.AddAuthorization();
 
 // Swagger configuration moved to Swagger/SwaggerExtensions.cs
 builder.Services.AddConfiguredSwagger();
@@ -106,6 +157,10 @@ app.UseCors("FrontendPolicy");
 
 // Health endpoint for liveness/readiness checks
 app.MapGet("health", HealthHandler.HandleAsync);
+
+// Authentication & Authorization
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 
