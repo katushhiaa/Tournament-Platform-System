@@ -91,6 +91,21 @@ class TournamentService {
         }
     }
 
+    async uploadTournamentImage(
+        tournamentId: string,
+        formData: FormData,
+    ): Promise<void> {
+        await axiosInstance.post(
+            `/api/v1/tournaments/${tournamentId}/image`,
+            formData,
+            {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            },
+        );
+    }
+
     async getTournamentById(id: string): Promise<ITournament> {
         try {
             const response = await axiosInstance.get<ITournament>(

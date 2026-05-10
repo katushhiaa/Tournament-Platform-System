@@ -217,7 +217,11 @@ import dateIcon from '../../assets/icons/date.png';
 import timeIcon from '../../assets/icons/time.png';
 import createIcon from '../../assets/icons/Create.png';
 import { tournamentService } from '../../services/tournamentService';
-import type { IThemeOption, ITournamentCreate, ITournamentResponse } from '../../types/Tournament';
+import type {
+  IThemeOption,
+  ITournamentCreate,
+  ITournamentResponse,
+} from '../../types/Tournament';
 import type { IApiError } from '../../types/Auth';
 
 const emit = defineEmits<{
@@ -235,8 +239,11 @@ type CreateTournamentFormValues = {
   conditions: string;
 };
 
+const router = useRouter();
+
 const bannerInput = ref<HTMLInputElement | null>(null);
 const bannerFileName = ref('');
+const bannerFile = ref<File | null>(null);
 
 const handleBannerClick = () => {
   bannerInput.value?.click();
@@ -248,13 +255,17 @@ const handleBannerChange = (event: Event) => {
 
   if (!file) return;
 
+  // optional validation
+  if (file.size > 5 * 1024 * 1024) {
+    toastMessage.value = 'Image must be less than 5MB';
+    return;
+  }
+
+  bannerFile.value = file;
   bannerFileName.value = file.name;
 };
 
 type FormErrors = Partial<Record<keyof CreateTournamentFormValues, string>>;
-
-const router = useRouter();
-
 
 const form = reactive<CreateTournamentFormValues>({
   title: '',
@@ -273,7 +284,6 @@ const isSubmitting = ref(false);
 const toastMessage = ref('');
 const successMessage = ref('');
 
-
 const titleInput = ref<HTMLInputElement | null>(null);
 const sportInput = ref<HTMLSelectElement | null>(null);
 const startDateInput = ref<HTMLInputElement | null>(null);
@@ -288,8 +298,12 @@ const focusFirstError = () => {
   if (errors.sport) return sportInput.value?.focus();
   if (errors.startDate) return startDateInput.value?.focus();
   if (errors.endDate) return endDateInput.value?.focus();
-  if (errors.registrationCloseDate) return registrationCloseDateInput.value?.focus();
-  if (errors.maxParticipants) return maxParticipantsInput.value?.focus();
+  if (errors.registrationCloseDate) {
+    return registrationCloseDateInput.value?.focus();
+  }
+  if (errors.maxParticipants) {
+    return maxParticipantsInput.value?.focus();
+  }
 
   return undefined;
 };
@@ -317,8 +331,9 @@ const validateField = (field: keyof CreateTournamentFormValues) => {
     case 'endDate':
       if (!form.endDate) {
         errors.endDate = 'End date is required';
-      } else if (form.startDate && new Date(form.endDate) < new Date(form.startDate)) {
-        errors.endDate = 'Date end must be greater than or equal to date start';
+      } else if (new Date(form.endDate) < new Date(form.startDate)) {
+        errors.endDate =
+          'Date end must be greater than or equal to date start';
       } else {
         errors.endDate = '';
       }
@@ -328,7 +343,6 @@ const validateField = (field: keyof CreateTournamentFormValues) => {
       if (!form.registrationCloseDate) {
         errors.registrationCloseDate = 'End of registration is required';
       } else if (
-        form.startDate &&
         new Date(form.registrationCloseDate) > new Date(form.startDate)
       ) {
         errors.registrationCloseDate =
@@ -342,7 +356,8 @@ const validateField = (field: keyof CreateTournamentFormValues) => {
       if (!form.maxParticipants) {
         errors.maxParticipants = 'Participants max count is required';
       } else if (form.maxParticipants < 2) {
-        errors.maxParticipants = 'Participants max count must be at least 2';
+        errors.maxParticipants =
+          'Participants max count must be at least 2';
       } else {
         errors.maxParticipants = '';
       }
@@ -393,24 +408,45 @@ const handleSubmit = async () => {
       maxParticipants: Number(form.maxParticipants),
     };
 
+    // 1. create tournament
     const response = await tournamentService.createTournament(payload);
 
+    // 2. upload image if exists
+    if (bannerFile.value) {
+      const formData = new FormData();
+
+      // IMPORTANT:
+      // backend usually expects "file"
+      formData.append('file', bannerFile.value);
+
+      await tournamentService.uploadTournamentImage(
+        response.id,
+        formData,
+      );
+    }
+
     successMessage.value = 'Tournament created successfully';
+
     emit('created', response);
+
+    router.push('/my-tournaments');
   } catch (error: unknown) {
     const apiError = error as IApiError;
 
     if (apiError.errorCode === 'CONFLICT') {
-      toastMessage.value = apiError.message || 'Conflict. Please check tournament data.';
+      toastMessage.value =
+        apiError.message || 'Conflict. Please check tournament data.';
     } else if (apiError.errorCode === 'VALIDATION_ERROR') {
       toastMessage.value = apiError.message || 'Validation error';
     } else {
-      toastMessage.value = apiError.message || 'Server error. Please try again later.';
+      toastMessage.value =
+        apiError.message || 'Server error. Please try again later.';
     }
   } finally {
     isSubmitting.value = false;
   }
 };
+
 onMounted(async () => {
   try {
     sports.value = await tournamentService.getSports();
