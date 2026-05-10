@@ -83,9 +83,8 @@
               @blur="validateField('sport')"
               @change="validateField('sport')"
             >
-              <option value="" disabled>Select a game</option>
-              <option v-for="theme in themes" :key="theme.id" :value="theme.id">
-                {{ theme.name }}
+              <option v-for="sport in sports" :key="sport.id" :value="sport.id">
+                {{ sport.name }}
               </option>
             </select>
 
@@ -256,7 +255,6 @@ type FormErrors = Partial<Record<keyof CreateTournamentFormValues, string>>;
 
 const router = useRouter();
 
-const minTeams = 2;
 
 const form = reactive<CreateTournamentFormValues>({
   title: '',
@@ -270,10 +268,11 @@ const form = reactive<CreateTournamentFormValues>({
 });
 
 const errors = reactive<FormErrors>({});
-const themes = ref<IThemeOption[]>([]);
+const sports = ref<IThemeOption[]>([]);
 const isSubmitting = ref(false);
 const toastMessage = ref('');
 const successMessage = ref('');
+
 
 const titleInput = ref<HTMLInputElement | null>(null);
 const sportInput = ref<HTMLSelectElement | null>(null);
@@ -342,8 +341,8 @@ const validateField = (field: keyof CreateTournamentFormValues) => {
     case 'maxParticipants':
       if (!form.maxParticipants) {
         errors.maxParticipants = 'Participants max count is required';
-      } else if (form.maxParticipants < minTeams) {
-        errors.maxParticipants = `Participants max count must be at least ${minTeams}`;
+      } else if (form.maxParticipants < 2) {
+        errors.maxParticipants = 'Participants max count must be at least 2';
       } else {
         errors.maxParticipants = '';
       }
@@ -412,9 +411,12 @@ const handleSubmit = async () => {
     isSubmitting.value = false;
   }
 };
-
 onMounted(async () => {
-  themes.value = await tournamentService.getThemes();
+  try {
+    sports.value = await tournamentService.getSports();
+  } catch {
+    toastMessage.value = 'Failed to load sports';
+  }
 });
 </script>
 
