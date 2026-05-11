@@ -125,6 +125,7 @@
               v-model.number="form.maxParticipants"
               type="number"
               min="2"
+              max="128"
               placeholder="e.g. 32"
               @blur="validateField('maxParticipants')"
               @input="validateField('maxParticipants')"
@@ -187,7 +188,7 @@
       <button
         type="submit"
         class="create-tournament-form__submit"
-        :disabled="isSubmitting"
+        :disabled="isSubmitting || isFormInvalid"
       >
         <img :src="createIcon" alt="" class="create-tournament-form__button-icon" />
         {{ isSubmitting ? 'Creating...' : 'Create tournament' }}
@@ -206,7 +207,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import uploadBannerIcon from '../../assets/icons/Upload Banner.png';
 import nameIcon from '../../assets/icons/Name.png';
@@ -227,6 +228,18 @@ import type { IApiError } from '../../types/Auth';
 const emit = defineEmits<{
   created: [tournament: ITournamentResponse];
 }>();
+
+const isFormInvalid = computed(() => {
+  return (
+    !form.title.trim() ||
+    !form.sport ||
+    !form.startDate ||
+    !form.endDate ||
+    !form.registrationCloseDate ||
+    !form.maxParticipants ||
+    Object.values(errors).some(Boolean)
+  );
+});
 
 type CreateTournamentFormValues = {
   title: string;
@@ -292,6 +305,8 @@ const registrationCloseDateInput = ref<HTMLInputElement | null>(null);
 const maxParticipantsInput = ref<HTMLInputElement | null>(null);
 
 const toIsoDate = (value: string) => new Date(value).toISOString();
+const minTeams = 2;
+const maxTeams = 128;
 
 const focusFirstError = () => {
   if (errors.title) return titleInput.value?.focus();
@@ -355,9 +370,11 @@ const validateField = (field: keyof CreateTournamentFormValues) => {
     case 'maxParticipants':
       if (!form.maxParticipants) {
         errors.maxParticipants = 'Participants max count is required';
-      } else if (form.maxParticipants < 2) {
+      } else if (form.maxParticipants < minTeams) {
+        errors.maxParticipants = `Participants max count must be at least ${minTeams}`;
+      } else if (form.maxParticipants > maxTeams) {
         errors.maxParticipants =
-          'Participants max count must be at least 2';
+          `Participants max count must be less than or equal to ${maxTeams}`;
       } else {
         errors.maxParticipants = '';
       }
@@ -671,6 +688,11 @@ onMounted(async () => {
   width: 24px;
   height: 22px;
   object-fit: contain;
+}
+
+.create-tournament-form__submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .create-tournament-form__cancel {
