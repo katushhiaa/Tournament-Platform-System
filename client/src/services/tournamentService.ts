@@ -96,7 +96,7 @@ class TournamentService {
         formData: FormData,
     ): Promise<void> {
         await axiosInstance.post(
-            `/api/v1/tournaments/${tournamentId}/image`,
+            `/tournaments/${tournamentId}/image`,
             formData,
             {
                 headers: {
