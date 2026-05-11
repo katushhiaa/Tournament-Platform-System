@@ -14,7 +14,7 @@
           </button>
         </div>
 
-        <p v-if="isCopied" class="add-players-modal__success">Link copied</p>
+        <p v-if="isCopied" class="add-players-modal__success">Lіnk copied</p>
       </section>
 
       <div class="add-players-modal__divider">
