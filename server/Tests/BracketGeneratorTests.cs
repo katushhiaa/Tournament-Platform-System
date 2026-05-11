@@ -12,7 +12,7 @@ namespace Tests
         [Theory]
         [InlineData(4)]
         [InlineData(7)]
-        [InlineData(10)]
+        [InlineData(33)]
         public void SingleElimination_GeneratesFullBracket_CorrectMatchCounts(int participantCount)
         {
             // Arrange

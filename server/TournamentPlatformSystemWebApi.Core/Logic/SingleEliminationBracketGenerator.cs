@@ -63,7 +63,7 @@ namespace TournamentPlatformSystemWebApi.Core.Logic
                     Id = Guid.NewGuid(),
                     TournamentId = tournamentId,
                     TeamAId = a?.Id ?? Guid.Empty,
-                    TeamBId = b?.Id == null || b?.Id == Guid.Empty ? null : b?.Id,
+                    TeamBId = b?.Id ?? Guid.Empty,
                     Level = level,
                     OrderNumber = orderNumber++,
                     StartDate = null,

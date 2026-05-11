@@ -30,6 +30,10 @@ public partial class MatchModel : BaseDbEntity
 
     public DateTime? UpdatedAt { get; set; }
 
+    public bool? IsBye { get; set; }
+
+    public string? Status { get; set; }
+
     public virtual TeamModel TeamA { get; set; } = null!;
 
     public virtual TeamModel? TeamB { get; set; }
