@@ -5,5 +5,5 @@ namespace TournamentPlatformSystemWebApi.Application.Interfaces;
 
 public interface IThemeRepository : IRepository<TournamentTheme, Guid>
 {
-
+    Task<bool> IsSportWithId(Guid id);
 }

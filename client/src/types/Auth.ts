@@ -9,17 +9,6 @@ export interface IRegisterRequest {
     password: string;
 }
 
-export interface IRegisterResponse {
-    userId: string;
-    email: string;
-    fullName: string;
-    role: string;
-    tokens: {
-        accessToken: string;
-        refreshToken: string;
-    };
-}
-
 export interface IRegisterFormValues extends IRegisterRequest {
     confirmPassword: string;
 }
@@ -58,11 +47,21 @@ export interface ILoginRequest {
     rememberMe: boolean;
 }
 
+export interface ITokensResponse {
+    accessToken: string;
+    refreshToken: string;
+}
+
+export interface IRegisterResponse {
+    userId: string;
+    email: string;
+    fullName: string;
+    role: string;
+    tokens: ITokensResponse;
+}
+
 export interface ILoginResponse {
-    tokens: {
-        accessToken: string;
-        refreshToken: string;
-    };
+    tokens: ITokensResponse;
     user: {
         id: string;
         email: string;
@@ -74,7 +73,6 @@ export interface ILoginResponse {
 export interface IUserProfileResponse {
     id: string;
     email: string;
-    name: string;
+    fullName: string;
     role: string;
-    stats?: string;
 }

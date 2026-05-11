@@ -17,9 +17,10 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { authStore } from '../../state/authStore';
+import { useAuthStore } from '../../stores/authStore';
 
 const router = useRouter();
+const authStore = useAuthStore();
 
 const handleLeave = () => {
   authStore.clearAuth();

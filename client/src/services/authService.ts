@@ -29,7 +29,7 @@ const normalizeRole = (role: string): UserRole => {
 
 const toBackendRole = (role: string): 'organizer' | 'player' => {
     return role.toLowerCase() === 'organizer' ? 'organizer' : 'player';
-}; // [serhii] Бекенд чекає роль в lower case форматі. Виправив
+};
 
 const normalizeFieldName = (field: string) => {
     const normalized = field.charAt(0).toLowerCase() + field.slice(1);
@@ -39,6 +39,7 @@ const normalizeFieldName = (field: string) => {
 
     return normalized;
 };
+
 
 const buildApiError = (
     status: number | undefined,

@@ -39,6 +39,7 @@
             <button
               v-if="showCreateButton"
               class="dashboard-button dashboard-button--orange"
+              @click="goToCreateTournament"
             >
               <span class="dashboard-button__icon">⊕</span>
               <span>Create tournament</span>
@@ -81,9 +82,12 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useRouter } from 'vue-router';
+
 import AppHeader from '../AppHeader.vue';
 import TournamentCard from '../TournamentCard.vue';
 import SiteFooter from '../SiteFooter.vue';
+
 import { useAuthStore } from '../../stores/authStore';
 
 import heroBg from '../../assets/hero-bg.png';
@@ -99,12 +103,21 @@ defineProps<{
   showCreateButton: boolean;
 }>();
 
+const router = useRouter();
+
 const authStore = useAuthStore();
+
 const firstName = computed(() => {
   const fullName = authStore.currentUser?.fullName?.trim();
+
   if (!fullName) return 'Name';
+
   return fullName.split(' ')[0];
 });
+
+const goToCreateTournament = () => {
+  router.push({ name: 'create-tournament' });
+};
 
 const activeTournaments = [
   {

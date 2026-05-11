@@ -96,6 +96,23 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
 
                 return Conflict(err);
             }
+            catch (ArgumentException ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status400BadRequest,
+                        Type = "ArgumentError",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return BadRequest(err);
+            }
             catch (Exception ex)
             {
                 var err = new ErrorResponseDto
