@@ -3,6 +3,7 @@ namespace TournamentPlatformSystemWebApi.Common.Models
     public class ErrorResponseDto
     {
         public ErrorDetail Error { get; set; } = new ErrorDetail();
+        public IDictionary<string, string[]>? Errors { get; set; }
     }
 
     public class ErrorDetail
