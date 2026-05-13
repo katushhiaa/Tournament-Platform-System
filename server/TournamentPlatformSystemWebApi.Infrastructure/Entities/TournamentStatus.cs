@@ -8,4 +8,5 @@ public enum TournamentStatusType
     REGISTRATION_CLOSED,
     IN_PROGRESS,
     COMPLETED
+    , DRAFT
 }
