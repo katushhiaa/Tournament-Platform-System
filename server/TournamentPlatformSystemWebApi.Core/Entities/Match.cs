@@ -17,6 +17,10 @@ namespace TournamentPlatformSystemWebApi.Core.Entities
         public int? TeamBScore { get; set; }
         public bool? IsValid { get; set; }
 
+        public bool? IsBye { get; set; }
+
+        public string? Status { get; set; }
+
         // Business model: keep simple reference fields only
         public string? TeamAName { get; set; }
         public string? TeamBName { get; set; }

@@ -104,4 +104,97 @@ public class TournamentService : ITournamentService
 
         return upload;
     }
+
+    public async Task<TournamentPlatformSystemWebApi.Application.DTOs.TournamentStartResponse> StartTournament(Guid tournamentId, Guid organizerId)
+    {
+        var existing = await _tournamentRepository.GetByIdAsync(tournamentId);
+        if (existing == null) throw new KeyNotFoundException("Tournament not found");
+        if (existing.OrganizerId != organizerId) throw new UnauthorizedAccessException("Not the organizer");
+        if (existing.Status == TournamentStatus.IN_PROGRESS)
+            throw new TournamentPlatformSystemWebApi.Common.Exceptions.TournamentAlreadyStartedException("Tournament is already started");
+
+        var participantsCount = await _tournamentRepository.GetParticipantsCountAsync(tournamentId);
+        if (participantsCount < 2)
+            ;//throw new TournamentPlatformSystemWebApi.Common.Exceptions.InsufficientParticipantsException("At least 2 participants are required to start the tournament");
+
+        // load teams and build bracket participants
+        var teams = await _tournamentRepository.GetTeamsAsync(tournamentId);
+
+        var participants = teams.Select(t => new TournamentPlatformSystemWebApi.Core.Logic.BracketParticipant
+        {
+            Id = t.Id,
+            Name = t.Name
+        }).ToList().AsReadOnly();
+
+        // Use single-elimination generator with random seeding by default
+        var generator = new TournamentPlatformSystemWebApi.Core.Logic.SingleEliminationBracketGenerator();
+        var seeding = new TournamentPlatformSystemWebApi.Core.Logic.RandomSeedingStrategy();
+
+        var matches = generator.Generate(tournamentId, participants, seeding);
+
+        // assign statuses and bye flags (important before persisting)
+        TournamentPlatformSystemWebApi.Core.Logic.MatchStatusHelper.AssignStatuses(matches);
+
+        // persist generated matches
+        await _tournamentRepository.AddMatchesAsync(matches);
+
+        // update tournament status to IN_PROGRESS
+        await _tournamentRepository.UpdateStatus(tournamentId, TournamentStatus.IN_PROGRESS);
+
+        // return minimal start response
+        var response = new TournamentPlatformSystemWebApi.Application.DTOs.TournamentStartResponse
+        {
+            TournamentId = tournamentId,
+            Status = TournamentStatus.IN_PROGRESS.ToString().ToLowerInvariant(),
+            MatchesCreated = matches?.Count ?? 0
+        };
+
+        return response;
+    }
+
+    public async Task<IReadOnlyList<TournamentPlatformSystemWebApi.Application.DTOs.MatchesRoundDto>> GetTournamentMatchesAsync(Guid tournamentId)
+    {
+        var matches = await _tournamentRepository.GetMatchesAsync(tournamentId);
+
+        var totalRounds = matches.Any() ? matches.Max(m => m.Level) : 0;
+
+        var grouped = matches
+            .GroupBy(m => m.Level)
+            .OrderBy(g => g.Key)
+            .Select(g =>
+            {
+                var round = g.Key;
+                var remaining = totalRounds - round + 1; // 1 => final
+
+                string display;
+                if (remaining == 1) display = "final";
+                else if (remaining == 2) display = "semifinal";
+                else if (remaining == 3) display = "quarterfinal";
+                else display = $"1/{(1 << remaining)}";
+
+                return new TournamentPlatformSystemWebApi.Application.DTOs.MatchesRoundDto
+                {
+                    Round = round,
+                    RoundDisplayName = display,
+                    Matches = g.Select(m => new TournamentPlatformSystemWebApi.Application.DTOs.MatchDto
+                    {
+                        MatchId = m.Id,
+                        TournamentId = m.TournamentId,
+                        Round = m.Level,
+                        OrderNumber = m.OrderNumber,
+                        Player1Id = m.TeamAId,
+                        Player2Id = m.TeamBId,
+                        Status = m.Status,
+                        IsBye = m.IsBye,
+                        ScorePlayer1 = m.TeamAScore,
+                        ScorePlayer2 = m.TeamBScore,
+                        WinnerId = m.WinnerId
+                    }).ToList().AsReadOnly(),
+                    MatchesCount = g.Count(),
+                    NotByeMatchesCount = g.Count(x => x.TeamBId != null && x.TeamBId != Guid.Empty)
+                };
+            }).ToList().AsReadOnly();
+
+        return grouped;
+    }
 }
