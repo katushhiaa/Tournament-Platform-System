@@ -6,5 +6,6 @@ namespace TournamentPlatformSystemWebApi.Core.Entities
         REGISTRATION_CLOSED,
         IN_PROGRESS,
         COMPLETED
+        , DRAFT
     }
 }

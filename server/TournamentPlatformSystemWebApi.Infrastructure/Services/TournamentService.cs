@@ -82,6 +82,55 @@ public class TournamentService : ITournamentService
         return result;
     }
 
+    public async Task<TournamentDto> SaveTournamentDraftAsync(TournamentCreateDto dto, Guid organizerId)
+    {
+        if (dto == null)
+            throw new ValidationException("Tournament data is required");
+
+        var title = dto.Title?.Trim();
+        if (string.IsNullOrWhiteSpace(title))
+            throw new ValidationException("Title is required");
+
+
+        var entity = new Tournament
+        {
+            Id = Guid.NewGuid(),
+            Name = title,
+            Description = dto.Description,
+            Conditions = dto.Conditions,
+            StartDate = dto.StartDate,
+            EndDate = dto.EndDate,
+            RegistrationDeadline = dto.RegistrationCloseDate,
+            MaxTeams = dto.MaxParticipants,
+            Status = TournamentStatus.DRAFT,
+            OrganizerId = organizerId,
+            ThemeId = dto.Sport
+        };
+
+        var createdId = await _tournamentRepository.CreateAsync(entity);
+
+        var newTournamentWithDetails = await _tournamentRepository.GetByIdAsync(createdId);
+
+        var result = new TournamentDto
+        {
+            Id = createdId,
+            Title = entity.Name,
+            Description = entity.Description,
+            Conditions = entity.Conditions,
+            StartDate = entity.StartDate,
+            EndDate = entity.EndDate,
+            RegistrationCloseDate = entity.RegistrationDeadline,
+            SportId = newTournamentWithDetails.ThemeId,
+            SportName = newTournamentWithDetails.ThemeName,
+            MaxParticipants = entity.MaxTeams,
+            Status = "draft",
+            OrganizerId = organizerId,
+            OrganizerName = newTournamentWithDetails.OrganizerName
+        };
+
+        return result;
+    }
+
     public async Task<StorageUploadResult> UploadImageAsync(Guid tournamentId, Guid organizerId, System.IO.Stream stream, string fileName, string contentType, long length)
     {
         // validate size and content type
@@ -196,5 +245,35 @@ public class TournamentService : ITournamentService
             }).ToList().AsReadOnly();
 
         return grouped;
+    }
+
+    public async Task<TournamentPlatformSystemWebApi.Application.DTOs.TournamentDetailsDto> GetTournamentDetailsAsync(Guid tournamentId)
+    {
+        var existing = await _tournamentRepository.GetByIdAsync(tournamentId);
+        if (existing == null) throw new KeyNotFoundException("Tournament not found");
+
+        var participantsCount = await _tournamentRepository.GetParticipantsCountAsync(tournamentId);
+
+
+        var result = new TournamentPlatformSystemWebApi.Application.DTOs.TournamentDetailsDto
+        {
+            Id = existing.Id,
+            Title = existing.Name,
+            Description = existing.Description,
+            Conditions = existing.Conditions,
+            StartDate = existing.StartDate,
+            EndDate = existing.EndDate,
+            RegistrationCloseDate = existing.RegistrationDeadline,
+            SportId = existing.ThemeId,
+            SportName = existing.ThemeName,
+            MaxParticipants = existing.MaxTeams,
+            Status = existing.Status.ToString().ToLowerInvariant(),
+            OrganizerId = existing.OrganizerId ?? Guid.Empty,
+            OrganizerName = existing.OrganizerName ?? string.Empty,
+            BackgroundImg = existing.BackgroundImg,
+            ParticipantsCount = participantsCount
+        };
+
+        return result;
     }
 }

@@ -29,13 +29,13 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
         [HttpPost]
         [Authorize(Roles = "organizer")]
         [SwaggerOperation(Summary = "Створення нового турніру", Description = "Створює новий турнір. Роль: Organizer.")]
-        [SwaggerResponse(201, Type = typeof(TournamentDto), Description = "Створено")]
+        [SwaggerResponse(201, Type = typeof(TournamentPlatformSystemWebApi.Application.DTOs.TournamentCreatedDto), Description = "Створено")]
         [SwaggerResponse(400, Type = typeof(ErrorResponseDto), Description = "Невалідні дані")]
         [SwaggerResponse(401, Type = typeof(ErrorResponseDto), Description = "Не авторизований")]
         [SwaggerResponse(403, Type = typeof(ErrorResponseDto), Description = "Forbidden")]
         [SwaggerResponse(409, Type = typeof(ErrorResponseDto), Description = "Турнір з такою назвою вже створений цим організатором")]
         [SwaggerRequestExample(typeof(TournamentCreateDto), typeof(Swagger.Examples.TournamentCreateExample))]
-        [SwaggerResponseExample(201, typeof(Swagger.Examples.TournamentDtoExample))]
+        [SwaggerResponseExample(201, typeof(Swagger.Examples.TournamentCreatedDtoExample))]
         public async Task<IActionResult> CreateTournament([FromBody] TournamentCreateDto dto)
         {
 
@@ -60,7 +60,15 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
             {
                 var created = await _tournamentService.CreateTournamentAsync(dto, organizerId);
 
-                return CreatedAtAction(nameof(GetTournament), new { id = created.Id }, created);
+                var detailsUrl = Url.Action(nameof(GetTournamentDetails), "Tournaments", new { id = created.Id }, Request.Scheme) ?? $"/api/v1/tournaments/{created.Id}/details";
+
+                var response = new TournamentPlatformSystemWebApi.Application.DTOs.TournamentCreatedDto
+                {
+                    Id = created.Id,
+                    DetailsUrl = detailsUrl
+                };
+
+                return CreatedAtAction(nameof(GetTournamentDetails), new { id = created.Id }, response);
             }
             catch (ValidationException ex)
             {
@@ -95,6 +103,98 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
                 };
 
                 return Conflict(err);
+            }
+            catch (ArgumentException ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status400BadRequest,
+                        Type = "ArgumentError",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return BadRequest(err);
+            }
+            catch (Exception ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status500InternalServerError,
+                        Type = "InternalServerError",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return StatusCode(500, err);
+            }
+        }
+
+        [HttpPost("draft")]
+        [Authorize(Roles = "organizer")]
+        [SwaggerOperation(Summary = "Зберегти чернетку турніру", Description = "Зберігає турнір як чернетку. Роль: Organizer.")]
+        [SwaggerResponse(201, Type = typeof(TournamentPlatformSystemWebApi.Application.DTOs.TournamentCreatedDto), Description = "Чернетка збережена")]
+        [SwaggerResponse(400, Type = typeof(ErrorResponseDto), Description = "Невалідні дані")]
+        public async Task<IActionResult> SaveTournamentDraft([FromBody] TournamentCreateDto dto)
+        {
+            // get organizer id from token (subject)
+            var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+            if (!Guid.TryParse(sub, out var organizerId))
+            {
+                return Unauthorized(new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Type = "Unauthorized",
+                        Message = "Invalid user",
+                        Code = 401,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                });
+            }
+
+            try
+            {
+                var created = await _tournamentService.SaveTournamentDraftAsync(dto, organizerId);
+
+                var detailsUrl = Url.Action(nameof(GetTournamentDetails), "Tournaments", new { id = created.Id }, Request.Scheme) ?? $"/api/v1/tournaments/{created.Id}/details";
+
+                var response = new TournamentPlatformSystemWebApi.Application.DTOs.TournamentCreatedDto
+                {
+                    Id = created.Id,
+                    DetailsUrl = detailsUrl
+                };
+
+                return CreatedAtAction(nameof(GetTournamentDetails), new { id = created.Id }, response);
+            }
+            catch (ValidationException ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status400BadRequest,
+                        Type = "ValidationError",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return BadRequest(err);
             }
             catch (ArgumentException ex)
             {
@@ -437,24 +537,58 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
             }
         }
 
+
         [HttpGet("{id}")]
-        [SwaggerOperation(Summary = "Одержати деталі турніру", Description = "Повертає деталі турніру. Роль: Guest/Player/Organizer.")]
-        [SwaggerResponse(200, Type = typeof(TournamentDto), Description = "Деталі турніру")]
+        [SwaggerOperation(Summary = "Одержати повні деталі турніру", Description = "Повертає повну інформацію про турнір: учасники, матчі, метадані. Роль: Guest/Player/Organizer.")]
+        [SwaggerResponse(200, Type = typeof(TournamentPlatformSystemWebApi.Application.DTOs.TournamentDetailsDto), Description = "Повні деталі турніру")]
         [SwaggerResponse(404, Type = typeof(ErrorResponseDto), Description = "Турнір не знайдено")]
-        public IActionResult GetTournament(Guid id)
+        public async Task<IActionResult> GetTournamentDetails(Guid id)
         {
-            var sample = new TournamentDto
+            try
             {
-                Id = id,
-                Title = "Sample Tournament",
-                StartDate = DateTime.UtcNow.AddDays(14),
-                EndDate = DateTime.UtcNow.AddDays(16),
-                RegistrationCloseDate = DateTime.UtcNow.AddDays(7),
-                SportId = Guid.Parse("a1b2c3d4-e5f6-7a8b-9c0d-111213141516"),
-                MaxParticipants = 16,
-                Status = "active"
-            };
-            return Ok(sample);
+                var tournamentDto = await _tournamentService.GetTournamentDetailsAsync(id);
+
+                if (tournamentDto.Status == "draft")
+                {
+                    var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+                    if (!Guid.TryParse(sub, out var userId) || userId != tournamentDto.OrganizerId)
+                    {
+                        var err = new ErrorResponseDto
+                        {
+                            Error = new ErrorDetail
+                            {
+                                Code = StatusCodes.Status403Forbidden,
+                                Type = "Forbidden",
+                                Message = "Tournament is in draft and access is restricted",
+                                Path = HttpContext.GetEndpoint()?.DisplayName,
+                                Timestamp = DateTime.UtcNow.ToString("o"),
+                                TraceId = HttpContext.TraceIdentifier
+                            }
+                        };
+
+                        return StatusCode(StatusCodes.Status403Forbidden, err);
+                    }
+                }
+
+                return Ok(tournamentDto);
+            }
+            catch (KeyNotFoundException)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status404NotFound,
+                        Type = "NotFound",
+                        Message = "Tournament not found",
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return NotFound(err);
+            }
         }
 
         [HttpGet("{id}/matches")]
