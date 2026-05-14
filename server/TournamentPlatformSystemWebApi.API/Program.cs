@@ -42,12 +42,14 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
     options.InvalidModelStateResponseFactory = context =>
     {
-        var errors = context.ModelState
-            .Where(x => x.Value.Errors.Count > 0)
-            .ToDictionary(
-                kvp => kvp.Key,
-                kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
-            );
+        var fieldErrors = context.ModelState
+            .Where(x => x.Value != null && x.Value.Errors.Count > 0)
+            .SelectMany(kvp => kvp.Value!.Errors.Select(e => new FieldError
+            {
+                Field = string.IsNullOrEmpty(kvp.Key) ? "" : char.ToLowerInvariant(kvp.Key[0]) + kvp.Key.Substring(1),
+                Message = e.ErrorMessage
+            }))
+            .ToList();
 
         var errorDto = new ErrorResponseDto
         {
@@ -56,11 +58,11 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
                 Code = StatusCodes.Status400BadRequest,
                 Type = "ValidationError",
                 Message = "Validation failed",
+                FieldErrors = fieldErrors,
                 Path = context.HttpContext.Request.Path,
                 Timestamp = DateTime.UtcNow.ToString("o"),
                 TraceId = context.HttpContext.TraceIdentifier
-            },
-            Errors = errors
+            }
         };
 
         return new BadRequestObjectResult(errorDto);
