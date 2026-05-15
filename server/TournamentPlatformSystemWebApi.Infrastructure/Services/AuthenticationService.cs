@@ -110,7 +110,7 @@ public class AuthenticationService : IAuthenticationService
         }
 
         // password validation
-        var pwdRegex = new Regex("^(?=.*[A-Z])(?=.*\\d).{8,}$");
+        var pwdRegex = new Regex("^(?=.*[A-Z])(?=.*\\d).{8,128}$");
         if (!pwdRegex.IsMatch(request.Password))
         {
             throw new ValidationException("Password must be at least 8 characters, contain an uppercase letter and a digit");

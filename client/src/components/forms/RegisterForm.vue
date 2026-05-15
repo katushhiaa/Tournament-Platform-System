@@ -683,7 +683,7 @@ const validateField = (field: keyof IRegisterFormValues) => {
     case 'password':
       if (!form.password) {
         errors.password = 'Password is required';
-      } else if (!/^(?=.*[A-Z])(?=.*\d).{8,}$/.test(form.password)) {
+      } else if (!/^(?=.*[A-Z])(?=.*\d).{8,128}$/.test(form.password)) {
         errors.password =
           'Password must contain at least 8 characters, one uppercase letter, and one digit';
       } else {
