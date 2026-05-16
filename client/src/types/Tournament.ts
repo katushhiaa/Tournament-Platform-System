@@ -1,3 +1,5 @@
+import type { IBracketStructure } from "./Bracket";
+
 export interface ITournament {
     id: string;
     title: string;
@@ -6,10 +8,21 @@ export interface ITournament {
     startDate: string;
     endDate: string;
     registrationCloseDate: string;
-    sport: string;
+
+    sportId: string;
+    sportName?: string;
+
     maxParticipants: number;
+    participantsCount?: number;
+
     status: string;
+
     organizerId: string;
+    organizerName?: string;
+
+    backgroundImg?: string | null;
+
+    matches?: IBracketStructure;
 }
 
 export interface ITournamentCreate {
@@ -31,3 +44,6 @@ export interface IThemeOption {
     id: string;
     name: string;
 }
+
+export interface ITournamentUpdate
+    extends Partial<ITournamentCreate> { }

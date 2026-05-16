@@ -18,11 +18,13 @@ body,
   margin: 0;
   min-width: 320px;
   min-height: 100%;
+  background: transparent;
+
 }
 
 body {
   margin: 0;
-  background: #252e35;
+  background: #000;
   color: #fffcf2;
 }
 

@@ -7,6 +7,7 @@ import OrganizerDashboardPage from '../views/OrganizerDashboardPage.vue';
 import PlayerDashboardPage from '../views/PlayerDashboardPage.vue';
 import { useAuthStore } from '../stores/authStore';
 import CreateTournamentPage from '../views/CreateTournamentPage.vue';
+import EditTournamentPage from '../views/EditTournamentPage.vue'
 
 const router = createRouter({
     history: createWebHistory(),
@@ -77,6 +78,18 @@ const router = createRouter({
                     );
                 },
             },
+        },
+
+        {
+            path: '/tournaments/:id',
+            name: 'view-tournament',
+            component: () => import('../views/ViewTournament.vue'),
+        },
+
+        {
+            path: '/tournaments/:id/edit',
+            name: 'edit-tournament',
+            component: EditTournamentPage,
         },
 
     ],

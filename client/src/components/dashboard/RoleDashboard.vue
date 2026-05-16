@@ -20,7 +20,8 @@
           <div class="dashboard-section__grid">
             <TournamentCard
               v-for="item in activeTournaments"
-              :key="item.title"
+              :key="item.id"
+              :id="item.id"
               :image="item.image"
               :title="item.title"
               :type="item.type"
@@ -56,7 +57,8 @@
           <div class="dashboard-section__grid">
             <TournamentCard
               v-for="item in myTournaments"
-              :key="`my-${item.title}`"
+              :key="`my-${item.id}`"
+              :id="item.id"
               :image="item.image"
               :title="item.title"
               :type="item.type"
@@ -121,6 +123,7 @@ const goToCreateTournament = () => {
 
 const activeTournaments = [
   {
+    id: '550e8400-e29b-41d4-a716-446655440001',
     image: cs2Card,
     title: 'Counter strike 2',
     type: 'Game',
@@ -129,6 +132,7 @@ const activeTournaments = [
     participants: '32/64',
   },
   {
+    id: '550e8400-e29b-41d4-a716-446655440002',
     image: tennisCard,
     title: 'Tennis tour',
     type: 'Tennis',
@@ -137,6 +141,7 @@ const activeTournaments = [
     participants: '6/6',
   },
   {
+    id: '550e8400-e29b-41d4-a716-446655440003',
     image: forzaCard,
     title: 'Forza horizon 5',
     type: 'Game',
@@ -145,6 +150,7 @@ const activeTournaments = [
     participants: '16/16',
   },
   {
+    id: '550e8400-e29b-41d4-a716-446655440004',
     image: chessCard,
     title: 'Chess tour',
     type: 'Chess',
@@ -156,6 +162,7 @@ const activeTournaments = [
 
 const myTournaments = [
   {
+    id: '550e8400-e29b-41d4-a716-446655440005',
     image: chessCard,
     title: 'Chess tour',
     type: 'Chess',
@@ -164,6 +171,7 @@ const myTournaments = [
     participants: '12/12',
   },
   {
+    id: '550e8400-e29b-41d4-a716-446655440002',
     image: tennisCard,
     title: 'Tennis tour',
     type: 'Tennis',
@@ -172,6 +180,7 @@ const myTournaments = [
     participants: '6/6',
   },
   {
+    id: '550e8400-e29b-41d4-a716-446655440007',
     image: cs2Card,
     title: 'Counter strike 2',
     type: 'Game',
@@ -180,6 +189,7 @@ const myTournaments = [
     participants: '32/64',
   },
   {
+    id: '550e8400-e29b-41d4-a716-446655440008',
     image: forzaCard,
     title: 'Forza horizon 5',
     type: 'Game',

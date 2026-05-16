@@ -79,7 +79,7 @@
 
 .footer {
   padding: 48px 84px 28px;
-  background: #252e35;
+  background: none;
   border-top: 1px solid rgba(21, 49, 206, 0.55);
 }
 

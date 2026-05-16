@@ -13,7 +13,12 @@
       <p class="tournament-card__text">Participants: {{ participants }}</p>
 
       <div class="tournament-card__actions">
-        <button class="tournament-card__button">View</button>
+        <RouterLink
+          :to="`/tournaments/${$props.id}`"
+          class="tournament-card__button"
+        >
+          View
+        </RouterLink>
       </div>
     </div>
   </article>
@@ -21,13 +26,14 @@
 
 <script setup lang="ts">
 defineProps<{
+  id: string;
   image: string;
   title: string;
   type: string;
   date: string;
   time: string;
   participants: string;
-}>();
+}>()
 </script>
 
 <style scoped>
@@ -91,7 +97,6 @@ defineProps<{
   justify-content: flex-end;
   margin-top: 6px;
 }
-
 .tournament-card__button {
   width: 70px;
   height: 25px;
@@ -103,5 +108,10 @@ defineProps<{
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
-}
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}   
 </style>
