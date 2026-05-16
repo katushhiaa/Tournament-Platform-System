@@ -1,4 +1,11 @@
 <script setup lang="ts">
+/*import type {
+  IBracketStructure,
+} from '../../types/Bracket'
+
+defineProps<{
+  rounds: IBracketStructure
+}>()*/
 const rounds = [
   [
     'Shevchenko Taras\nHryhorovych',
@@ -21,7 +28,7 @@ const rounds = [
       <!-- ROUND 1 -->
       <div class="round first">
         <div
-          v-for="(match, index) in rounds"
+          v-for="(match, index) in rounds" 
           :key="index"
           class="match"
         >

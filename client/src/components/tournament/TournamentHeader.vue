@@ -1,17 +1,38 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
+import GenerateBracketButton from './GenerateBracketButton.vue'
+
 import type { ITournament } from '../../types/Tournament'
+
 import chessCard from '../../assets/chess-card.png'
 
-defineProps<{
+const props = defineProps<{
   tournament: ITournament
-  currentUser?: unknown
+
+  currentUser?: {
+    id: string
+    role: string
+  } | null
+}>()
+
+const emit = defineEmits<{
+  'refresh-bracket': []
 }>()
 
 const router = useRouter()
 
-const handleEditTournament = (id: string) => {
+const isOrganizer = computed(() => {
+  return (
+    props.currentUser?.id ===
+    props.tournament.organizerId
+  )
+})
+
+const handleEditTournament = (
+  id: string,
+) => {
   router.push(`/tournaments/${id}/edit`)
 }
 </script>
@@ -63,17 +84,33 @@ const handleEditTournament = (id: string) => {
           </p>
         </div>
 
-        <div class="actions">
+        <div class="side">
           <div class="count">
             {{ tournament.participantsCount }}/{{ tournament.maxParticipants }}
           </div>
 
-          <button
-            class="button"
-            @click="handleEditTournament(tournament.id)"
-          >
-            Edit Tournament
-          </button>
+          <div class="buttons">
+            <GenerateBracketButton
+              :is-organizer="isOrganizer"
+              :tournament-status="
+                tournament.status
+              "
+              @generated="
+                emit('refresh-bracket')
+              "
+            />
+
+            <button
+              class="button"
+              @click="
+                handleEditTournament(
+                  tournament.id,
+                )
+              "
+            >
+              Edit Tournament
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -83,11 +120,14 @@ const handleEditTournament = (id: string) => {
 <style scoped>
 .header {
   padding-top: 197px;
+
   margin-left: 80px;
   margin-right: 83px;
 
   display: flex;
   align-items: flex-start;
+
+  gap: 32px;
 }
 
 .image {
@@ -95,6 +135,7 @@ const handleEditTournament = (id: string) => {
   height: 244px;
 
   object-fit: cover;
+
   border-radius: 24px;
 
   flex-shrink: 0;
@@ -102,8 +143,6 @@ const handleEditTournament = (id: string) => {
 
 .right {
   flex: 1;
-
-  margin-left: 32px;
 }
 
 .top {
@@ -113,15 +152,17 @@ const handleEditTournament = (id: string) => {
 }
 
 .title {
+  margin: 0;
+
   font-size: 32px;
   font-weight: 600;
-  color: white;
 
-  margin: 0;
+  color: white;
 }
 
 .format {
   font-size: 16px;
+
   color: #84c082;
 
   white-space: nowrap;
@@ -133,6 +174,8 @@ const handleEditTournament = (id: string) => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+
+  gap: 32px;
 }
 
 .details {
@@ -140,41 +183,51 @@ const handleEditTournament = (id: string) => {
 }
 
 .details p {
-  font-size: 14px;
-  color: white;
-
   margin-bottom: 20px;
+
+  font-size: 14px;
+
+  color: white;
 }
 
-.actions {
+.side {
   display: flex;
   flex-direction: column;
-  align-items: center;
-
-  margin-top: -20px;
+  align-items: flex-end;
 }
 
 .count {
-  font-size: 12px;
-  color: #ff9800;
+  margin-bottom: 10px;
 
-  margin-bottom: 7px;
+  font-size: 12px;
+
+  color: #ffffff;
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+
+  gap: 14px;
 }
 
 .button {
   width: 166px;
-  height: 46px;
+  height: 52px;
 
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
 
   background: #ff9800;
+
   color: white;
 
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 600;
 
   cursor: pointer;
+
+  transition: opacity 0.2s ease;
 }
 
 .button:hover {
@@ -183,17 +236,19 @@ const handleEditTournament = (id: string) => {
 
 @media (max-width: 1200px) {
   .header {
+    margin-left: 24px;
+    margin-right: 24px;
+
     flex-direction: column;
   }
 
   .right {
-    margin-left: 0;
-    margin-top: 32px;
     width: 100%;
   }
 
   .top {
     flex-direction: column;
+
     gap: 16px;
   }
 
@@ -201,9 +256,34 @@ const handleEditTournament = (id: string) => {
     flex-direction: column;
   }
 
-  .actions {
-    margin-top: 32px;
+  .side {
     align-items: flex-start;
+  }
+
+  .buttons {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding-top: 140px;
+  }
+
+  .image {
+    width: 100%;
+    height: auto;
+  }
+
+  .buttons {
+    width: 100%;
+
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .button {
+    width: 100%;
   }
 }
 </style>
