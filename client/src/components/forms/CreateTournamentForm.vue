@@ -60,6 +60,7 @@
               ref="startDateInput"
               v-model="form.startDate"
               type="datetime-local"
+              :min="minStartDate"
               @blur="validateField('startDate')"
               @change="validateDateFields"
             />
@@ -207,27 +208,110 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import uploadBannerIcon from '../../assets/icons/Upload Banner.png';
-import nameIcon from '../../assets/icons/Name.png';
-import sportIcon from '../../assets/icons/Sport.png';
-import dropdownIcon from '../../assets/icons/drop_down_list.png';
-import peopleIcon from '../../assets/icons/people.png';
-import dateIcon from '../../assets/icons/date.png';
-import timeIcon from '../../assets/icons/time.png';
-import createIcon from '../../assets/icons/Create.png';
-import { tournamentService } from '../../services/tournamentService';
+import {
+  computed,
+  onMounted,
+  reactive,
+  ref,
+} from 'vue'
+
+import { useRouter } from 'vue-router'
+
+import uploadBannerIcon from '../../assets/icons/Upload Banner.png'
+import nameIcon from '../../assets/icons/Name.png'
+import sportIcon from '../../assets/icons/Sport.png'
+import dropdownIcon from '../../assets/icons/drop_down_list.png'
+import peopleIcon from '../../assets/icons/people.png'
+import dateIcon from '../../assets/icons/date.png'
+import timeIcon from '../../assets/icons/time.png'
+import createIcon from '../../assets/icons/Create.png'
+
+import { tournamentService } from '../../services/tournamentService'
+
 import type {
   IThemeOption,
   ITournamentCreate,
   ITournamentResponse,
-} from '../../types/Tournament';
-import type { IApiError } from '../../types/Auth';
+} from '../../types/Tournament'
+
+import type { IApiError } from '../../types/Auth'
 
 const emit = defineEmits<{
-  created: [tournament: ITournamentResponse];
-}>();
+  created: [tournament: ITournamentResponse]
+}>()
+
+const router = useRouter()
+
+const minStartDate = new Date()
+  .toISOString()
+  .slice(0, 16)
+
+type CreateTournamentFormValues = {
+  title: string
+  sport: string
+  startDate: string
+  endDate: string
+  registrationCloseDate: string
+  maxParticipants: number | null
+  description: string
+  conditions: string
+}
+
+type FormErrors = Partial<
+  Record<
+    keyof CreateTournamentFormValues,
+    string
+  >
+>
+
+const form =
+  reactive<CreateTournamentFormValues>({
+    title: '',
+    sport: '',
+    startDate: '',
+    endDate: '',
+    registrationCloseDate: '',
+    maxParticipants: null,
+    description: '',
+    conditions: '',
+  })
+
+const errors = reactive<FormErrors>({})
+
+const sports = ref<IThemeOption[]>([])
+
+const isSubmitting = ref(false)
+
+const toastMessage = ref('')
+const successMessage = ref('')
+
+const bannerInput =
+  ref<HTMLInputElement | null>(null)
+
+const bannerFileName = ref('')
+
+const bannerFile = ref<File | null>(null)
+
+const titleInput =
+  ref<HTMLInputElement | null>(null)
+
+const sportInput =
+  ref<HTMLSelectElement | null>(null)
+
+const startDateInput =
+  ref<HTMLInputElement | null>(null)
+
+const endDateInput =
+  ref<HTMLInputElement | null>(null)
+
+const registrationCloseDateInput =
+  ref<HTMLInputElement | null>(null)
+
+const maxParticipantsInput =
+  ref<HTMLInputElement | null>(null)
+
+const minTeams = 2
+const maxTeams = 128
 
 const isFormInvalid = computed(() => {
   return (
@@ -238,239 +322,303 @@ const isFormInvalid = computed(() => {
     !form.registrationCloseDate ||
     !form.maxParticipants ||
     Object.values(errors).some(Boolean)
-  );
-});
-
-type CreateTournamentFormValues = {
-  title: string;
-  sport: string;
-  startDate: string;
-  endDate: string;
-  registrationCloseDate: string;
-  maxParticipants: number | null;
-  description: string;
-  conditions: string;
-};
-
-const router = useRouter();
-
-const bannerInput = ref<HTMLInputElement | null>(null);
-const bannerFileName = ref('');
-const bannerFile = ref<File | null>(null);
+  )
+})
 
 const handleBannerClick = () => {
-  bannerInput.value?.click();
-};
+  bannerInput.value?.click()
+}
 
-const handleBannerChange = (event: Event) => {
-  const input = event.target as HTMLInputElement;
-  const file = input.files?.[0];
+const handleBannerChange = (
+  event: Event,
+) => {
+  const input =
+    event.target as HTMLInputElement
 
-  if (!file) return;
+  const file = input.files?.[0]
 
-  // optional validation
+  if (!file) return
+
   if (file.size > 5 * 1024 * 1024) {
-    toastMessage.value = 'Image must be less than 5MB';
-    return;
+    toastMessage.value =
+      'Image must be less than 5MB'
+
+    return
   }
 
-  bannerFile.value = file;
-  bannerFileName.value = file.name;
-};
+  bannerFile.value = file
+  bannerFileName.value = file.name
+}
 
-type FormErrors = Partial<Record<keyof CreateTournamentFormValues, string>>;
-
-const form = reactive<CreateTournamentFormValues>({
-  title: '',
-  sport: '',
-  startDate: '',
-  endDate: '',
-  registrationCloseDate: '',
-  maxParticipants: null,
-  description: '',
-  conditions: '',
-});
-
-const errors = reactive<FormErrors>({});
-const sports = ref<IThemeOption[]>([]);
-const isSubmitting = ref(false);
-const toastMessage = ref('');
-const successMessage = ref('');
-
-const titleInput = ref<HTMLInputElement | null>(null);
-const sportInput = ref<HTMLSelectElement | null>(null);
-const startDateInput = ref<HTMLInputElement | null>(null);
-const endDateInput = ref<HTMLInputElement | null>(null);
-const registrationCloseDateInput = ref<HTMLInputElement | null>(null);
-const maxParticipantsInput = ref<HTMLInputElement | null>(null);
-
-const toIsoDate = (value: string) => new Date(value).toISOString();
-const minTeams = 2;
-const maxTeams = 128;
+const toIsoDate = (value: string) =>
+  new Date(value).toISOString()
 
 const focusFirstError = () => {
-  if (errors.title) return titleInput.value?.focus();
-  if (errors.sport) return sportInput.value?.focus();
-  if (errors.startDate) return startDateInput.value?.focus();
-  if (errors.endDate) return endDateInput.value?.focus();
+  if (errors.title) {
+    return titleInput.value?.focus()
+  }
+
+  if (errors.sport) {
+    return sportInput.value?.focus()
+  }
+
+  if (errors.startDate) {
+    return startDateInput.value?.focus()
+  }
+
+  if (errors.endDate) {
+    return endDateInput.value?.focus()
+  }
+
   if (errors.registrationCloseDate) {
-    return registrationCloseDateInput.value?.focus();
+    return registrationCloseDateInput.value?.focus()
   }
+
   if (errors.maxParticipants) {
-    return maxParticipantsInput.value?.focus();
+    return maxParticipantsInput.value?.focus()
   }
 
-  return undefined;
-};
+  return undefined
+}
 
-const validateField = (field: keyof CreateTournamentFormValues) => {
+const validateField = (
+  field: keyof CreateTournamentFormValues,
+) => {
   switch (field) {
     case 'title':
       if (!form.title.trim()) {
-        errors.title = 'Tournament name is required';
-      } else if (form.title.length > 255) {
-        errors.title = 'Tournament name must be less than 255 characters';
+        errors.title =
+          'Tournament name is required'
+      } else if (
+        form.title.length > 255
+      ) {
+        errors.title =
+          'Tournament name must be less than 255 characters'
       } else {
-        errors.title = '';
+        errors.title = ''
       }
-      break;
+
+      break
 
     case 'sport':
-      errors.sport = form.sport ? '' : 'Sport type is required';
-      break;
+      errors.sport = form.sport
+        ? ''
+        : 'Sport type is required'
+
+      break
 
     case 'startDate':
-      errors.startDate = form.startDate ? '' : 'Start date is required';
-      break;
+      if (!form.startDate) {
+        errors.startDate =
+          'Start date is required'
+      } else {
+        const selectedDate = new Date(
+          form.startDate,
+        )
+
+        const now = new Date()
+
+        if (selectedDate < now) {
+          errors.startDate =
+            'Start date cannot be in the past'
+        } else {
+          errors.startDate = ''
+        }
+      }
+
+      break
 
     case 'endDate':
       if (!form.endDate) {
-        errors.endDate = 'End date is required';
-      } else if (new Date(form.endDate) < new Date(form.startDate)) {
         errors.endDate =
-          'Date end must be greater than or equal to date start';
+          'End date is required'
+      } else if (
+        new Date(form.endDate) <
+        new Date(form.startDate)
+      ) {
+        errors.endDate =
+          'Date end must be greater than or equal to date start'
       } else {
-        errors.endDate = '';
+        errors.endDate = ''
       }
-      break;
+
+      break
 
     case 'registrationCloseDate':
       if (!form.registrationCloseDate) {
-        errors.registrationCloseDate = 'End of registration is required';
+        errors.registrationCloseDate =
+          'End of registration is required'
       } else if (
-        new Date(form.registrationCloseDate) > new Date(form.startDate)
+        new Date(
+          form.registrationCloseDate,
+        ) > new Date(form.startDate)
       ) {
         errors.registrationCloseDate =
-          'End of registration must be less than or equal to date start';
+          'End of registration must be less than or equal to date start'
       } else {
-        errors.registrationCloseDate = '';
+        errors.registrationCloseDate =
+          ''
       }
-      break;
+
+      break
 
     case 'maxParticipants':
       if (!form.maxParticipants) {
-        errors.maxParticipants = 'Participants max count is required';
-      } else if (form.maxParticipants < minTeams) {
-        errors.maxParticipants = `Participants max count must be at least ${minTeams}`;
-      } else if (form.maxParticipants > maxTeams) {
         errors.maxParticipants =
-          `Participants max count must be less than or equal to ${maxTeams}`;
+          'Participants max count is required'
+      } else if (
+        form.maxParticipants < minTeams
+      ) {
+        errors.maxParticipants =
+          `Participants max count must be at least ${minTeams}`
+      } else if (
+        form.maxParticipants > maxTeams
+      ) {
+        errors.maxParticipants =
+          `Participants max count must be less than or equal to ${maxTeams}`
       } else {
-        errors.maxParticipants = '';
+        errors.maxParticipants = ''
       }
-      break;
+
+      break
 
     default:
-      break;
+      break
   }
-};
+}
 
 const validateDateFields = () => {
-  validateField('startDate');
-  validateField('endDate');
-  validateField('registrationCloseDate');
-};
+  validateField('startDate')
+  validateField('endDate')
+  validateField(
+    'registrationCloseDate',
+  )
+}
 
 const validateForm = () => {
-  validateField('title');
-  validateField('sport');
-  validateDateFields();
-  validateField('maxParticipants');
+  validateField('title')
+  validateField('sport')
+  validateDateFields()
+  validateField('maxParticipants')
 
-  return !Object.values(errors).some(Boolean);
-};
+  return !Object.values(errors).some(
+    Boolean,
+  )
+}
 
 const handleSubmit = async () => {
-  toastMessage.value = '';
-  successMessage.value = '';
+  toastMessage.value = ''
+  successMessage.value = ''
 
-  const isValid = validateForm();
+  const isValid = validateForm()
 
   if (!isValid) {
-    focusFirstError();
-    return;
+    focusFirstError()
+
+    return
   }
 
-  isSubmitting.value = true;
+  isSubmitting.value = true
 
   try {
-    const payload: ITournamentCreate = {
-      title: form.title.trim(),
-      description: form.description.trim() || null,
-      conditions: form.conditions.trim() || null,
-      startDate: toIsoDate(form.startDate),
-      endDate: toIsoDate(form.endDate),
-      registrationCloseDate: toIsoDate(form.registrationCloseDate),
-      sport: form.sport,
-      maxParticipants: Number(form.maxParticipants),
-    };
+    const payload: ITournamentCreate =
+      {
+        title: form.title.trim(),
 
-    // 1. create tournament
-    const response = await tournamentService.createTournament(payload);
+        description:
+          form.description.trim() ||
+          null,
 
-    // 2. upload image if exists
+        conditions:
+          form.conditions.trim() || null,
+
+        startDate: toIsoDate(
+          form.startDate,
+        ),
+
+        endDate: toIsoDate(
+          form.endDate,
+        ),
+
+        registrationCloseDate:
+          toIsoDate(
+            form.registrationCloseDate,
+          ),
+
+        sport: form.sport,
+
+        maxParticipants: Number(
+          form.maxParticipants,
+        ),
+      }
+
+    const response =
+      await tournamentService.createTournament(
+        payload,
+      )
+
     if (bannerFile.value) {
-      const formData = new FormData();
+      const formData = new FormData()
 
-      // IMPORTANT:
-      // backend usually expects "file"
-      formData.append('file', bannerFile.value);
+      formData.append(
+        'file',
+        bannerFile.value,
+      )
 
       await tournamentService.uploadTournamentImage(
         response.id,
         formData,
-      );
+      )
     }
 
-    successMessage.value = 'Tournament created successfully';
+    successMessage.value =
+      'Tournament created successfully'
 
-    emit('created', response);
+    emit('created', response)
 
-    router.push('/my-tournaments');
+    /*
+      redirect disabled temporarily
+      to allow Add Players modal rendering
+    */
+
+    // router.push('/my-tournaments')
   } catch (error: unknown) {
-    const apiError = error as IApiError;
+    const apiError =
+      error as IApiError
 
-    if (apiError.errorCode === 'CONFLICT') {
+    if (
+      apiError.errorCode ===
+      'CONFLICT'
+    ) {
       toastMessage.value =
-        apiError.message || 'Conflict. Please check tournament data.';
-    } else if (apiError.errorCode === 'VALIDATION_ERROR') {
-      toastMessage.value = apiError.message || 'Validation error';
+        apiError.message ||
+        'Conflict. Please check tournament data.'
+    } else if (
+      apiError.errorCode ===
+      'VALIDATION_ERROR'
+    ) {
+      toastMessage.value =
+        apiError.message ||
+        'Validation error'
     } else {
       toastMessage.value =
-        apiError.message || 'Server error. Please try again later.';
+        apiError.message ||
+        'Server error. Please try again later.'
     }
   } finally {
-    isSubmitting.value = false;
+    isSubmitting.value = false
   }
-};
+}
 
 onMounted(async () => {
   try {
-    sports.value = await tournamentService.getSports();
+    sports.value =
+      await tournamentService.getSports()
   } catch {
-    toastMessage.value = 'Failed to load sports';
+    toastMessage.value =
+      'Failed to load sports'
   }
-});
+})
 </script>
 
 <style scoped>
