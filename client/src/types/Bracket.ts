@@ -24,6 +24,26 @@ export interface IBracketRound {
     matches: IMatchInfo[];
 }
 
-export interface IBracketStructure {
-    rounds: IBracketRound[];
+export type IBracketStructure = BracketRound[]
+
+export interface Match {
+  matchId: string
+  tournamentId: string
+  round: number
+  orderNumber: number
+  player1Id: string | null
+  player2Id: string | null
+  status: string
+  isBye: boolean
+  scorePlayer1: number | null
+  scorePlayer2: number | null
+  winnerId: string | null
+}
+
+export interface BracketRound {
+  round: number
+  matches: Match[]
+  matchesCount: number
+  notByeMatchesCount: number
+  roundDisplayName: string
 }

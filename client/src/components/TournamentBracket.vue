@@ -4,7 +4,12 @@ import { useRoute } from 'vue-router';
 import { useBracket } from '../composables/useBracket';
 
 const route = useRoute();
-const tournamentId = route.params.id as string;
+
+import { computed } from 'vue'
+
+const tournamentId = computed(() => {
+  return route.params.id?.toString()
+})
 
 const {
   bracket,
@@ -14,8 +19,10 @@ const {
 } = useBracket();
 
 onMounted(() => {
-  loadBracket(tournamentId);
-});
+  if (tournamentId.value) {
+    loadBracket(tournamentId.value)
+  }
+})
 </script>
 
 <template>

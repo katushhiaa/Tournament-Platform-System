@@ -43,6 +43,7 @@ import checkIconGreen from '../assets/icons/check-icon-green.svg';
 
         <div class="tournaments-grid">
           <TournamentCard
+            id="3fa85f64-5717-4562-b3fc-2c963f66afa6"
             :image="cs2Card"
             title="Counter strike 2"
             type="Game"
@@ -51,6 +52,7 @@ import checkIconGreen from '../assets/icons/check-icon-green.svg';
             participants="32/64"
           />
           <TournamentCard
+            id="550e8400-e29b-41d4-a716-446655440001"
             :image="tennisCard"
             title="Tennis tour"
             type="Tennis"
@@ -59,6 +61,7 @@ import checkIconGreen from '../assets/icons/check-icon-green.svg';
             participants="6/6"
           />
           <TournamentCard
+            id="550e8400-e29b-41d4-a716-446655440001"
             :image="forzaCard"
             title="Forza horizon 5"
             type="Game"
@@ -67,6 +70,7 @@ import checkIconGreen from '../assets/icons/check-icon-green.svg';
             participants="16/16"
           />
           <TournamentCard
+            id="e7b1c3d2-4f5a-4e6b-9a1b-2c3d4e5f6789"
             :image="chessCard"
             title="Chess tour"
             type="Chess"

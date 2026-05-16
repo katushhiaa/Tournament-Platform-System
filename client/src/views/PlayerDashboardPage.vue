@@ -51,6 +51,7 @@ const userName = computed(() => {
 
         <div class="dashboard-grid">
           <TournamentCard
+            id="550e8400-e29b-41d4-a716-446655440001"
             :image="cs2Card"
             title="Counter strike 2"
             type="Game"
@@ -59,6 +60,7 @@ const userName = computed(() => {
             participants="32/64"
           />
           <TournamentCard
+            id="550e8400-e29b-41d4-a716-446655440001"
             :image="tennisCard"
             title="Tennis tour"
             type="Tennis"
@@ -67,6 +69,7 @@ const userName = computed(() => {
             participants="6/6"
           />
           <TournamentCard
+            id="550e8400-e29b-41d4-a716-446655440001"
             :image="forzaCard"
             title="Forza horizon 5"
             type="Game"
@@ -75,6 +78,7 @@ const userName = computed(() => {
             participants="16/16"
           />
           <TournamentCard
+            id="550e8400-e29b-41d4-a716-446655440001"
             :image="chessCard"
             title="Chess tour"
             type="Chess"
@@ -99,6 +103,7 @@ const userName = computed(() => {
 
         <div class="dashboard-grid">
           <TournamentCard
+            id="550e8400-e29b-41d4-a716-446655440001"
             :image="chessCard"
             title="Chess tour"
             type="Chess"
@@ -107,6 +112,7 @@ const userName = computed(() => {
             participants="12/12"
           />
           <TournamentCard
+            id="550e8400-e29b-41d4-a716-446655440001"
             :image="tennisCard"
             title="Tennis tour"
             type="Tennis"
@@ -115,6 +121,7 @@ const userName = computed(() => {
             participants="6/6"
           />
           <TournamentCard
+            id="550e8400-e29b-41d4-a716-446655440001"
             :image="cs2Card"
             title="Counter strike 2"
             type="Game"
@@ -123,6 +130,7 @@ const userName = computed(() => {
             participants="32/64"
           />
           <TournamentCard
+            id="550e8400-e29b-41d4-a716-446655440001"
             :image="forzaCard"
             title="Forza horizon 5"
             type="Game"
