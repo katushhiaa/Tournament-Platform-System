@@ -1,49 +1,44 @@
 export type MatchStatus =
-    | 'Pending'
-    | 'Active'
-    | 'Completed';
+    | 'pending'
+    | 'scheduled'
+    | 'active'
+    | 'completed'
+    | 'bye'
 
-export interface IBracketPlayer {
-    id: string;
-    name: string;
+export interface MatchPlayer {
+    id: string | null
 }
 
-export interface IMatchInfo {
-    id: string;
+export interface MatchInfo {
+    matchId: string
+    tournamentId: string
 
-    player1: IBracketPlayer | null;
-    player2: IBracketPlayer | null;
+    round: number
+    orderNumber: number
 
-    status: MatchStatus;
+    player1Id: string | null
+    player2Id: string | null
 
-    winnerId?: string | null;
-}
+    status: MatchStatus
 
-export interface IBracketRound {
-    round: number;
-    matches: IMatchInfo[];
-}
+    isBye: boolean
 
-export type IBracketStructure = BracketRound[]
+    scorePlayer1: number | null
+    scorePlayer2: number | null
 
-export interface Match {
-  matchId: string
-  tournamentId: string
-  round: number
-  orderNumber: number
-  player1Id: string | null
-  player2Id: string | null
-  status: string
-  isBye: boolean
-  scorePlayer1: number | null
-  scorePlayer2: number | null
-  winnerId: string | null
+    winnerId: string | null
 }
 
 export interface BracketRound {
-  round: number
-  matches: Match[]
-  matchesCount: number
-  notByeMatchesCount: number
-  roundDisplayName: string
+    round: number
+
+    matches: MatchInfo[]
+
+    matchesCount: number
+
+    notByeMatchesCount: number
+
+    roundDisplayName: string
 }
+
+export type IBracketStructure = BracketRound[]
