@@ -16,5 +16,7 @@ public partial class UserDetailModel : BaseDbEntity
 
     public DateTime? UpdatedAt { get; set; }
 
+    public bool PreferencesSetupCompleted { get; set; }
+
     public virtual UserModel User { get; set; } = null!;
 }

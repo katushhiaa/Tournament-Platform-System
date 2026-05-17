@@ -31,4 +31,6 @@ public partial class UserModel : BaseDbEntity
     public virtual ICollection<UserTeamModel> UserTeams { get; set; } = new List<UserTeamModel>();
 
     public virtual ICollection<RefreshTokenModel> RefreshTokens { get; set; } = new List<RefreshTokenModel>();
+
+    public virtual ICollection<UserTournamentThemePreferenceModel> UserThemePreferences { get; set; } = new List<UserTournamentThemePreferenceModel>();
 }
