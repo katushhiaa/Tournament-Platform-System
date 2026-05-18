@@ -36,6 +36,18 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
             try
             {
                 var result = await _authenticationService.RegisterAsync(dto);
+
+                var cookieOptions = new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    Path = "/api/v1/auth/refresh",
+                    Expires = DateTimeOffset.UtcNow.AddDays(15)
+                };
+
+                Response.Cookies.Append("refresh_token", result.Tokens.RefreshToken, cookieOptions);
+
                 return Created(string.Empty, result);
             }
             catch (ValidationException ex)
@@ -100,6 +112,18 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
             try
             {
                 var tokens = await _authenticationService.LoginAsync(dto);
+
+                var cookieOptions = new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    Path = "/api/v1/auth/refresh",
+                    Expires = DateTimeOffset.UtcNow.AddDays(15)
+                };
+
+                Response.Cookies.Append("refresh_token", tokens.Tokens.RefreshToken, cookieOptions);
+
                 return Ok(tokens);
             }
             catch (TournamentPlatformSystemWebApi.Common.Exceptions.TooManyLoginAttemptsException ex)
@@ -189,25 +213,46 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
         /// Refreshes the access token using a refresh token stored in an HttpOnly cookie.
         /// </summary>
         /// <remarks>
-        /// WARNING! This endpoint cannot be tested through swagger because it will not be possible to pass cookies. Client must send the refresh token in a cookie named "refresh_token" (HttpOnly, Secure recommended).
-        /// The endpoint validates the refresh, access tokens and, on success, returns a new access token and a new refresh token in the response body.
+        /// Client must send the refresh token in an HttpOnly cookie named "refresh_token".
+        /// The endpoint validates tokens, sets a NEW refresh token in HttpOnly cookie, and returns a NEW access token in the response body.
         /// </remarks>
         [HttpPost("refresh")]
         [AllowAnonymous]
-        [SwaggerOperation(Summary = "Refresh access token", Description = "WARNING! This endpoint cannot be tested through swagger because it will not be possible to pass cookies. Refreshes the access token using the refresh token stored in an HttpOnly cookie named 'refresh_token'.")]
+        [SwaggerOperation(Summary = "Refresh access token", Description = "Refreshes the access token using the refresh token stored in an HttpOnly cookie named 'refresh_token'.")]
         [Produces("application/json")]
-        [ProducesResponseType(typeof(TokensResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(TokensResponseDto), StatusCodes.Status200OK)] // Змінено DTO
         [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status400BadRequest)]
-        [SwaggerResponseExample(200, typeof(Swagger.Examples.TokenResponseExample))]
+        [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Refresh()
         {
             try
             {
                 var refreshToken = Request.Cookies["refresh_token"];
                 var authHeader = Request.Headers["Authorization"].ToString();
+
+                // Сервіс повертає пару токенів (наприклад, об'єкт з AccessToken та RefreshToken)
                 var tokens = await _authenticationService.RefreshAsync(refreshToken, authHeader);
-                return Ok(tokens);
+
+                // Налаштування куки для НОВОГО refresh токена (Ротація токенів)
+                var cookieOptions = new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    Path = "/api/v1/auth/refresh",
+                    Expires = DateTimeOffset.UtcNow.AddDays(15)
+                };
+
+                // Записуємо новий refresh_token в куки
+                Response.Cookies.Append("refresh_token", tokens.RefreshToken, cookieOptions);
+
+                // Повертаємо у JSON ТІЛЬКИ access токен
+                var response = new TokensResponseDto
+                {
+                    AccessToken = tokens.AccessToken
+                };
+
+                return Ok(response);
             }
             catch (TournamentPlatformSystemWebApi.Common.Exceptions.InvalidCredentialsException ex)
             {
@@ -218,7 +263,7 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
                         Code = StatusCodes.Status401Unauthorized,
                         Type = "Unauthorized",
                         Message = ex.Message,
-                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Path = HttpContext.Request.Path,
                         Timestamp = DateTime.UtcNow.ToString("o"),
                         TraceId = HttpContext.TraceIdentifier
                     }
@@ -234,7 +279,7 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
                         Code = 500,
                         Type = "InternalServerError",
                         Message = ex.Message,
-                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Path = HttpContext.Request.Path,
                         Timestamp = DateTime.UtcNow.ToString("o"),
                         TraceId = HttpContext.TraceIdentifier
                     }
@@ -242,6 +287,7 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
                 return StatusCode(500, err);
             }
         }
+
 
         [Authorize]
         [HttpGet("/api/v1/users/me")]
