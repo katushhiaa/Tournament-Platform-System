@@ -276,4 +276,74 @@ public class TournamentService : ITournamentService
 
         return result;
     }
+
+    public async Task<TournamentPlatformSystemWebApi.Application.DTOs.TournamentDto> UpdateTournamentAsync(Guid tournamentId, TournamentCreateDto dto, Guid organizerId)
+    {
+        if (dto == null)
+            throw new ValidationException("Tournament data is required");
+
+        var existing = await _tournamentRepository.GetByIdAsync(tournamentId);
+        if (existing == null) throw new KeyNotFoundException("Tournament not found");
+        if (existing.OrganizerId != organizerId) throw new UnauthorizedAccessException("Not the organizer");
+
+        // Do not allow editing when tournament already in progress or completed
+        if (existing.Status == TournamentStatus.IN_PROGRESS || existing.Status == TournamentStatus.COMPLETED)
+            throw new TournamentPlatformSystemWebApi.Common.Exceptions.TournamentAlreadyStartedException("Tournament cannot be edited in its current status");
+
+        var title = dto.Title?.Trim();
+        if (string.IsNullOrWhiteSpace(title))
+            throw new ValidationException("Title is required");
+
+        // If title changed, ensure uniqueness for organizer
+        if (!string.Equals(existing.Name?.Trim(), title, StringComparison.InvariantCultureIgnoreCase))
+        {
+            var unique = await _tournamentRepository.IsTitleUniqueAsync(title, organizerId);
+            if (!unique)
+                throw new TournamentPlatformSystemWebApi.Common.Exceptions.DuplicateTournamentTitleException("Tournament title must be unique for the organizer");
+        }
+
+        // Validate sport exists
+        if (!dto.Sport.HasValue || !await _themeRepository.IsSportWithId(dto.Sport.Value))
+        {
+            throw new ArgumentException("Sport with this Id not found");
+        }
+
+        // Check participants count vs new limit
+        var participantsCount = await _tournamentRepository.GetParticipantsCountAsync(tournamentId);
+        if (dto.MaxParticipants < participantsCount)
+            throw new TournamentPlatformSystemWebApi.Common.Exceptions.InsufficientParticipantsException("New max participants is less than current participants count");
+
+        // map updated fields
+        existing.Name = title;
+        existing.Description = dto.Description;
+        existing.Conditions = dto.Conditions;
+        existing.StartDate = dto.StartDate;
+        existing.EndDate = dto.EndDate;
+        existing.RegistrationDeadline = dto.RegistrationCloseDate;
+        existing.MaxTeams = dto.MaxParticipants;
+        existing.ThemeId = dto.Sport;
+
+        var updated = await _tournamentRepository.UpdateAsync(existing);
+
+        var newTournamentWithDetails = await _tournamentRepository.GetByIdAsync(updated.Id);
+
+        var result = new TournamentPlatformSystemWebApi.Application.DTOs.TournamentDto
+        {
+            Id = updated.Id,
+            Title = updated.Name,
+            Description = updated.Description,
+            Conditions = updated.Conditions,
+            StartDate = updated.StartDate,
+            EndDate = updated.EndDate,
+            RegistrationCloseDate = updated.RegistrationDeadline,
+            SportId = newTournamentWithDetails.ThemeId,
+            SportName = newTournamentWithDetails.ThemeName,
+            MaxParticipants = updated.MaxTeams,
+            Status = updated.Status.ToString().ToLowerInvariant(),
+            OrganizerId = organizerId,
+            OrganizerName = newTournamentWithDetails.OrganizerName
+        };
+
+        return result;
+    }
 }
