@@ -85,7 +85,35 @@ public class AuthenticationService : IAuthenticationService
             throw new InvalidCredentialsException("Invalid or expired refresh token");
         }
 
-        var (newAccess, newJwtId, expiresAt) = _jwtTokenService.GenerateToken(userId, jwt.Payload[JwtRegisteredClaimNames.Email]?.ToString() ?? string.Empty, jwt.Payload[ClaimTypes.Role]?.ToString() ?? "player", jwt.Payload["isOrganizer"]?.ToString() == "True");
+        // Safely read email, role and isOrganizer from the token payload. The token may store role under
+        // different keys (we use "role" when generating tokens), so use TryGetValue to avoid KeyNotFoundException.
+        string email = string.Empty;
+        if (jwt.Payload.TryGetValue(JwtRegisteredClaimNames.Email, out var emailObj))
+        {
+            email = emailObj?.ToString() ?? string.Empty;
+        }
+
+        string role = "player";
+        if (jwt.Payload.TryGetValue("role", out var roleObj))
+        {
+            role = roleObj?.ToString() ?? role;
+        }
+        else if (jwt.Payload.TryGetValue(ClaimTypes.Role, out var roleObj2))
+        {
+            role = roleObj2?.ToString() ?? role;
+        }
+        else if (jwt.Payload.TryGetValue("roles", out var roleObj3))
+        {
+            role = roleObj3?.ToString() ?? role;
+        }
+
+        var isOrganizer = false;
+        if (jwt.Payload.TryGetValue("isOrganizer", out var isOrgObj) && bool.TryParse(isOrgObj?.ToString(), out var isOrg))
+        {
+            isOrganizer = isOrg;
+        }
+
+        var (newAccess, newJwtId, expiresAt) = _jwtTokenService.GenerateToken(userId, email, role, isOrganizer);
 
         var newRefresh = _jwtTokenService.GenerateRefreshToken();
         var refreshExpires = DateTime.UtcNow.AddDays(_refreshTokenDays);

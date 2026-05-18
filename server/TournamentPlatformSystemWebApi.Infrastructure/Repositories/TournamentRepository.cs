@@ -82,6 +82,66 @@ public class TournamentRepository : BaseRepository<Tournament, TournamentModel>,
             .ToListAsync();
     }
 
+    public async Task<bool> IsUserInTournamentAsync(Guid tournamentId, Guid userId)
+    {
+        return await _context.Set<UserTeamModel>()
+            .AsNoTracking()
+            .Include(ut => ut.Team)
+            .AnyAsync(ut => ut.UserId == userId && ut.Team.TournamentId == tournamentId);
+    }
+
+    public async Task<Team> AddParticipantAsync(Guid tournamentId, Guid userId, string teamName)
+    {
+        // create new team and user-team link
+        var teamModel = new TeamModel
+        {
+            Id = Guid.NewGuid(),
+            Name = teamName ?? string.Empty,
+            TournamentId = tournamentId,
+            IsDisqualified = false,
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        };
+
+        await _context.Set<TeamModel>().AddAsync(teamModel);
+
+        var userTeam = new UserTeamModel
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            TeamId = teamModel.Id,
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        };
+
+        await _context.Set<UserTeamModel>().AddAsync(userTeam);
+
+        await _context.SaveChangesAsync();
+
+        return _mapper.Map<Team>(teamModel);
+    }
+
+    public async Task<bool> DisqualifyParticipantAsync(Guid tournamentId, Guid userId)
+    {
+        // find user-team relation
+        var userTeam = await _context.Set<UserTeamModel>()
+            .Include(ut => ut.Team)
+            .FirstOrDefaultAsync(ut => ut.UserId == userId && ut.Team.TournamentId == tournamentId);
+
+        if (userTeam == null)
+            return false;
+
+        var team = userTeam.Team;
+        if (team == null)
+            return false;
+
+        team.IsDisqualified = true;
+        team.UpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+
+        _context.Set<TeamModel>().Update(team);
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
     public async Task AddMatchesAsync(IEnumerable<TournamentPlatformSystemWebApi.Core.Entities.Match> matches)
     {
         if (matches == null) return;

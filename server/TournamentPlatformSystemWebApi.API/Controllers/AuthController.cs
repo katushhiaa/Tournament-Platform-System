@@ -122,7 +122,10 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
                     Expires = DateTimeOffset.UtcNow.AddDays(15)
                 };
 
-                Response.Cookies.Append("refresh_token", tokens.Tokens.RefreshToken, cookieOptions);
+                if (!string.IsNullOrWhiteSpace(tokens.Tokens?.RefreshToken))
+                {
+                    Response.Cookies.Append("refresh_token", tokens.Tokens.RefreshToken, cookieOptions);
+                }
 
                 return Ok(tokens);
             }
