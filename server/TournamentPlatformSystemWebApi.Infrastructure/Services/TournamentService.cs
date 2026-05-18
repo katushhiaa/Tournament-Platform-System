@@ -38,6 +38,11 @@ public class TournamentService : ITournamentService
         if (!unique)
             throw new DuplicateTournamentTitleException("Tournament title must be unique for the organizer");
 
+        // DEV-342 [bug] Do not allow creating a tournament with a start date in the past
+        var startUtc = dto.StartDate.ToUniversalTime().Date;
+        if (startUtc < DateTime.UtcNow.Date)
+            throw new ValidationException("Start date cannot be in the past");
+
         var entity = new Tournament
         {
             Id = Guid.NewGuid(),
