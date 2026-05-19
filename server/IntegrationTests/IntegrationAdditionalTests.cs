@@ -28,7 +28,7 @@ namespace IntegrationTests
             {
                 Email = email,
                 Password = password,
-                FullName = "Integration Tester",
+                FullName = $"Integration Tester {Guid.NewGuid():N}",
                 PhoneNumber = "+380123456799",
                 DateOfBirth = "1990-01-01",
                 Role = role
@@ -205,6 +205,83 @@ namespace IntegrationTests
             Assert.Equal(409, (int)delResp.StatusCode);
 
             _client.DefaultRequestHeaders.Authorization = null;
+        }
+
+        [Fact]
+        public async Task Users_Search_ByFullName_ReturnsRegisteredUser()
+        {
+            var (userId, access, refresh) = await RegisterAndGetTokensAsync("player");
+            // fetch registered user's full name using /me endpoint
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", access);
+            var meResp = await _client.GetAsync("/api/v1/users/me");
+            meResp.EnsureSuccessStatusCode();
+            var meBody = await meResp.Content.ReadAsStringAsync();
+            using var meDoc = JsonDocument.Parse(meBody);
+            var fullName = meDoc.RootElement.GetProperty("fullName").GetString() ?? string.Empty;
+            _client.DefaultRequestHeaders.Authorization = null;
+
+            // search by the unique full name
+            var resp = await _client.GetAsync($"/api/v1/users?q={Uri.EscapeDataString(fullName)}");
+            resp.EnsureSuccessStatusCode();
+            var body = await resp.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(body);
+            Assert.True(doc.RootElement.ValueKind == JsonValueKind.Array);
+
+            var found = false;
+            foreach (var el in doc.RootElement.EnumerateArray())
+            {
+                if (el.TryGetProperty("id", out var idEl) && idEl.GetGuid() == userId)
+                {
+                    found = true;
+                    break;
+                }
+            }
+
+            Assert.True(found, "Registered user should be present in search results by full name");
+        }
+
+        [Fact]
+        public async Task Users_Search_ByEmail_ReturnsRegisteredUser()
+        {
+            var (userId, access, refresh) = await RegisterAndGetTokensAsync("player");
+
+            // register helper created email with prefix int_role_<guid>@example.com
+            // extract email prefix from RegisterAndGetTokensAsync by registering separately here
+            var email = $"int_player_{Guid.NewGuid():N}@example.com";
+            var password = "Password1";
+
+            var register = new
+            {
+                Email = email,
+                Password = password,
+                FullName = "SearchByEmail Tester",
+                PhoneNumber = "+380123456700",
+                DateOfBirth = "1990-01-01",
+                Role = "player"
+            };
+
+            var regResp = await _client.PostAsJsonAsync("/api/v1/auth/register", register);
+            regResp.EnsureSuccessStatusCode();
+
+            // search by email local-part
+            var query = email.Split('@')[0];
+            var resp = await _client.GetAsync($"/api/v1/users?q={Uri.EscapeDataString(query)}");
+            resp.EnsureSuccessStatusCode();
+            var body = await resp.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(body);
+            Assert.True(doc.RootElement.ValueKind == JsonValueKind.Array);
+
+            var found = false;
+            foreach (var el in doc.RootElement.EnumerateArray())
+            {
+                if (el.TryGetProperty("fullName", out var fnEl) && fnEl.GetString() == "SearchByEmail Tester")
+                {
+                    found = true;
+                    break;
+                }
+            }
+
+            Assert.True(found, "Registered user should be present in search results by email");
         }
     }
 }

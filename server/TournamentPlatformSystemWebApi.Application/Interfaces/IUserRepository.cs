@@ -1,5 +1,6 @@
 using System;
 using TournamentPlatformSystemWebApi.Core.Entities;
+using TournamentPlatformSystemWebApi.Application.DTOs;
 
 namespace TournamentPlatformSystemWebApi.Application.Interfaces;
 
@@ -12,5 +13,7 @@ public interface IUserRepository : IRepository<User, Guid>
     Task SetRefreshTokenForUser(Guid userId, string token, string jwtId, DateTime expiresAt);
     Task<bool> ValidateRefreshTokenForUser(Guid userId, string token, string jwtId);
     Task RevokeUserTokens(Guid userId);
+
+    Task<IReadOnlyList<UserSearchItemResponce>> SearchUsersAsync(string query, int limit = 20);
 
 }

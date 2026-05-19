@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using TournamentPlatformSystemWebApi.Infrastructure.Entities;
 using TournamentPlatformSystemWebApi.Application.DTOs.Auth;
 using TournamentPlatformSystemWebApi.Application.Interfaces;
+using TournamentPlatformSystemWebApi.Application.DTOs;
 using TournamentPlatformSystemWebApi.Infrastructure.Context;
 using TournamentPlatformSystemWebApi.Core.Entities;
 using AutoMapper;
@@ -217,6 +218,34 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Repositories
 
                 _context.Set<RefreshTokenModel>().UpdateRange(existing);
             }
+        }
+
+        public async Task<IReadOnlyList<UserSearchItemResponce>> SearchUsersAsync(string query, int limit = 20)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return await _context.Set<UserModel>()
+                .AsNoTracking()
+                .Where(u => u.IsOrganizer != true)
+                .OrderBy(u => u.FullName)
+                .Select(u => new UserSearchItemResponce { Id = u.Id, FullName = u.FullName })
+                .Take(limit)
+                .ToListAsync();
+            }
+
+            var q = query.Trim().ToLowerInvariant();
+
+            var results = await _context.Set<UserModel>()
+                .AsNoTracking()
+                .Include(u => u.UserDetail)
+                .Where(u => u.IsOrganizer != true && (EF.Functions.Like(u.FullName.ToLower(), $"%{q}%")
+                            || (u.UserDetail != null && EF.Functions.Like(u.UserDetail.Email.ToLower(), $"%{q}%"))))
+                .OrderBy(u => u.FullName)
+                .Select(u => new UserSearchItemResponce { Id = u.Id, FullName = u.FullName })
+                .Take(limit)
+                .ToListAsync();
+
+            return results;
         }
     }
 }
