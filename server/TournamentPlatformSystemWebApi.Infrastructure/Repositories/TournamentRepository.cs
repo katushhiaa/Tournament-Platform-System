@@ -2,6 +2,8 @@ using System;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
+using Npgsql.EntityFrameworkCore.PostgreSQL;
+using TournamentPlatformSystemWebApi.Application.DTOs;
 using TournamentPlatformSystemWebApi.Application.Interfaces;
 using TournamentPlatformSystemWebApi.Core.Entities;
 using TournamentPlatformSystemWebApi.Infrastructure.Context;
@@ -167,6 +169,83 @@ public class TournamentRepository : BaseRepository<Tournament, TournamentModel>,
             .ThenBy(m => m.OrderNumber)
             .ProjectTo<TournamentPlatformSystemWebApi.Core.Entities.Match>(_mapper.ConfigurationProvider)
             .ToListAsync();
+    }
+
+    public async Task<IReadOnlyList<TournamentPreviewDto>> GetForUserAsync(Guid userId, int page, int pageSize)
+    {
+        var skip = (page - 1) * pageSize;
+
+        var rows = await _context.Set<TournamentModel>()
+            .AsNoTracking()
+            .Where(t => t.OrganizerId == userId || t.Teams.Any(team => team.UserTeams.Any(ut => ut.UserId == userId)))
+            .OrderByDescending(t => t.StartDate)
+            .ThenBy(t => t.Id)
+            .Skip(skip)
+            .Take(pageSize)
+            .Select(t => new
+            {
+                t.Id,
+                Title = t.Name,
+                t.Status,
+                t.BackgroundImg,
+                SportName = t.Theme != null ? t.Theme.Name : null,
+                t.StartDate,
+                t.MaxTeams,
+                ParticipantsCount = t.Teams.Count(team => team.IsDisqualified == null || team.IsDisqualified == false)
+            })
+            .ToListAsync();
+
+        return rows.Select(r => new TournamentPreviewDto
+        {
+            Id = r.Id,
+            Title = r.Title,
+            Status = r.Status.ToString().ToLowerInvariant(),
+            BackgroundImg = r.BackgroundImg,
+            SportName = r.SportName,
+            StartDate = r.StartDate,
+            ParticipantsCount = r.ParticipantsCount,
+            MaxParticipants = r.MaxTeams
+        }).ToList();
+    }
+
+    public async Task<IReadOnlyList<TournamentPreviewDto>> GetAllPreviewAsync(int page, int pageSize, bool randomize)
+    {
+        var skip = (page - 1) * pageSize;
+
+        var query = _context.Set<TournamentModel>()
+            .AsNoTracking();
+
+        query = randomize
+            ? query.OrderBy(_ => EF.Functions.Random())
+            : query.OrderByDescending(t => t.StartDate).ThenBy(t => t.Id);
+
+        var rows = await query
+            .Skip(skip)
+            .Take(pageSize)
+            .Select(t => new
+            {
+                t.Id,
+                Title = t.Name,
+                t.Status,
+                t.BackgroundImg,
+                SportName = t.Theme != null ? t.Theme.Name : null,
+                t.StartDate,
+                t.MaxTeams,
+                ParticipantsCount = t.Teams.Count(team => team.IsDisqualified == null || team.IsDisqualified == false)
+            })
+            .ToListAsync();
+
+        return rows.Select(r => new TournamentPreviewDto
+        {
+            Id = r.Id,
+            Title = r.Title,
+            Status = r.Status.ToString().ToLowerInvariant(),
+            BackgroundImg = r.BackgroundImg,
+            SportName = r.SportName,
+            StartDate = r.StartDate,
+            ParticipantsCount = r.ParticipantsCount,
+            MaxParticipants = r.MaxTeams
+        }).ToList();
     }
 
 }

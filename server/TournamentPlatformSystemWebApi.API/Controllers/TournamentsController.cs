@@ -691,6 +691,118 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
             }
         }
 
+        [HttpGet]
+        [SwaggerOperation(Summary = "Список турнірів (preview)", Description = "Повертає список турнірів для списків UI. Роль: Guest/Player/Organizer.")]
+        [SwaggerResponse(200, Type = typeof(IEnumerable<TournamentPreviewDto>), Description = "Список турнірів")]
+        [SwaggerResponse(400, Type = typeof(ErrorResponseDto), Description = "Невалідні дані")]
+        public async Task<IActionResult> GetAllTournaments([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] bool randomize = false)
+        {
+            try
+            {
+                var tournaments = await _tournamentService.GetAllTournamentsAsync(page, pageSize, randomize);
+                return Ok(tournaments);
+            }
+            catch (ValidationException ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status400BadRequest,
+                        Type = "ValidationError",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return BadRequest(err);
+            }
+            catch (Exception ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status500InternalServerError,
+                        Type = "InternalServerError",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return StatusCode(500, err);
+            }
+        }
+
+        [HttpGet("user")]
+        [SwaggerOperation(Summary = "Список турнірів користувача", Description = "Повертає список турнірів, де користувач є організатором або учасником. Роль: Guest/Player/Organizer.")]
+        [SwaggerResponse(200, Type = typeof(IEnumerable<TournamentPreviewDto>), Description = "Список турнірів користувача")]
+        [SwaggerResponse(400, Type = typeof(ErrorResponseDto), Description = "Невалідні дані")]
+        public async Task<IActionResult> GetUserTournaments([FromQuery] Guid userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        {
+            if (userId == Guid.Empty)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status400BadRequest,
+                        Type = "BadRequest",
+                        Message = "userId is required",
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return BadRequest(err);
+            }
+
+            try
+            {
+                var tournaments = await _tournamentService.GetTournamentsForUserAsync(userId, page, pageSize);
+                return Ok(tournaments);
+            }
+            catch (ValidationException ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status400BadRequest,
+                        Type = "ValidationError",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return BadRequest(err);
+            }
+            catch (Exception ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status500InternalServerError,
+                        Type = "InternalServerError",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return StatusCode(500, err);
+            }
+        }
+
 
         [HttpGet("{id}")]
         [SwaggerOperation(Summary = "Одержати повні деталі турніру", Description = "Повертає повну інформацію про турнір: учасники, матчі, метадані. Роль: Guest/Player/Organizer.")]
