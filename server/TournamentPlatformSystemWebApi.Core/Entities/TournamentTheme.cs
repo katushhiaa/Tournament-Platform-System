@@ -6,4 +6,5 @@ namespace TournamentPlatformSystemWebApi.Core.Entities;
 public class TournamentTheme : BaseEntity
 {
     public string Name { get; set; } = null!;
+    public string? ImageUrl { get; set; }
 }

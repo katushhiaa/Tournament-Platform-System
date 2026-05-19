@@ -11,16 +11,16 @@ INSERT INTO account_state (name, description)
 SELECT 'banned', 'User account is banned'
 WHERE NOT EXISTS (SELECT 1 FROM account_state WHERE name = 'banned');
 
-INSERT INTO tournament_theme (name)
-SELECT 'Chess' WHERE NOT EXISTS (SELECT 1 FROM tournament_theme WHERE name = 'Chess');
-INSERT INTO tournament_theme (name)
-SELECT 'Tennis' WHERE NOT EXISTS (SELECT 1 FROM tournament_theme WHERE name = 'Tennis');
-INSERT INTO tournament_theme (name)
-SELECT 'Shooting' WHERE NOT EXISTS (SELECT 1 FROM tournament_theme WHERE name = 'Shooting');
-INSERT INTO tournament_theme (name)
-SELECT 'Boxing' WHERE NOT EXISTS (SELECT 1 FROM tournament_theme WHERE name = 'Boxing');
-INSERT INTO tournament_theme (name)
-SELECT 'Rocket League' WHERE NOT EXISTS (SELECT 1 FROM tournament_theme WHERE name = 'Rocket League');
+INSERT INTO tournament_theme (name, image_url)
+SELECT 'Chess', 'https://storage.googleapis.com/tournament-zvytiaga-images/chess.jpg' WHERE NOT EXISTS (SELECT 1 FROM tournament_theme WHERE name = 'Chess');
+INSERT INTO tournament_theme (name, image_url)
+SELECT 'Tennis', 'https://storage.googleapis.com/tournament-zvytiaga-images/tennis.jpg' WHERE NOT EXISTS (SELECT 1 FROM tournament_theme WHERE name = 'Tennis');
+INSERT INTO tournament_theme (name, image_url)
+SELECT 'Shooting', 'https://storage.googleapis.com/tournament-zvytiaga-images/shooting.jpg' WHERE NOT EXISTS (SELECT 1 FROM tournament_theme WHERE name = 'Shooting');
+INSERT INTO tournament_theme (name, image_url)
+SELECT 'Boxing', 'https://storage.googleapis.com/tournament-zvytiaga-images/boxing.jpg' WHERE NOT EXISTS (SELECT 1 FROM tournament_theme WHERE name = 'Boxing');
+INSERT INTO tournament_theme (name, image_url)
+SELECT 'Rocket League', 'https://storage.googleapis.com/tournament-zvytiaga-images/rocket-league.jpg' WHERE NOT EXISTS (SELECT 1 FROM tournament_theme WHERE name = 'Rocket League');
 -- ============================================================================
 -- SEED DATA FOR TOURNAMENT PLATFORM
 -- ============================================================================

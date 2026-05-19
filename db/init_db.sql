@@ -57,7 +57,8 @@ CREATE TABLE user_details (
     email VARCHAR(255) UNIQUE NOT NULL,
     date_of_birth DATE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    preferences_setup_completed BOOLEAN DEFAULT false
 );
 
 CREATE INDEX idx_user_details_user_id ON user_details(user_id);
@@ -85,16 +86,32 @@ CREATE INDEX idx_user_phone_phone_number ON user_phone(phone_number);
 CREATE TABLE tournament_theme (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(100) NOT NULL UNIQUE,
+    image_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Insert default themes
-INSERT INTO tournament_theme (name) VALUES
-    ('Chess'),
-    ('Tennis'),
-    ('Shooting'),
-    ('Boxing'),
-    ('Rocket League');
+INSERT INTO tournament_theme (name, image_url) VALUES
+    ('Chess', 'https://storage.googleapis.com/tournament-zvytiaga-images/chess.jpg'),
+    ('Tennis', 'https://storage.googleapis.com/tournament-zvytiaga-images/tennis.jpg'),
+    ('Shooting', 'https://storage.googleapis.com/tournament-zvytiaga-images/shooting.jpg'),
+    ('Boxing', 'https://storage.googleapis.com/tournament-zvytiaga-images/boxing.jpg'),
+    ('Rocket League', 'https://storage.googleapis.com/tournament-zvytiaga-images/rocket-league.jpg');
+
+-- ============================================================================
+-- 6.1. CREATE USER_TOURNAMENT_THEME_PREFERENCE TABLE
+-- ============================================================================
+
+CREATE TABLE user_tournament_theme_preference (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+    theme_id UUID NOT NULL REFERENCES tournament_theme(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_user_theme_preference UNIQUE (user_id, theme_id)
+);
+
+CREATE INDEX idx_user_theme_pref_user_id ON user_tournament_theme_preference(user_id);
+CREATE INDEX idx_user_theme_pref_theme_id ON user_tournament_theme_preference(theme_id);
 
 -- ============================================================================
 -- 7. CREATE TOURNAMENT TABLE (with background_img, soft delete & audit trail)

@@ -10,5 +10,6 @@ namespace TournamentPlatformSystemWebApi.Core.Entities
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public ICollection<string> Phones { get; set; } = new List<string>();
+        public bool PreferencesSetupCompleted { get; set; } = false;
     }
 }

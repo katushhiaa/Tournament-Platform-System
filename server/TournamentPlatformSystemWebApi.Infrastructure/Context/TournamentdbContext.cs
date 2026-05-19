@@ -26,6 +26,7 @@ public partial class TournamentdbContext : DbContext
     public virtual DbSet<UserPhoneModel> UserPhones { get; set; }
     public virtual DbSet<UserTeamModel> UserTeams { get; set; }
     public virtual DbSet<RefreshTokenModel> RefreshTokens { get; set; }
+    public virtual DbSet<UserTournamentThemePreferenceModel> UserTournamentThemePreferences { get; set; }
     // OnConfiguring removed. Use dependency-injected DbContextOptions or the design-time factory.
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -239,6 +240,8 @@ public partial class TournamentdbContext : DbContext
             entity.Property(e => e.Name)
                 .HasMaxLength(100)
                 .HasColumnName("name");
+            entity.Property(e => e.ImageUrl)
+                .HasColumnName("image_url");
         });
 
         modelBuilder.Entity<UserModel>(entity =>
@@ -313,6 +316,9 @@ public partial class TournamentdbContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("updated_at");
+            entity.Property(e => e.PreferencesSetupCompleted)
+                .HasDefaultValueSql("false")
+                .HasColumnName("preferences_setup_completed");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
             entity.HasOne(d => d.User).WithOne(p => p.UserDetail)
@@ -382,6 +388,38 @@ public partial class TournamentdbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("user_team_user_id_fkey");
         });
+
+        modelBuilder.Entity<UserTournamentThemePreferenceModel>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("user_tournament_theme_preference_pkey");
+
+            entity.ToTable("user_tournament_theme_preference");
+
+            entity.HasIndex(e => new { e.UserId, e.ThemeId }, "unique_user_theme_preference").IsUnique();
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("gen_random_uuid()")
+                .HasColumnName("id");
+            
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.ThemeId).HasColumnName("theme_id");
+            
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+
+            entity.HasOne(d => d.Theme).WithMany(p => p.UserPreferences)
+                .HasForeignKey(d => d.ThemeId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("user_tournament_theme_preference_theme_id_fkey");
+
+            entity.HasOne(d => d.User).WithMany(p => p.UserThemePreferences)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("user_tournament_theme_preference_user_id_fkey");
+        });
+
         modelBuilder.Entity<RefreshTokenModel>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("refresh_token_pkey");
