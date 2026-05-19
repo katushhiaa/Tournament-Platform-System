@@ -32,7 +32,7 @@ namespace Tests
             // Assert: claims
             Assert.Equal(userId.ToString(), token.Payload.Sub);
             Assert.Equal(email, token.Payload[JwtRegisteredClaimNames.Email]);
-            Assert.Equal(role, token.Payload[System.Security.Claims.ClaimTypes.Role]);
+            Assert.Equal(role, token.Payload["role"]);
             Assert.Equal(isOrganizer.ToString(), token.Payload["isOrganizer"]?.ToString());
 
             // Assert: issuer/audience

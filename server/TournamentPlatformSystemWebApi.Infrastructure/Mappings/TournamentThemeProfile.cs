@@ -11,7 +11,10 @@ public class TournamentThemeProfile : Profile
     {
         CreateMap<TournamentThemeModel, TournamentTheme>();
 
-        CreateMap<TournamentTheme, TournamentThemeModel>();
+        CreateMap<TournamentTheme, TournamentThemeModel>()
+            .ForMember(d => d.CreatedAt, o => o.Ignore())
+            .ForMember(d => d.Tournaments, o => o.Ignore())
+            .ForMember(d => d.UserPreferences, o => o.Ignore());
     }
 }
 
