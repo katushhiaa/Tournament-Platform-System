@@ -27,7 +27,8 @@ namespace TournamentPlatformSystemWebApi.Application.DTOs
         [Required]
         public Guid? Sport { get; set; }
 
-        [Range(2, 1024)]
+        [Required]
+        [Range(2, 128)]
         public int MaxParticipants { get; set; } = 2;
 
 

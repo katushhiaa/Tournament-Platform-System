@@ -9,8 +9,7 @@ namespace TournamentPlatformSystemWebApi.API.Swagger.Examples
         {
             return new TokensResponseDto
             {
-                AccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                RefreshToken = "123124784y19472hjskbfkjsdcqsuycghqbf9uoikjca"
+                AccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
             };
         }
