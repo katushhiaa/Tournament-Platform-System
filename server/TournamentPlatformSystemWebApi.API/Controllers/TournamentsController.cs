@@ -12,6 +12,7 @@ using System.IO;
 using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 using TournamentPlatformSystemWebApi.Common.Exceptions;
+using TournamentPlatformSystemWebApi.Core.Entities;
 namespace TournamentPlatformSystemWebApi.API.Controllers
 {
     [ApiController]
@@ -692,14 +693,16 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
         }
 
         [HttpGet]
-        [SwaggerOperation(Summary = "Список турнірів (preview)", Description = "Повертає список турнірів для списків UI. Роль: Guest/Player/Organizer.")]
+        [SwaggerOperation(Summary = "Список турнірів (preview)", Description = "Повертає список турнірів для списків UI. Роль: Guest/Player/Organizer. Опційні параметри: page, pageSize, randomize, status (CSV; case-insensitive). Допустимі значення status: REGISTRATION_OPEN, REGISTRATION_CLOSED, IN_PROGRESS, COMPLETED, DRAFT.")]
         [SwaggerResponse(200, Type = typeof(IEnumerable<TournamentPreviewDto>), Description = "Список турнірів")]
+        [SwaggerResponseExample(200, typeof(Swagger.Examples.TournamentPreviewListExample))]
         [SwaggerResponse(400, Type = typeof(ErrorResponseDto), Description = "Невалідні дані")]
-        public async Task<IActionResult> GetAllTournaments([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] bool randomize = false)
+        public async Task<IActionResult> GetAllTournaments([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] bool randomize = false, [FromQuery] string? status = null)
         {
             try
             {
-                var tournaments = await _tournamentService.GetAllTournamentsAsync(page, pageSize, randomize);
+                var statuses = ParseStatuses(status);
+                var tournaments = await _tournamentService.GetAllTournamentsAsync(page, pageSize, randomize, statuses);
                 return Ok(tournaments);
             }
             catch (ValidationException ex)
@@ -739,10 +742,11 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
         }
 
         [HttpGet("user")]
-        [SwaggerOperation(Summary = "Список турнірів користувача", Description = "Повертає список турнірів, де користувач є організатором або учасником. Роль: Guest/Player/Organizer.")]
+        [SwaggerOperation(Summary = "Список турнірів користувача", Description = "Повертає список турнірів, де користувач є організатором або учасником. Роль: Guest/Player/Organizer. Опційні параметри: page, pageSize, status (CSV; case-insensitive). Допустимі значення status: REGISTRATION_OPEN, REGISTRATION_CLOSED, IN_PROGRESS, COMPLETED, DRAFT.")]
         [SwaggerResponse(200, Type = typeof(IEnumerable<TournamentPreviewDto>), Description = "Список турнірів користувача")]
+        [SwaggerResponseExample(200, typeof(Swagger.Examples.TournamentPreviewListExample))]
         [SwaggerResponse(400, Type = typeof(ErrorResponseDto), Description = "Невалідні дані")]
-        public async Task<IActionResult> GetUserTournaments([FromQuery] Guid userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        public async Task<IActionResult> GetUserTournaments([FromQuery] Guid userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] string? status = null)
         {
             if (userId == Guid.Empty)
             {
@@ -764,7 +768,8 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
 
             try
             {
-                var tournaments = await _tournamentService.GetTournamentsForUserAsync(userId, page, pageSize);
+                var statuses = ParseStatuses(status);
+                var tournaments = await _tournamentService.GetTournamentsForUserAsync(userId, page, pageSize, statuses);
                 return Ok(tournaments);
             }
             catch (ValidationException ex)
@@ -801,6 +806,27 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
 
                 return StatusCode(500, err);
             }
+        }
+
+        private static IReadOnlyList<TournamentStatus>? ParseStatuses(string? statusCsv)
+        {
+            if (string.IsNullOrWhiteSpace(statusCsv))
+                return null;
+
+            var tokens = statusCsv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (tokens.Length == 0)
+                return null;
+
+            var parsed = new List<TournamentStatus>();
+            foreach (var token in tokens)
+            {
+                if (!Enum.TryParse<TournamentStatus>(token, true, out var status))
+                    return null;
+
+                parsed.Add(status);
+            }
+
+            return parsed.Distinct().ToList();
         }
 
 

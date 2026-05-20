@@ -171,12 +171,20 @@ public class TournamentRepository : BaseRepository<Tournament, TournamentModel>,
             .ToListAsync();
     }
 
-    public async Task<IReadOnlyList<TournamentPreviewDto>> GetForUserAsync(Guid userId, int page, int pageSize)
+    public async Task<IReadOnlyList<TournamentPreviewDto>> GetForUserAsync(Guid userId, int page, int pageSize, IReadOnlyList<TournamentStatus>? statuses)
     {
         var skip = (page - 1) * pageSize;
 
-        var rows = await _context.Set<TournamentModel>()
-            .AsNoTracking()
+        var statusFilters = statuses != null && statuses.Count > 0
+            ? statuses.Select(s => (TournamentStatusType)s).ToList()
+            : null;
+        var query = _context.Set<TournamentModel>()
+            .AsNoTracking();
+
+        if (statusFilters != null)
+            query = query.Where(t => statusFilters.Contains(t.Status));
+
+        var rows = await query
             .Where(t => t.OrganizerId == userId || t.Teams.Any(team => team.UserTeams.Any(ut => ut.UserId == userId)))
             .OrderByDescending(t => t.StartDate)
             .ThenBy(t => t.Id)
@@ -208,12 +216,19 @@ public class TournamentRepository : BaseRepository<Tournament, TournamentModel>,
         }).ToList();
     }
 
-    public async Task<IReadOnlyList<TournamentPreviewDto>> GetAllPreviewAsync(int page, int pageSize, bool randomize)
+    public async Task<IReadOnlyList<TournamentPreviewDto>> GetAllPreviewAsync(int page, int pageSize, bool randomize, IReadOnlyList<TournamentStatus>? statuses)
     {
         var skip = (page - 1) * pageSize;
 
+        var statusFilters = statuses != null && statuses.Count > 0
+            ? statuses.Select(s => (TournamentStatusType)s).ToList()
+            : null;
+
         var query = _context.Set<TournamentModel>()
             .AsNoTracking();
+
+        if (statusFilters != null)
+            query = query.Where(t => statusFilters.Contains(t.Status));
 
         query = randomize
             ? query.OrderBy(_ => EF.Functions.Random())

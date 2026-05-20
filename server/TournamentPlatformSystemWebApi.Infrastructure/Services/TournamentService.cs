@@ -443,7 +443,7 @@ public class TournamentService : ITournamentService
         return dtos;
     }
 
-    public async Task<IReadOnlyList<TournamentPreviewDto>> GetTournamentsForUserAsync(Guid userId, int page, int pageSize)
+    public async Task<IReadOnlyList<TournamentPreviewDto>> GetTournamentsForUserAsync(Guid userId, int page, int pageSize, IReadOnlyList<TournamentStatus>? statuses)
     {
         if (page < 1)
             throw new ValidationException("Page must be greater than or equal to 1");
@@ -451,10 +451,10 @@ public class TournamentService : ITournamentService
         if (pageSize < 1)
             throw new ValidationException("PageSize must be greater than or equal to 1");
 
-        return await _tournamentRepository.GetForUserAsync(userId, page, pageSize);
+        return await _tournamentRepository.GetForUserAsync(userId, page, pageSize, statuses);
     }
 
-    public async Task<IReadOnlyList<TournamentPreviewDto>> GetAllTournamentsAsync(int page, int pageSize, bool randomize)
+    public async Task<IReadOnlyList<TournamentPreviewDto>> GetAllTournamentsAsync(int page, int pageSize, bool randomize, IReadOnlyList<TournamentStatus>? statuses)
     {
         if (page < 1)
             throw new ValidationException("Page must be greater than or equal to 1");
@@ -462,6 +462,6 @@ public class TournamentService : ITournamentService
         if (pageSize < 1)
             throw new ValidationException("PageSize must be greater than or equal to 1");
 
-        return await _tournamentRepository.GetAllPreviewAsync(page, pageSize, randomize);
+        return await _tournamentRepository.GetAllPreviewAsync(page, pageSize, randomize, statuses);
     }
 }
