@@ -1,13 +1,10 @@
 <script setup lang="ts">
-const participants = [
-  'Shevchenko Taras Hryhorovych',
-  'Kozak Volodymyr Petrovych',
-  'Melnyk Mariia Ivanivna',
-  'Kovalenko Oleksandr Viktorovych',
-  'Tkachenko Artem Ihorovych',
-  'Lysenko Hanna Vitaliivna',
-  'Bondarenko Olena Mykolaivna',
-]
+import type { Participant }
+from '../../types/Participant'
+
+defineProps<{
+  participants: Participant[]
+}>()
 </script>
 
 <template>
@@ -19,10 +16,10 @@ const participants = [
     <div class="list">
       <div
         v-for="participant in participants"
-        :key="participant"
+        :key="participant.id"
         class="participant-card"
       >
-        {{ participant }}
+        {{ participant.name }}
       </div>
     </div>
 

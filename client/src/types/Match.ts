@@ -1,21 +1,30 @@
 export type MatchStatus =
     | 'pending'
+    | 'scheduled'
     | 'active'
-    | 'completed';
+    | 'completed'
+    | 'bye'
 
-export interface IMatchDto {
-    matchId: string;
-    tournamentId: string;
-    round: number;
-    orderNumber: number;
+export interface MatchInfo {
+    matchId: string
 
-    player1Id: string;
-    player2Id: string;
+    tournamentId: string
 
-    status: MatchStatus;
+    round: number
 
-    scorePlayer1?: number;
-    scorePlayer2?: number;
+    orderNumber: number
 
-    winnerId?: string;
+    player1Id: string | null
+
+    player2Id: string | null
+
+    status: MatchStatus
+
+    isBye: boolean
+
+    scorePlayer1: number | null
+
+    scorePlayer2: number | null
+
+    winnerId: string | null
 }
