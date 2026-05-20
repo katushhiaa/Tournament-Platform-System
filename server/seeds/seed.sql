@@ -224,3 +224,100 @@ WHERE NOT EXISTS (SELECT 1 FROM user_phone WHERE user_id = '00000000-0000-0000-0
 INSERT INTO user_phone (user_id, phone_number)
 SELECT '00000000-0000-0000-0000-000000000012'::uuid, '+1-555-1201'
 WHERE NOT EXISTS (SELECT 1 FROM user_phone WHERE user_id = '00000000-0000-0000-0000-000000000012'::uuid AND phone_number = '+1-555-1201');
+
+-- ==========================================================================
+-- 4. INSERT TOURNAMENTS
+-- ==========================================================================
+
+INSERT INTO tournament (
+    id,
+    name,
+    organizer_id,
+    theme_id,
+    max_teams,
+    background_img,
+    start_date,
+    registration_deadline,
+    end_date,
+    description,
+    conditions,
+    status
+)
+SELECT
+    '11111111-1111-1111-1111-111111111111'::uuid,
+    'City Chess Open',
+    '00000000-0000-0000-0000-000000000001'::uuid,
+    (SELECT id FROM tournament_theme WHERE name = 'Chess'),
+    16,
+    'https://storage.googleapis.com/tournament-zvytiaga-images/chess.jpg',
+    '2026-06-15 09:00:00',
+    '2026-06-10 23:59:59',
+    '2026-06-16 18:00:00',
+    'Open chess tournament for all skill levels.',
+    'Standard FIDE rules. Bring your own set if possible.',
+    'REGISTRATION_OPEN'
+WHERE NOT EXISTS (
+    SELECT 1 FROM tournament WHERE id = '11111111-1111-1111-1111-111111111111'::uuid
+);
+
+INSERT INTO tournament (
+    id,
+    name,
+    organizer_id,
+    theme_id,
+    max_teams,
+    background_img,
+    start_date,
+    registration_deadline,
+    end_date,
+    description,
+    conditions,
+    status
+)
+SELECT
+    '22222222-2222-2222-2222-222222222222'::uuid,
+    'Summer Tennis Cup',
+    '00000000-0000-0000-0000-000000000002'::uuid,
+    (SELECT id FROM tournament_theme WHERE name = 'Tennis'),
+    32,
+    'https://storage.googleapis.com/tournament-zvytiaga-images/tennis.jpg',
+    '2026-07-05 10:00:00',
+    '2026-06-30 23:59:59',
+    '2026-07-06 19:00:00',
+    'Outdoor hard-court tournament with group stage and playoffs.',
+    'Singles only. Players must bring their own racket.',
+    'REGISTRATION_OPEN'
+WHERE NOT EXISTS (
+    SELECT 1 FROM tournament WHERE id = '22222222-2222-2222-2222-222222222222'::uuid
+);
+
+INSERT INTO tournament (
+    id,
+    name,
+    organizer_id,
+    theme_id,
+    max_teams,
+    background_img,
+    start_date,
+    registration_deadline,
+    end_date,
+    description,
+    conditions,
+    status
+)
+SELECT
+    '33333333-3333-3333-3333-333333333333'::uuid,
+    'Rocket League Weekly',
+    '00000000-0000-0000-0000-000000000001'::uuid,
+    (SELECT id FROM tournament_theme WHERE name = 'Rocket League'),
+    16,
+    'https://storage.googleapis.com/tournament-zvytiaga-images/rocket-league.jpg',
+    '2026-06-05 18:00:00',
+    '2026-06-04 20:00:00',
+    '2026-06-05 22:00:00',
+    'Weekly 2v2 bracket with best-of-3 matches.',
+    'Teams of 2. Check-in 30 minutes before start.',
+    'REGISTRATION_OPEN'
+WHERE NOT EXISTS (
+    SELECT 1 FROM tournament WHERE id = '33333333-3333-3333-3333-333333333333'::uuid
+);
