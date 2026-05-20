@@ -2,7 +2,12 @@
   <article class="tournament-card">
     <div class="tournament-card__image-wrapper">
       <img :src="image" :alt="title" class="tournament-card__image" />
-      <span class="tournament-card__badge">Active</span>
+      <span
+        class="tournament-card__badge"
+        :class="statusClass(status)"
+      >
+        {{ statusLabel(status) }}
+      </span>
     </div>
 
     <div class="tournament-card__content">
@@ -26,14 +31,35 @@
 
 <script setup lang="ts">
 defineProps<{
-  id: string;
-  image: string;
-  title: string;
-  type: string;
-  date: string;
-  time: string;
-  participants: string;
+  id: string
+  image: string
+  title: string
+  type: string
+  date: string
+  time: string
+  participants: string
+  status?: string
 }>()
+
+const statusLabel = (status?: string): string => {
+  const map: Record<string, string> = {
+    registration_open: 'Registration',
+    in_progress: 'Active',
+    completed: 'Finished',
+    draft: 'Draft',
+  }
+  return map[status ?? ''] ?? status ?? 'Active'
+}
+
+const statusClass = (status?: string): string => {
+  const map: Record<string, string> = {
+    registration_open: 'badge--blue',
+    in_progress: 'badge--green',
+    completed: 'badge--grey',
+    draft: 'badge--grey',
+  }
+  return map[status ?? ''] ?? 'badge--green'
+}
 </script>
 
 <style scoped>
@@ -113,5 +139,8 @@ defineProps<{
   align-items: center;
   justify-content: center;
   text-decoration: none;
-}   
+} 
+.badge--green { background: #84c082; }
+.badge--blue  { background: #1531ce; }
+.badge--grey  { background: #5a6570; }  
 </style>

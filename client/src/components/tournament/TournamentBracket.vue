@@ -1,65 +1,57 @@
 <script setup lang="ts">
-/*import type {
+import type {
   IBracketStructure,
 } from '../../types/Bracket'
 
 defineProps<{
   rounds: IBracketStructure
-}>()*/
-const rounds = [
-  [
-    'Shevchenko Taras\nHryhorovych',
-    'Kovalenko Oksana\nViktorovych',
-  ],
-  [
-    'Melnyk Maria\nIvanivna',
-    'Kozak Volodymyr\nPetrovych',
-  ],
-]
+}>()
 </script>
 
 <template>
   <section class="bracket">
     <h2 class="title">
-      Player grid
+      Tournament bracket
     </h2>
 
-    <div class="tournament">
-      <!-- ROUND 1 -->
-      <div class="round first">
+    <div
+      v-if="!rounds.length"
+      class="empty"
+    >
+      Bracket has not been generated yet
+    </div>
+
+    <div
+      v-else
+      class="rounds"
+    >
+      <div
+        v-for="round in rounds"
+        :key="round.round"
+        class="round"
+      >
+        <h3 class="round-title">
+          {{ round.roundDisplayName }}
+        </h3>
+
         <div
-          v-for="(match, index) in rounds" 
-          :key="index"
+          v-for="match in round.matches"
+          :key="match.matchId"
           class="match"
         >
           <div class="player">
-            {{ match[0] }}
+            {{ match.player1Id || 'TBD' }}
           </div>
 
           <div class="player">
-            {{ match[1] }}
+            {{ match.player2Id || 'TBD' }}
+          </div>
+
+          <div class="status">
+            {{ match.status }}
           </div>
         </div>
       </div>
-
-      <!-- CONNECTORS -->
-      <div class="connectors">
-        <div class="connector top"></div>
-        <div class="connector bottom"></div>
-      </div>
-
-      <!-- SEMI -->
-      <div class="round second">
-        <div class="winner"></div>
-
-        <div class="winner second-winner"></div>
-      </div>
-
-      <!-- FINAL CONNECTOR -->
-      <div class="final-connector"></div>
-
-      <!-- FINAL -->
-      <div class="champion"></div>
     </div>
   </section>
 </template>
@@ -71,130 +63,57 @@ const rounds = [
 
 .title {
   text-align: center;
-
   font-size: 32px;
   font-weight: 600;
-
   color: white;
-
-  margin-bottom: 110px;
+  margin-bottom: 60px;
 }
 
-.tournament {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.empty {
+  text-align: center;
+  color: rgba(255,255,255,0.7);
+  font-size: 18px;
 }
 
-/* ROUND 1 */
-
-.round.first {
+.rounds {
   display: flex;
-  flex-direction: column;
-  gap: 120px;
+  gap: 40px;
+  overflow-x: auto;
+}
+
+.round {
+  min-width: 260px;
+}
+
+.round-title {
+  text-align: center;
+  margin-bottom: 24px;
+  color: white;
 }
 
 .match {
-  display: flex;
-  flex-direction: column;
-  gap: 70px;
+  background: rgba(21, 49, 206, 0.35);
+  border: 1px solid #1531ce;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
 }
 
 .player {
-  width: 240px;
-  min-height: 62px;
-
   background: #1531ce;
-
-  border-radius: 10px;
-
-  padding: 14px 18px;
-
-  display: flex;
-  align-items: center;
-
+  border-radius: 8px;
+  padding: 12px;
+  color: white;
 }
 
-
-/* CONNECTORS */
-
-.connectors {
-  width: 120px;
-
-  display: flex;
-  flex-direction: column;
-
-  gap: 188px;
-
-  margin-left: 0;
+.player + .player {
+  margin-top: 12px;
 }
 
-.connector {
-  width: 120px;
-  height: 132px;
-
-  border-top: 2px solid rgba(255,255,255,0.7);
-  border-right: 2px solid rgba(255,255,255,0.7);
-  border-bottom: 2px solid rgba(255,255,255,0.7);
-}
-
-/* ROUND 2 */
-
-.round.second {
-  display: flex;
-  flex-direction: column;
-
-  gap: 170px;
-
-  margin-left: 0;
-}
-
-.winner {
-  width: 240px;
-  height: 62px;
-
-  background: #8e8e8e;
-
-  border-radius: 10px;
-
-  position: relative;
-}
-
-
-
-/* FINAL CONNECTOR */
-
-.final-connector {
-  width: 80px;
-  height: 196px;
-
-  border-top: 2px solid rgba(255,255,255,0.7);
-  border-right: 2px solid rgba(255,255,255,0.7);
-  border-bottom: 2px solid rgba(255,255,255,0.7);
-}
-
-/* CHAMPION */
-
-.champion {
-  width: 240px;
-  height: 62px;
-
-  background: #8e8e8e;
-
-  border-radius: 10px;
-
-  position: relative;
-}
-
-
-@media (max-width: 1200px) {
-  .tournament {
-    transform: scale(0.75);
-    transform-origin: top center;
-  }
-
-  .bracket {
-    overflow-x: auto;
-  }
+.status {
+  margin-top: 12px;
+  text-align: center;
+  color: rgba(255,255,255,0.7);
+  font-size: 14px;
 }
 </style>

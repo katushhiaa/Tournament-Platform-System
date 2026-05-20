@@ -3,18 +3,13 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 import GenerateBracketButton from './GenerateBracketButton.vue'
-
 import type { ITournament } from '../../types/Tournament'
 
-import chessCard from '../../assets/chess-card.png'
+import defaultBg from '../../assets/chess-card.png'
 
 const props = defineProps<{
   tournament: ITournament
-
-  currentUser?: {
-    id: string
-    role: string
-  } | null
+  currentUser?: { id: string; role: string } | null
 }>()
 
 const emit = defineEmits<{
@@ -23,16 +18,22 @@ const emit = defineEmits<{
 
 const router = useRouter()
 
-const isOrganizer = computed(() => {
-  return (
-    props.currentUser?.id ===
-    props.tournament.organizerId
-  )
-})
+const isOrganizer = computed(() =>
+  props.currentUser?.id === props.tournament.organizerId
+)
 
-const handleEditTournament = (
-  id: string,
-) => {
+const coverImage = computed(() =>
+  props.tournament.backgroundImg ?? defaultBg
+)
+
+const formatDate = (iso: string) =>
+  new Date(iso).toLocaleDateString('uk-UA', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })
+
+const handleEditTournament = (id: string) => {
   router.push(`/tournaments/${id}/edit`)
 }
 </script>
@@ -40,7 +41,7 @@ const handleEditTournament = (
 <template>
   <section class="header">
     <img
-      :src="chessCard"
+      :src="coverImage"
       alt="Tournament"
       class="image"
     />
@@ -63,20 +64,9 @@ const handleEditTournament = (
             {{ tournament.sportName }}
           </p>
 
-          <p>
-            Date start:
-            {{ tournament.startDate }}
-          </p>
-
-          <p>
-            Date end:
-            {{ tournament.endDate }}
-          </p>
-
-          <p>
-            End of registration:
-            {{ tournament.registrationCloseDate }}
-          </p>
+          <p>Date start: {{ formatDate(tournament.startDate) }}</p>
+          <p>Date end: {{ formatDate(tournament.endDate) }}</p>
+          <p>End of registration: {{ formatDate(tournament.registrationCloseDate) }}</p>
 
           <p>
             Participants:

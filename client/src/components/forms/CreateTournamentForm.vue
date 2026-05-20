@@ -241,7 +241,7 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
-
+console.log("CREATE TOURNAMENT PAGE LOADED")
 const minStartDate = new Date()
   .toISOString()
   .slice(0, 16)
@@ -350,8 +350,7 @@ const handleBannerChange = (
   bannerFileName.value = file.name
 }
 
-const toIsoDate = (value: string) =>
-  new Date(value).toISOString()
+const toIsoDate = (value: string) => value
 
 const focusFirstError = () => {
   if (errors.title) {
