@@ -10,12 +10,10 @@ const axiosInstance = axios.create({
 });
 
 axiosInstance.interceptors.request.use((config) => {
-    const authStore = useAuthStore();
-
-    if (authStore.token) {
-        config.headers.Authorization = `Bearer ${authStore.token}`;
+    const token = localStorage.getItem('zvytiaha_token');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
     }
-
     return config;
 });
 

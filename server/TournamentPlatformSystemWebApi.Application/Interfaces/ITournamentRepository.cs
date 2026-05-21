@@ -1,4 +1,5 @@
 using System;
+using TournamentPlatformSystemWebApi.Application.DTOs;
 using TournamentPlatformSystemWebApi.Core.Entities;
 
 namespace TournamentPlatformSystemWebApi.Application.Interfaces;
@@ -14,4 +15,6 @@ public interface ITournamentRepository : IRepository<Tournament, Guid>
     Task<bool> DisqualifyParticipantAsync(Guid tournamentId, Guid userId);
     Task AddMatchesAsync(IEnumerable<TournamentPlatformSystemWebApi.Core.Entities.Match> matches);
     Task<IReadOnlyList<TournamentPlatformSystemWebApi.Core.Entities.Match>> GetMatchesAsync(Guid tournamentId);
+    Task<IReadOnlyList<TournamentPreviewDto>> GetForUserAsync(Guid userId, int page, int pageSize, IReadOnlyList<TournamentStatus>? statuses);
+    Task<IReadOnlyList<TournamentPreviewDto>> GetAllPreviewAsync(int page, int pageSize, bool randomize, IReadOnlyList<TournamentStatus>? statuses);
 }

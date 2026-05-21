@@ -1,46 +1,108 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import GenerateBracketButton from './GenerateBracketButton.vue'
-
 import type { ITournament } from '../../types/Tournament'
+import type { Participant } from '../../types/Participant'
+import { useAuthStore } from '../../stores/authStore'
+import { participationService } from '../../services/participationService'
 
-import chessCard from '../../assets/chess-card.png'
+import defaultBg from '../../assets/hero-card.jpg'
 
 const props = defineProps<{
   tournament: ITournament
-
-  currentUser?: {
-    id: string
-    role: string
-  } | null
+  participants: Participant[]
+  currentUser?: { id: string; role: string } | null
 }>()
 
 const emit = defineEmits<{
   'refresh-bracket': []
+  'refresh-participants': []
 }>()
 
 const router = useRouter()
+const authStore = useAuthStore()
 
-const isOrganizer = computed(() => {
-  return (
-    props.currentUser?.id ===
-    props.tournament.organizerId
+// --- Стан ---
+const isJoining = ref(false)
+const actionError = ref<string | null>(null)
+
+// --- Обчислення ---
+const coverImage = computed(() =>
+  props.tournament.backgroundImg ?? defaultBg
+)
+
+const formatDate = (iso: string) =>
+  new Date(iso).toLocaleDateString('uk-UA', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })
+
+const isOrganizer = computed(() =>
+  props.currentUser?.id === props.tournament.organizerId
+)
+
+const isGuest = computed(() => !authStore.isAuthenticated)
+
+//видалити
+const isAlreadyRegistered = computed(() =>
+  props.participants.some(
+    p => p.name === authStore.currentUser?.email
   )
-})
+)
 
-const handleEditTournament = (
-  id: string,
-) => {
-  router.push(`/tournaments/${id}/edit`)
+//розкомітити після видалення вище
+/*const isAlreadyRegistered = computed(() =>
+    props.participants.some(p => p.userId === authStore.currentUser?.userId)
+)*/
+
+const showSubmitButton = computed(() =>
+  !isOrganizer.value && !isAlreadyRegistered.value &&
+  props.tournament.status === 'registration_open'
+)
+
+const showCancelButton = computed(() =>
+  !isOrganizer.value && isAlreadyRegistered.value
+)
+
+// --- Дії ---
+const handleJoin = async () => {
+  
+  if (isGuest.value) {
+    router.push('/login')
+    return
+  }
+
+  try {
+    isJoining.value = true
+    actionError.value = null
+    await participationService.addParticipant(
+      props.tournament.id,
+      authStore.currentUser!.userId,
+    )
+    emit('refresh-participants')
+  } catch (e: any) {
+    if (e?.response?.status === 409) {
+      actionError.value = 'You are already registered or the tournament is full.'
+    } else {
+      actionError.value = 'Failed to join. Please try again.'
+    }
+  } finally {
+    isJoining.value = false
+  }
+}
+
+const handleEditTournament = () => {
+  router.push(`/tournaments/${props.tournament.id}/edit`)
 }
 </script>
 
 <template>
   <section class="header">
     <img
-      :src="chessCard"
+      :src="coverImage"
       alt="Tournament"
       class="image"
     />
@@ -63,20 +125,9 @@ const handleEditTournament = (
             {{ tournament.sportName }}
           </p>
 
-          <p>
-            Date start:
-            {{ tournament.startDate }}
-          </p>
-
-          <p>
-            Date end:
-            {{ tournament.endDate }}
-          </p>
-
-          <p>
-            End of registration:
-            {{ tournament.registrationCloseDate }}
-          </p>
+          <p>Date start: {{ formatDate(tournament.startDate) }}</p>
+          <p>Date end: {{ formatDate(tournament.endDate) }}</p>
+          <p>End of registration: {{ formatDate(tournament.registrationCloseDate) }}</p>
 
           <p>
             Participants:
@@ -90,26 +141,44 @@ const handleEditTournament = (
           </div>
 
           <div class="buttons">
+            
             <GenerateBracketButton
+              v-if="isOrganizer"
               :is-organizer="isOrganizer"
-              :tournament-status="
-                tournament.status
-              "
-              @generated="
-                emit('refresh-bracket')
-              "
+              :tournament-status="tournament.status"
+              :tournament-id="tournament.id"
+              @generated="emit('refresh-bracket')"
             />
 
+            <!-- Організатор: Edit (тільки якщо його турнір) -->
             <button
+              v-if="isOrganizer"
               class="button"
-              @click="
-                handleEditTournament(
-                  tournament.id,
-                )
-              "
+              @click="handleEditTournament"
             >
               Edit Tournament
             </button>
+
+            <!-- Гравець / Гість: Submit -->
+            <button
+              v-if="showSubmitButton"
+              class="button button--join"
+              :disabled="isJoining"
+              @click="handleJoin"
+            >
+              {{ isJoining ? 'Joining...' : 'Submit an application' }}
+            </button>
+
+            <!-- Гравець: Cancel (тільки до старту) -->
+            <button
+              v-if="showCancelButton"
+              class="button button--cancel"
+              disabled
+            >
+              Cancel participation
+            </button>
+
+            <p v-if="actionError" class="action-error">{{ actionError }}</p>
           </div>
         </div>
       </div>
@@ -232,6 +301,34 @@ const handleEditTournament = (
 
 .button:hover {
   opacity: 0.9;
+}
+
+.button--join {
+  background: #ff9800;
+  border: none;
+}
+
+.button--cancel {
+  background: transparent;
+  border: 2px solid #e57373;
+  color: #e57373;
+}
+
+.button--cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button--join:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.action-error {
+  color: #e57373;
+  font-size: 13px;
+  margin-top: 8px;
+  width: 100%;
 }
 
 @media (max-width: 1200px) {

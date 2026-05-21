@@ -1,5 +1,9 @@
 export interface Participant {
     id: string
-    fullName: string
-    avatarUrl?: string
+    //userId: string 
+    name: string
+    tournamentId: string
+    isDisqualified: boolean
+    createdAt: string
+    updatedAt: string
 }

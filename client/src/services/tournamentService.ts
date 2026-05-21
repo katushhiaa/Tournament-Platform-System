@@ -7,6 +7,7 @@ import type {
     IThemeOption,
     ITournament,
     ITournamentCreate,
+    ITournamentPreview,
     ITournamentResponse,
     ITournamentUpdate,
 } from '../types/Tournament';
@@ -238,25 +239,28 @@ export const tournamentService = {
 
                 if (status === 404) {
 
-                throw {
-                    errorCode: 'NOT_FOUND',
-                    message: 'Tournament not found',
+                    throw {
+                        errorCode: 'NOT_FOUND',
+                        message: 'Tournament not found',
+                    }
+                }
+
+                if (status === 409) {
+
+                    throw {
+                        errorCode: 'CONFLICT',
+                        message:
+                            'Editing unavailable. Tournament already active.',
+                    }
                 }
             }
 
-            if (status === 409) {
-
-                throw {
-                    errorCode: 'CONFLICT',
-                    message:
-                        'Editing unavailable. Tournament already active.',
-                }
-            }
+            throw buildTournamentApiError(error)
         }
 
-        throw buildTournamentApiError(error)
-    }
-},
+
+
+    },
 
     async startTournament(
         id: string,
@@ -273,16 +277,55 @@ export const tournamentService = {
         }
     },
 
-        async getSports(): Promise < IThemeOption[] > {
-            try {
-                const response =
-                    await axiosInstance.get<IThemeOption[]>(
-                        '/sport',
-                    );
+    async getSports(): Promise<IThemeOption[]> {
+        try {
+            const response =
+                await axiosInstance.get<IThemeOption[]>(
+                    '/sport',
+                );
 
-                return response.data;
-            } catch(error) {
-                throw buildTournamentApiError(error);
-            }
-        },
+            return response.data;
+        } catch (error) {
+            throw buildTournamentApiError(error);
+        }
+    },
+
+    async getTournaments(params?: {
+        page?: number
+        pageSize?: number
+        status?: string
+    }): Promise<ITournamentPreview[]> {
+        const response = await axiosInstance.get<ITournamentPreview[]>('/tournaments', {
+            params: {
+                page: params?.page ?? 1,
+                pageSize: params?.pageSize ?? 8,
+                ...(params?.status ? { status: params.status } : {}),
+            },
+        })
+        return response.data
+    },
+
+    async getUserTournaments(params: {
+        userId: string
+        page?: number
+        pageSize?: number
+        status?: string
+    }): Promise<ITournamentPreview[]> {
+        try {
+            const response = await axiosInstance.get<ITournamentPreview[]>(
+                '/tournaments/user',
+                {
+                    params: {
+                        userId: params.userId,
+                        page: params.page ?? 1,
+                        pageSize: params.pageSize ?? 4,
+                        ...(params.status ? { status: params.status } : {}),
+                    },
+                },
+            )
+            return response.data
+        } catch (error) {
+            throw buildTournamentApiError(error)
+        }
+    },
 };

@@ -6,21 +6,32 @@
       <button
         type="button"
         class="edit-form__upload"
+        :class="{ 'edit-form__upload--has-image': previewImage }"
+        @click="fileInput?.click()"
       >
-        <img :src="uploadBannerIcon" class="edit-form__upload-icon" />
+        <template v-if="isUploading">
+          <p class="edit-form__upload-title">Uploading...</p>
+        </template>
 
-        <p class="edit-form__upload-title">
-          Upload Banner
-        </p>
+        <template v-else-if="previewImage">
+          <img :src="previewImage" class="edit-form__upload-preview" />
+        </template>
 
-        <p class="edit-form__upload-text">
-          PNG, JPG up to 5MB
-        </p>
-
-        <p class="edit-form__upload-text">
-          Recommended 16:9
-        </p>
+        <template v-else>
+          <img :src="uploadBannerIcon" class="edit-form__upload-icon" />
+          <p class="edit-form__upload-title">Upload Banner</p>
+          <p class="edit-form__upload-text">PNG, JPG up to 5MB</p>
+          <p class="edit-form__upload-text">Recommended 16:9</p>
+        </template>
       </button>
+
+      <input
+        ref="fileInput"
+        type="file"
+        accept="image/png,image/jpeg"
+        style="display:none"
+        @change="handleFileChange"
+      />
 
       <div class="edit-form__grid">
 
@@ -59,13 +70,15 @@
           <div class="edit-form__input-wrapper">
             <img :src="sportIcon" class="edit-form__icon" />
 
-            <select
-              v-model="form.sport"
-              :disabled="isRegistrationClosed"
-            >
-              <option value="1">Game</option>
-              <option value="2">Chess</option>
-            </select>
+            <select v-model="form.sport" :disabled="isRegistrationClosed">
+                  <option
+                    v-for="sport in sports"
+                    :key="sport.id"
+                    :value="sport.id"
+                  >
+                    {{ sport.name }}
+                  </option>
+                </select>
           </div>
         </div>
 
@@ -131,35 +144,47 @@
     </div>
 
     <div class="edit-form__participants">
-
       <div class="edit-form__participants-header">
         <h2>Participants</h2>
-
         <button
           type="button"
           class="edit-form__add-player"
+          @click="showAddModal = true"
         >
           Add player
         </button>
       </div>
 
+      <p v-if="isLoading" style="color:rgba(255,255,255,0.6)">Loading...</p>
+
+      <p v-else-if="!participants.length" style="color:rgba(255,255,255,0.6)">
+        No participants yet.
+      </p>
+
       <div
-        v-for="player in participants"
-        :key="player"
+        v-else
+        v-for="participant in participants"
+        :key="participant.id"
         class="edit-form__participant"
       >
-        <span>{{ player }}</span>
-
+        <span>{{ participant.name }}</span>
         <button
           type="button"
           class="edit-form__disqualify"
-          @click="removeParticipant(player)"
+          @click="disqualifyParticipant(participant)"
         >
           Disqualify
         </button>
       </div>
-
     </div>
+
+    <!-- AddPlayerModal -->
+   <AddPlayersModal
+      v-if="showAddModal"
+      :tournament-id="tournamentId"
+      @close="showAddModal = false"
+      @player-added="handlePlayerAdded"
+    />
 
     <div class="edit-form__actions">
 
@@ -184,56 +209,156 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
+import { tournamentService } from '../../services/tournamentService'
+import { participationService } from '../../services/participationService'
+import type { Participant } from '../../types/Participant'
+
+import type { IThemeOption } from '../../types/Tournament'
 import uploadBannerIcon from '../../assets/icons/Upload Banner.png'
 import nameIcon from '../../assets/icons/Name.png'
 import sportIcon from '../../assets/icons/Sport.png'
 import peopleIcon from '../../assets/icons/people.png'
 import dateIcon from '../../assets/icons/date.png'
 import timeIcon from '../../assets/icons/time.png'
+import AddPlayersModal from '../modals/AddPlayersModal.vue'
+
+const props = defineProps<{
+  tournamentId: string
+}>()
 
 const router = useRouter()
-
 const isSubmitting = ref(false)
-
+const isLoading = ref(true)
 const isRegistrationClosed = ref(false)
+const participants = ref<Participant[]>([])
+const showAddModal = ref(false)
 
+const fileInput = ref<HTMLInputElement | null>(null)
+const previewImage = ref<string | null>(null)
+const isUploading = ref(false)
+
+const handleFileChange = async (e: Event) => {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+
+  // Показати превью
+  previewImage.value = URL.createObjectURL(file)
+
+  // Завантажити на сервер
+  try {
+    isUploading.value = true
+    const formData = new FormData()
+    formData.append('file', file)
+    await tournamentService.uploadTournamentImage(props.tournamentId, formData)
+  } catch (e) {
+    alert('Failed to upload image. Please try again.')
+    previewImage.value = null
+  } finally {
+    isUploading.value = false
+  }
+}
+
+const sports = ref<IThemeOption[]>([])
 const form = reactive({
-  title: 'Counter strike 2',
-  sport: '1',
-  startDate: '2026-05-24T12:00',
-  endDate: '2026-06-23T18:00',
-  registrationCloseDate: '2026-05-20T23:59',
-  maxParticipants: 64,
-  description: 'Tournament description',
-  conditions: 'Tournament conditions',
+  title: '',
+  sport: '',
+  startDate: '',
+  endDate: '',
+  registrationCloseDate: '',
+  maxParticipants: 0,
+  description: '',
+  conditions: '',
 })
 
-const participants = ref([
-  'Shevchenko Taras Hryhorovych',
-  'Kozak Volodymyr Petrovych',
-  'Melnyk Mariia Ivanivna',
-  'Tkachenko Artem Ihorovych',
-  'Lysenko Hanna Vitaliivna',
-  'Bondarenko Olena Mykolaivna',
-  'Bondaryk Oksana Mykolaivna',
-])
+// Форматуємо ISO в datetime-local формат
+const toDatetimeLocal = (iso: string): string => {
+  if (!iso) return ''
+  return iso.slice(0, 16)
+}
 
-const removeParticipant = (player: string) => {
-  participants.value =
-    participants.value.filter(p => p !== player)
+onMounted(async () => {
+  const sportsData = await tournamentService.getSports()
+  sports.value = sportsData
+  try {
+    const [tournament, participantsData] = await Promise.all([
+      tournamentService.getTournamentById(props.tournamentId),
+      participationService.getTournamentParticipants(props.tournamentId),
+    ])
+
+    form.title = tournament.title
+    form.sport = tournament.sportId
+    form.startDate = toDatetimeLocal(tournament.startDate)
+    form.endDate = toDatetimeLocal(tournament.endDate)
+    form.registrationCloseDate = toDatetimeLocal(tournament.registrationCloseDate)
+    form.maxParticipants = tournament.maxParticipants
+    form.description = tournament.description ?? ''
+    form.conditions = tournament.conditions ?? ''
+
+    if (tournament.backgroundImg) {
+      previewImage.value = tournament.backgroundImg
+    }
+
+    participants.value = participantsData
+
+    // Блокуємо редагування якщо реєстрація закрита
+    const closedStatuses = ['registration_closed', 'in_progress', 'completed']
+    isRegistrationClosed.value = closedStatuses.includes(tournament.status)
+
+  } catch (e) {
+    console.error('Failed to load tournament for edit', e)
+  } finally {
+    isLoading.value = false
+  }
+})
+
+const disqualifyParticipant = async (participant: Participant) => {
+  const confirmed = window.confirm(`Disqualify ${participant.name}?`)
+  if (!confirmed) return
+
+  try {
+    await participationService.removeParticipant(
+      props.tournamentId,
+      participant.id,//participant.userId
+    )
+    participants.value = participants.value.filter(p => p.id !== participant.id)
+  } catch (e) {
+    alert('Failed to disqualify participant.')
+  }
+}
+
+const handlePlayerAdded = async () => {
+  participants.value = await participationService.getTournamentParticipants(props.tournamentId)
+  showAddModal.value = false
 }
 
 const handleSubmit = async () => {
   isSubmitting.value = true
 
-  setTimeout(() => {
-    isSubmitting.value = false
+  try {
+    await tournamentService.updateTournament(props.tournamentId, {
+      title: form.title,
+      sport: form.sport,
+      startDate: new Date(form.startDate).toISOString(),
+      endDate: new Date(form.endDate).toISOString(),
+      registrationCloseDate: new Date(form.registrationCloseDate).toISOString(),
+      maxParticipants: Number(form.maxParticipants),
+      description: form.description || null,
+      conditions: form.conditions || null,
+    })
 
-    router.push('/my-tournaments')
-  }, 1000)
+    router.push(`/tournaments/${props.tournamentId}`)
+  } catch (e: any) {
+    if (e?.errorCode === 'CONFLICT') {
+      alert('Editing is blocked. Tournament is already active.')
+    } else {
+      alert('Failed to save changes. Please try again.')
+    }
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>
 
@@ -305,6 +430,18 @@ const handleSubmit = async () => {
 
 .edit-form__input-wrapper {
   position: relative;
+}
+
+.edit-form__upload--has-image {
+  padding: 0;
+  overflow: hidden;
+}
+
+.edit-form__upload-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 14px;
 }
 
 .edit-form__input-wrapper input,

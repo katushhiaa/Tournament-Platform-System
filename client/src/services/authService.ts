@@ -151,6 +151,8 @@ class AuthService {
             const loginResponse = await axiosInstance.post<ILoginResponse>('/auth/login', payload);
             const loginResult = loginResponse.data;
 
+            console.log('[authService] login raw response:', loginResult)
+
             if (!loginResult.tokens?.accessToken) {
                 throw {
                     errorCode: 'INVALID_RESPONSE',

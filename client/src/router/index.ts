@@ -8,6 +8,8 @@ import PlayerDashboardPage from '../views/PlayerDashboardPage.vue';
 import { useAuthStore } from '../stores/authStore';
 import CreateTournamentPage from '../views/CreateTournamentPage.vue';
 import EditTournamentPage from '../views/EditTournamentPage.vue'
+import TournamentsPage from '../views/TournamentsPage.vue'
+import MyTournamentsPage from '../views/MyTournamentsPage.vue'
 
 const router = createRouter({
     history: createWebHistory(),
@@ -90,6 +92,18 @@ const router = createRouter({
             path: '/tournaments/:id/edit',
             name: 'edit-tournament',
             component: EditTournamentPage,
+        },
+
+        {
+            path: '/tournaments',
+            name: 'tournaments',
+            component: TournamentsPage,
+        },
+        {
+            path: '/my-tournaments',
+            name: 'my-tournaments',
+            component: MyTournamentsPage,
+            meta: { requiresAuth: true },
         },
 
     ],

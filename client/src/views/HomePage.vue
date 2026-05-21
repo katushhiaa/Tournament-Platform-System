@@ -1,20 +1,58 @@
 <script setup lang="ts">
-import AppHeader from '../components/AppHeader.vue';
-import TournamentCard from '../components/TournamentCard.vue';
-import SiteFooter from '../components/SiteFooter.vue';
+import { onMounted, ref } from 'vue'
+import AppHeader from '../components/AppHeader.vue'
+import TournamentCard from '../components/TournamentCard.vue'
+import SiteFooter from '../components/SiteFooter.vue'
+import { tournamentService } from '../services/tournamentService'
+import type { ITournamentPreview } from '../types/Tournament'
 
-import heroBg from '../assets/hero-bg.png';
-import cs2Card from '../assets/cs2-card.png';
-import tennisCard from '../assets/tennis-card.png';
-import forzaCard from '../assets/forza-card.png';
-import chessCard from '../assets/chess-card.png';
-import organizersBg from '../assets/organizers-bg.png';
-import playersBg from '../assets/players-bg.png';
-import ctaBg from '../assets/cta-bg.png';
-import organizersTitleIcon from '../assets/icons/organizers-title-icon.svg';
-import playersTitleIcon from '../assets/icons/players-title-icon.svg';
-import checkIconBlue from '../assets/icons/check-icon-blue.svg';
-import checkIconGreen from '../assets/icons/check-icon-green.svg';
+import heroBg from '../assets/hero-bg.png'
+import organizersBg from '../assets/organizers-bg.png'
+import playersBg from '../assets/players-bg.png'
+import ctaBg from '../assets/cta-bg.png'
+import organizersTitleIcon from '../assets/icons/organizers-title-icon.svg'
+import playersTitleIcon from '../assets/icons/players-title-icon.svg'
+import checkIconBlue from '../assets/icons/check-icon-blue.svg'
+import checkIconGreen from '../assets/icons/check-icon-green.svg'
+
+
+import defaultCardBg from '../assets/hero-card.jpg'
+
+const tournaments = ref<ITournamentPreview[]>([])
+const tournamentsLoading = ref(true)
+const tournamentsError = ref(false)
+
+const formatDate = (iso: string): string => {
+    const d = new Date(iso)
+    return d.toLocaleDateString('uk-UA', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+    })
+}
+
+const formatTime = (iso: string): string => {
+    const d = new Date(iso)
+    return d.toLocaleTimeString('uk-UA', {
+        hour: '2-digit',
+        minute: '2-digit',
+    })
+}
+
+onMounted(async () => {
+    try {
+        tournaments.value = await tournamentService.getTournaments({
+          pageSize: 4,
+          status: 'IN_PROGRESS,REGISTRATION_OPEN',
+        })
+    } catch (e) {
+        console.error(e)
+        tournamentsError.value = true
+    } finally {
+        tournamentsLoading.value = false
+    }
+})
+
 </script>
 
 <template>
@@ -42,46 +80,40 @@ import checkIconGreen from '../assets/icons/check-icon-green.svg';
         </p>
 
         <div class="tournaments-grid">
-          <TournamentCard
-            id="3fa85f64-5717-4562-b3fc-2c963f66afa6"
-            :image="cs2Card"
-            title="Counter strike 2"
-            type="Game"
-            date="24.05.2026"
-            time="18:00"
-            participants="32/64"
-          />
-          <TournamentCard
-            id="550e8400-e29b-41d4-a716-446655440001"
-            :image="tennisCard"
-            title="Tennis tour"
-            type="Tennis"
-            date="28.06.2026"
-            time="16:00"
-            participants="6/6"
-          />
-          <TournamentCard
-            id="550e8400-e29b-41d4-a716-446655440001"
-            :image="forzaCard"
-            title="Forza horizon 5"
-            type="Game"
-            date="21.03.2026"
-            time="20:00"
-            participants="16/16"
-          />
-          <TournamentCard
-            id="e7b1c3d2-4f5a-4e6b-9a1b-2c3d4e5f6789"
-            :image="chessCard"
-            title="Chess tour"
-            type="Chess"
-            date="23.02.2026"
-            time="15:00"
-            participants="12/12"
-          />
-        </div>
+          <!-- Скелетони поки грузиться -->
+          <template v-if="tournamentsLoading">
+            <div
+              v-for="n in 4"
+              :key="n"
+              class="tournament-card-skeleton"
+            />
+          </template>
+
+        <!-- Помилка -->
+        <p v-else-if="tournamentsError" class="tournaments-error">
+          Failed to load tournaments. Please try again later.
+        </p>
+
+        <!-- Реальні дані -->
+        <TournamentCard
+          v-else
+          v-for="t in tournaments"
+          :key="t.id"
+          :id="t.id"
+          :image="t.backgroundImg ?? defaultCardBg"
+          :title="t.title"
+          :type="t.sportName"
+          :date="formatDate(t.startDate)"
+          :time="formatTime(t.startDate)"
+          :participants="`${t.participantsCount}/${t.maxParticipants}`"
+          :status="t.status"
+        />
+      </div>
 
         <div class="section__button-wrapper">
-          <button class="main-button">View All Tournaments</button>
+          <RouterLink to="/tournaments" class="main-button main-button--link">
+            View All Tournaments
+          </RouterLink>
         </div>
       </div>
     </section>
@@ -495,6 +527,32 @@ import checkIconGreen from '../assets/icons/check-icon-green.svg';
 .cta__content .main-button {
   width: 166px;
   height: 46px;
+  font-size: 16px;
+}
+
+.tournament-card-skeleton {
+  width: 230px;
+  min-height: 306px;
+  border-radius: 18px;
+  background: linear-gradient(
+    90deg,
+    #2e3a42 25%,
+    #3a4a54 50%,
+    #2e3a42 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.tournaments-error {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
   font-size: 16px;
 }
 
