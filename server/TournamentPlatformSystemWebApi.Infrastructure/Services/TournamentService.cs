@@ -390,6 +390,7 @@ public class TournamentService : ITournamentService
         {
             Id = team.Id,
             Name = team.Name,
+            UserId = userId,
             TournamentId = team.TournamentId,
             IsDisqualified = team.IsDisqualified,
             CreatedAt = team.CreatedAt,
