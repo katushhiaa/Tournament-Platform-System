@@ -7,7 +7,7 @@ namespace TournamentPlatformSystemWebApi.Core.Entities
     public class Match : BaseEntity
     {
         public Guid TournamentId { get; set; }
-        public Guid TeamAId { get; set; }
+        public Guid? TeamAId { get; set; }
         public Guid? TeamBId { get; set; }
         public Guid? WinnerId { get; set; }
         public int Level { get; set; }

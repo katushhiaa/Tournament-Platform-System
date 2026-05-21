@@ -15,6 +15,8 @@ namespace TournamentPlatformSystemWebApi.API.Swagger.Examples
                 Round = 1,
                 Player1Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
                 Player2Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+                Player1Name = "Team Alpha",
+                Player2Name = "Team Beta",
                 Status = "completed",
                 ScorePlayer1 = 2,
                 ScorePlayer2 = 1,

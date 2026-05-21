@@ -10,6 +10,8 @@ namespace TournamentPlatformSystemWebApi.Application.DTOs
         public int OrderNumber { get; set; }
         public Guid? Player1Id { get; set; }
         public Guid? Player2Id { get; set; }
+        public string? Player1Name { get; set; }
+        public string? Player2Name { get; set; }
         public string? Status { get; set; }
         public bool? IsBye { get; set; }
         public int? ScorePlayer1 { get; set; }

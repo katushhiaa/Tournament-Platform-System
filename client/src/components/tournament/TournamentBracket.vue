@@ -40,11 +40,11 @@ defineProps<{
           class="match"
         >
           <div class="player">
-            {{ match.player1Id || 'TBD' }}
+            {{ match.player1Name || 'TBD' }}
           </div>
 
           <div class="player">
-            {{ match.player2Id || 'TBD' }}
+            {{ match.player2Name || 'TBD' }}
           </div>
 
           <div class="status">

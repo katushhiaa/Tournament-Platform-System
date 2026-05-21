@@ -18,6 +18,10 @@ export interface MatchInfo {
 
     player2Id: string | null
 
+    player1Name: string | null
+
+    player2Name: string | null
+
     status: MatchStatus
 
     isBye: boolean

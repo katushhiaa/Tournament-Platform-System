@@ -8,7 +8,7 @@ public partial class MatchModel : BaseDbEntity
 {
     public Guid TournamentId { get; set; }
 
-    public Guid TeamAId { get; set; }
+    public Guid? TeamAId { get; set; }
 
     public Guid? TeamBId { get; set; }
 

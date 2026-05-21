@@ -1,6 +1,6 @@
 export interface Participant {
     id: string
-    //userId: string 
+    userId: string
     name: string
     tournamentId: string
     isDisqualified: boolean

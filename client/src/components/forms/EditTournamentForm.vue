@@ -321,7 +321,7 @@ const disqualifyParticipant = async (participant: Participant) => {
   try {
     await participationService.removeParticipant(
       props.tournamentId,
-      participant.id,//participant.userId
+      participant.userId
     )
     participants.value = participants.value.filter(p => p.id !== participant.id)
   } catch (e) {

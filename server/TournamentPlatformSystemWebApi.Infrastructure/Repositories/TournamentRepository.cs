@@ -80,6 +80,7 @@ public class TournamentRepository : BaseRepository<Tournament, TournamentModel>,
         return await _context.Set<TeamModel>()
             .AsNoTracking()
             .Where(t => t.TournamentId == tournamentId && (t.IsDisqualified == null || t.IsDisqualified == false))
+            .Include(t => t.UserTeams)
             .ProjectTo<Team>(_mapper.ConfigurationProvider)
             .ToListAsync();
     }
@@ -156,6 +157,17 @@ public class TournamentRepository : BaseRepository<Tournament, TournamentModel>,
             return mm;
         }).ToList();
 
+        // Convert Guid.Empty placeholders to nulls so DB foreign keys are not violated
+        foreach (var mm in models)
+        {
+            if (mm.TeamAId == Guid.Empty)
+                mm.TeamAId = null;
+            if (mm.TeamBId == Guid.Empty)
+                mm.TeamBId = null;
+            if (mm.WinnerId == Guid.Empty)
+                mm.WinnerId = null;
+        }
+
         await _context.Set<MatchModel>().AddRangeAsync(models);
         await _context.SaveChangesAsync();
     }
@@ -165,6 +177,8 @@ public class TournamentRepository : BaseRepository<Tournament, TournamentModel>,
         return await _context.Set<MatchModel>()
             .AsNoTracking()
             .Where(m => m.TournamentId == tournamentId)
+            .Include(m => m.TeamA)
+            .Include(m => m.TeamB)
             .OrderBy(m => m.Level)
             .ThenBy(m => m.OrderNumber)
             .ProjectTo<TournamentPlatformSystemWebApi.Core.Entities.Match>(_mapper.ConfigurationProvider)

@@ -69,7 +69,8 @@ namespace TournamentPlatformSystemWebApi.Core.Logic
                     StartDate = null,
                     IsValid = true,
                     TeamAName = a?.Name,
-                    TeamBName = b?.Name
+                    TeamBName = b?.Name,
+                    IsBye = false
                 };
 
                 // If opponent is missing (bye), auto-advance TeamA
@@ -77,8 +78,9 @@ namespace TournamentPlatformSystemWebApi.Core.Logic
                 {
                     match.TeamBId = null;
                     match.WinnerId = match.TeamAId;
+                    match.IsBye = true;
                     // Represent next-round participant as the actual advancing team
-                    nextRoundParticipants.Add(new BracketParticipant { Id = match.TeamAId, Name = match.TeamAName ?? string.Empty });
+                    nextRoundParticipants.Add(new BracketParticipant { Id = match.TeamAId ?? Guid.Empty, Name = match.TeamAName ?? string.Empty });
                 }
                 else
                 {
