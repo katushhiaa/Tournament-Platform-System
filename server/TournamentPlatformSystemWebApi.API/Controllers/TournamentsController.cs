@@ -944,6 +944,36 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
             }
         }
 
+        [HttpGet("{id}/events")]
+        [SwaggerOperation(Summary = "Get tournament events", Description = "Returns timeline events for the tournament.")]
+        [SwaggerResponse(200, Type = typeof(IEnumerable<TournamentPlatformSystemWebApi.Application.DTOs.EventDto>), Description = "List of events")]
+        [SwaggerResponse(404, Type = typeof(ErrorResponseDto), Description = "Tournament not found")]
+        public async Task<IActionResult> GetTournamentEvents(Guid id)
+        {
+            try
+            {
+                var events = await _tournamentService.GetTournamentEventsAsync(id);
+                return Ok(events);
+            }
+            catch (KeyNotFoundException)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status404NotFound,
+                        Type = "NotFound",
+                        Message = "Tournament not found",
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return NotFound(err);
+            }
+        }
+
         [HttpPost("{id}/participants")]
         [Authorize]
         [SwaggerOperation(Summary = "Додати учасника до турніру", Description = "Додає гравця до турніру. Приймає UserId гравця.")]

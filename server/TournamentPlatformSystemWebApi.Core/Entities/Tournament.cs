@@ -19,5 +19,7 @@ namespace TournamentPlatformSystemWebApi.Core.Entities
         public string? OrganizerName { get; set; }
         public string? ThemeName { get; set; }
         public Guid? ThemeId { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
     }
 }
