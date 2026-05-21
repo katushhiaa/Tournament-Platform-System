@@ -24,63 +24,157 @@
       </div>
 
       <section class="add-players-modal__section">
-        <label class="add-players-modal__label" for="playerSearch">Search by user</label>
+            <label class="add-players-modal__label" for="playerSearch">
+                Search by user
+            </label>
 
-        <div class="add-players-modal__input-wrapper">
-          <input
-            id="playerSearch"
-            v-model.trim="searchQuery"
-            class="add-players-modal__input"
-            placeholder="Find players by username..."
-          />
-          <span class="add-players-modal__search-icon">⌕</span>
-        </div>
+            <div class="add-players-modal__input-wrapper">
+                <input
+                    id="playerSearch"
+                    v-model.trim="searchQuery"
+                    class="add-players-modal__input"
+                    placeholder="Find players by username..."
+                    autocomplete="off"
+                />
+                <span class="add-players-modal__search-icon">
+                    {{ isSearching ? '...' : '⌕' }}
+                </span>
+            </div>
+
+            <ul v-if="searchResults.length" class="add-players-modal__dropdown">
+                <li
+                    v-for="user in searchResults"
+                    :key="user.id"
+                    class="add-players-modal__dropdown-item"
+                    @click="selectUser(user)"
+                >
+                    {{ user.fullName }}
+                </li>
+            </ul>
+
+            <p v-if="addError" class="add-players-modal__error">{{ addError }}</p>
+            <p v-if="addSuccess" class="add-players-modal__success">Player added successfully!</p>
       </section>
 
       <div class="add-players-modal__actions">
-        <button type="button" class="add-players-modal__button add-players-modal__button--cancel" @click="handleCancel">
-          Cancel
-        </button>
+          <button
+              type="button"
+              class="add-players-modal__button add-players-modal__button--cancel"
+              @click="handleCancel"
+          >
+              Cancel
+          </button>
 
-        <button type="button" class="add-players-modal__button add-players-modal__button--add" @click="handleAdd">
-          Add
-        </button>
+          <button
+              type="button"
+              class="add-players-modal__button add-players-modal__button--add"
+              :disabled="isAdding || !selectedUser"
+              @click="handleAdd"
+          >
+              {{ isAdding ? 'Adding...' : 'Add' }}
+          </button>
       </div>
+
+    
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue'
+import { userService, type IUserSearchItem } from '../../services/userService'
+import { participationService } from '../../services/participationService'
 
 const props = defineProps<{
-  tournamentId: string;
-}>();
+    tournamentId: string
+}>()
 
 const emit = defineEmits<{
-  close: [];
-}>();
-const searchQuery = ref('');
-const isCopied = ref(false);
+    close: []
+    playerAdded: []
+}>()
 
-const joinLink = computed(() => `${window.location.origin}/join/${props.tournamentId}`);
+const searchQuery = ref('')
+const isCopied = ref(false)
+const searchResults = ref<IUserSearchItem[]>([])
+const selectedUser = ref<IUserSearchItem | null>(null)
+const isSearching = ref(false)
+const isAdding = ref(false)
+const addError = ref<string | null>(null)
+const addSuccess = ref(false)
+
+const joinLink = computed(() =>
+    `${window.location.origin}/join/${props.tournamentId}`
+)
 
 const copyLink = async () => {
-  await navigator.clipboard.writeText(joinLink.value);
-  isCopied.value = true;
+    await navigator.clipboard.writeText(joinLink.value)
+    isCopied.value = true
+    window.setTimeout(() => { isCopied.value = false }, 1800)
+}
 
-  window.setTimeout(() => {
-    isCopied.value = false;
-  }, 1800);
-};
 
-const handleAdd = () => {
-  console.log('[AddPlayersModal] add player:', searchQuery.value);
-};
+let searchTimeout: ReturnType<typeof setTimeout>
+watch(searchQuery, (val) => {
+    selectedUser.value = null
+    addError.value = null
+    addSuccess.value = false
+    clearTimeout(searchTimeout)
+
+    if (!val) {
+        searchResults.value = []
+        return
+    }
+
+    searchTimeout = setTimeout(async () => {
+        try {
+            isSearching.value = true
+            searchResults.value = await userService.searchUsers(val)
+        } catch {
+            searchResults.value = []
+        } finally {
+            isSearching.value = false
+        }
+    }, 350)
+})
+
+const selectUser = (user: IUserSearchItem) => {
+    selectedUser.value = user
+    searchQuery.value = user.fullName
+    searchResults.value = []
+}
+
+const handleAdd = async () => {
+    if (!selectedUser.value) {
+        addError.value = 'Please select a user from the list.'
+        return
+    }
+
+    try {
+        isAdding.value = true
+        addError.value = null
+        await participationService.addParticipant(
+            props.tournamentId,
+            selectedUser.value.id,
+        )
+        addSuccess.value = true
+        searchQuery.value = ''
+        selectedUser.value = null
+        emit('playerAdded')
+    } catch (e: any) {
+        if (e?.response?.status === 409) {
+            addError.value = 'This player is already added or the tournament is full.'
+        } else {
+            addError.value = 'Failed to add player. Please try again.'
+        }
+    } finally {
+        isAdding.value = false
+    }
+}
 
 const handleCancel = () => {
-  emit('close');
-};
+    emit('close')
+}
 </script>
 
 <style scoped>
@@ -210,5 +304,35 @@ const handleCancel = () => {
   border: 1px solid #ff9800;
   background: #ff9800;
   color: #fffcf2;
+}
+
+.add-players-modal__dropdown {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    border: 1px solid #1531ce;
+    border-radius: 12px;
+    background: #2e3a42;
+    overflow: hidden;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.add-players-modal__dropdown-item {
+    padding: 14px 24px;
+    font-size: 18px;
+    cursor: pointer;
+    color: #fffcf2;
+    transition: background 0.15s ease;
+}
+
+.add-players-modal__dropdown-item:hover {
+    background: rgba(21, 49, 206, 0.35);
+}
+
+.add-players-modal__error {
+    margin: 10px 0 0;
+    color: #e57373;
+    font-size: 14px;
 }
 </style>

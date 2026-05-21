@@ -39,50 +39,20 @@ const formatTime = (iso: string): string => {
     })
 }
 
-/*onMounted(async () => {
+onMounted(async () => {
     try {
-        tournaments.value = await tournamentService.getTournaments()
-       // tournaments.value = await tournamentService.getTournaments({ pageSize: 4 })
+        tournaments.value = await tournamentService.getTournaments({
+          pageSize: 4,
+          status: 'IN_PROGRESS,REGISTRATION_OPEN',
+        })
     } catch (e) {
         console.error(e)
         tournamentsError.value = true
     } finally {
         tournamentsLoading.value = false
     }
-})*/
-
-onMounted(async () => {
-    try {
-        tournaments.value = await tournamentService.getTournaments()
-    } catch (e) {
-        console.warn('API недоступний, використовуємо мокові дані')
-        // Тимчасово поки бекенд не пофіксить GET /tournaments
-        tournaments.value = [
-            {
-                id: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
-                title: 'Counter Strike 2',
-                status: 'in_progress',
-                backgroundImg: null,
-                sportName: 'Game',
-                startDate: '2026-05-24T18:00:00Z',
-                participantsCount: 32,
-                maxParticipants: 64,
-            },
-            {
-                id: '550e8400-e29b-41d4-a716-446655440001',
-                title: 'Tennis Tour',
-                status: 'registration_open',
-                backgroundImg: null,
-                sportName: 'Tennis',
-                startDate: '2026-06-28T16:00:00Z',
-                participantsCount: 6,
-                maxParticipants: 16,
-            },
-        ]
-    } finally {
-        tournamentsLoading.value = false
-    }
 })
+
 </script>
 
 <template>
@@ -141,7 +111,9 @@ onMounted(async () => {
       </div>
 
         <div class="section__button-wrapper">
-          <button class="main-button">View All Tournaments</button>
+          <RouterLink to="/tournaments" class="main-button main-button--link">
+            View All Tournaments
+          </RouterLink>
         </div>
       </div>
     </section>

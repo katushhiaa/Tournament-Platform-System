@@ -289,35 +289,43 @@ export const tournamentService = {
             throw buildTournamentApiError(error);
         }
     },
-    /* async getTournaments(params?: {
-         page?: number;
-         pageSize?: number;
-     }): Promise<ITournamentPreview[]> {
-         try {
-             const response = await axiosInstance.get<ITournamentPreview[]>(
-                 '/tournaments',
-                 {
-                     params: {
-                         page: params?.page ?? 1,
-                         pageSize: params?.pageSize ?? 8,
-                     },
-                 },
-             );
-             return response.data;
-         } catch (error) {
-             throw buildTournamentApiError(error);
-         }
-     },*/
 
-    async getTournaments(_params?: {
-        page?: number;
-        pageSize?: number;
+    async getTournaments(params?: {
+        page?: number
+        pageSize?: number
+        status?: string
+    }): Promise<ITournamentPreview[]> {
+        const response = await axiosInstance.get<ITournamentPreview[]>('/tournaments', {
+            params: {
+                page: params?.page ?? 1,
+                pageSize: params?.pageSize ?? 8,
+                ...(params?.status ? { status: params.status } : {}),
+            },
+        })
+        return response.data
+    },
+
+    async getUserTournaments(params: {
+        userId: string
+        page?: number
+        pageSize?: number
+        status?: string
     }): Promise<ITournamentPreview[]> {
         try {
-            const response = await axiosInstance.get<ITournamentPreview[]>('/tournaments');
-            return response.data;
+            const response = await axiosInstance.get<ITournamentPreview[]>(
+                '/tournaments/user',
+                {
+                    params: {
+                        userId: params.userId,
+                        page: params.page ?? 1,
+                        pageSize: params.pageSize ?? 4,
+                        ...(params.status ? { status: params.status } : {}),
+                    },
+                },
+            )
+            return response.data
         } catch (error) {
-            throw buildTournamentApiError(error);
+            throw buildTournamentApiError(error)
         }
     },
 };

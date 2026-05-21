@@ -17,25 +17,34 @@
           <h2 class="dashboard-section__title">Active tournaments</h2>
           <p class="dashboard-section__subtitle">{{ activeSubtitle }}</p>
 
-          <div class="dashboard-section__grid">
+         <div class="dashboard-section__grid">
+            <div
+              v-if="loadingActive"
+              v-for="n in 4"
+              :key="n"
+              class="tournament-card-skeleton"
+            />
+
             <TournamentCard
+              v-else
               v-for="item in activeTournaments"
               :key="item.id"
               :id="item.id"
-              :image="item.image"
+              :image="item.backgroundImg ?? defaultCardBg"
               :title="item.title"
-              :type="item.type"
-              :date="item.date"
-              :time="item.time"
-              :participants="item.participants"
+              :type="item.sportName"
+              :date="formatDate(item.startDate)"
+              :time="formatTime(item.startDate)"
+              :participants="`${item.participantsCount}/${item.maxParticipants}`"
+              :status="item.status"
             />
           </div>
 
           <div class="dashboard-section__actions">
-            <button class="dashboard-button dashboard-button--blue">
+            <RouterLink to="/tournaments" class="dashboard-button dashboard-button--blue">
               <span class="dashboard-button__icon">☰</span>
               <span>View All Tournaments</span>
-            </button>
+            </RouterLink>
 
             <button
               v-if="showCreateButton"
@@ -55,24 +64,40 @@
           <p class="dashboard-section__subtitle">{{ mySubtitle }}</p>
 
           <div class="dashboard-section__grid">
+            <div
+              v-if="loadingMy"
+              v-for="n in 4"
+              :key="n"
+              class="tournament-card-skeleton"
+            />
+
+            <p
+              v-else-if="!myTournaments.length"
+              class="dashboard-section__empty"
+            >
+              You have no tournaments yet.
+            </p>
+
             <TournamentCard
+              v-else
               v-for="item in myTournaments"
-              :key="`my-${item.id}`"
+              :key="item.id"
               :id="item.id"
-              :image="item.image"
+              :image="item.backgroundImg ?? defaultCardBg"
               :title="item.title"
-              :type="item.type"
-              :date="item.date"
-              :time="item.time"
-              :participants="item.participants"
+              :type="item.sportName"
+              :date="formatDate(item.startDate)"
+              :time="formatTime(item.startDate)"
+              :participants="`${item.participantsCount}/${item.maxParticipants}`"
+              :status="item.status"
             />
           </div>
 
           <div class="dashboard-section__actions dashboard-section__actions--single">
-            <button class="dashboard-button dashboard-button--blue">
+            <RouterLink to="/my-tournaments" class="dashboard-button dashboard-button--blue">
               <span class="dashboard-button__icon">☰</span>
-              <span>View All Tournaments</span>
-            </button>
+              <span>View My Tournaments</span>
+            </RouterLink>
           </div>
         </div>
       </section>
@@ -83,121 +108,88 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
-import AppHeader from '../AppHeader.vue';
-import TournamentCard from '../TournamentCard.vue';
-import SiteFooter from '../SiteFooter.vue';
+import AppHeader from '../AppHeader.vue'
+import TournamentCard from '../TournamentCard.vue'
+import SiteFooter from '../SiteFooter.vue'
 
-import { useAuthStore } from '../../stores/authStore';
+import { useAuthStore } from '../../stores/authStore'
+import { tournamentService } from '../../services/tournamentService'
+import type { ITournamentPreview } from '../../types/Tournament'
 
-import heroBg from '../../assets/hero-bg.png';
-import cs2Card from '../../assets/cs2-card.png';
-import tennisCard from '../../assets/tennis-card.png';
-import forzaCard from '../../assets/forza-card.png';
-import chessCard from '../../assets/chess-card.png';
+import heroBg from '../../assets/hero-bg.png'
+import defaultCardBg from '../../assets/hero-card.jpg'
 
 defineProps<{
-  heroSubtitle: string;
-  activeSubtitle: string;
-  mySubtitle: string;
-  showCreateButton: boolean;
-}>();
+  heroSubtitle: string
+  activeSubtitle: string
+  mySubtitle: string
+  showCreateButton: boolean
+}>()
 
-const router = useRouter();
-
-const authStore = useAuthStore();
+const router = useRouter()
+const authStore = useAuthStore()
 
 const firstName = computed(() => {
-  const fullName = authStore.currentUser?.fullName?.trim();
-
-  if (!fullName) return 'Name';
-
-  return fullName.split(' ')[0];
-});
+  const fullName = authStore.currentUser?.fullName?.trim()
+  if (!fullName) return 'Name'
+  return fullName.split(' ')[0]
+})
 
 const goToCreateTournament = () => {
-  router.push({ name: 'create-tournament' });
-};
+  router.push({ name: 'create-tournament' })
+}
 
-const activeTournaments = [
-  {
-    id: '550e8400-e29b-41d4-a716-446655440001',
-    image: cs2Card,
-    title: 'Counter strike 2',
-    type: 'Game',
-    date: '24.05.2026',
-    time: '18:00',
-    participants: '32/64',
-  },
-  {
-    id: '550e8400-e29b-41d4-a716-446655440002',
-    image: tennisCard,
-    title: 'Tennis tour',
-    type: 'Tennis',
-    date: '28.06.2026',
-    time: '16:00',
-    participants: '6/6',
-  },
-  {
-    id: '550e8400-e29b-41d4-a716-446655440003',
-    image: forzaCard,
-    title: 'Forza horizon 5',
-    type: 'Game',
-    date: '21.03.2026',
-    time: '20:00',
-    participants: '16/16',
-  },
-  {
-    id: '550e8400-e29b-41d4-a716-446655440004',
-    image: chessCard,
-    title: 'Chess tour',
-    type: 'Chess',
-    date: '23.02.2026',
-    time: '15:00',
-    participants: '12/12',
-  },
-];
+// --- Дані ---
+const activeTournaments = ref<ITournamentPreview[]>([])
+const myTournaments = ref<ITournamentPreview[]>([])
+const loadingActive = ref(true)
+const loadingMy = ref(true)
 
-const myTournaments = [
-  {
-    id: '550e8400-e29b-41d4-a716-446655440005',
-    image: chessCard,
-    title: 'Chess tour',
-    type: 'Chess',
-    date: '23.02.2026',
-    time: '15:00',
-    participants: '12/12',
-  },
-  {
-    id: '550e8400-e29b-41d4-a716-446655440002',
-    image: tennisCard,
-    title: 'Tennis tour',
-    type: 'Tennis',
-    date: '28.06.2026',
-    time: '16:00',
-    participants: '6/6',
-  },
-  {
-    id: '550e8400-e29b-41d4-a716-446655440007',
-    image: cs2Card,
-    title: 'Counter strike 2',
-    type: 'Game',
-    date: '24.05.2026',
-    time: '18:00',
-    participants: '32/64',
-  },
-  {
-    id: '550e8400-e29b-41d4-a716-446655440008',
-    image: forzaCard,
-    title: 'Forza horizon 5',
-    type: 'Game',
-    date: '21.03.2026',
-    time: '20:00',
-    participants: '16/16',
-  },
-];
+const formatDate = (iso: string) =>
+  new Date(iso).toLocaleDateString('uk-UA', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })
+
+const formatTime = (iso: string) =>
+  new Date(iso).toLocaleTimeString('uk-UA', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+
+onMounted(async () => {
+  // Активні турніри
+  try {
+    activeTournaments.value = await tournamentService.getTournaments({
+      pageSize: 4,
+      status: 'IN_PROGRESS,REGISTRATION_OPEN',
+    })
+  } catch (e) {
+    console.error('Failed to load active tournaments', e)
+  } finally {
+    loadingActive.value = false
+  }
+
+  // Мої турніри
+  if (authStore.currentUser) {
+    try {
+      myTournaments.value = await tournamentService.getUserTournaments({
+        userId: authStore.currentUser.userId,
+        pageSize: 4,
+      })
+    } catch (e) {
+      console.error('Failed to load my tournaments', e)
+    } finally {
+      loadingMy.value = false
+    }
+  } else {
+    loadingMy.value = false
+  }
+})
 </script>
 
 <style scoped>
