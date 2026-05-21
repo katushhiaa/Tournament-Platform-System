@@ -496,6 +496,7 @@ public class TournamentService : ITournamentService
         }
 
         return events.AsReadOnly();
+    }
     public async Task<IReadOnlyList<TournamentPreviewDto>> GetTournamentsForUserAsync(Guid userId, int page, int pageSize, IReadOnlyList<TournamentStatus>? statuses)
     {
         if (page < 1)
