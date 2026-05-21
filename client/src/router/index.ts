@@ -10,6 +10,8 @@ import CreateTournamentPage from '../views/CreateTournamentPage.vue';
 import EditTournamentPage from '../views/EditTournamentPage.vue'
 import TournamentsPage from '../views/TournamentsPage.vue'
 import MyTournamentsPage from '../views/MyTournamentsPage.vue'
+import NotFoundPage from '../views/NotFoundPage.vue'
+import JoinTournamentPage from '../views/JoinTournamentPage.vue'
 
 const router = createRouter({
     history: createWebHistory(),
@@ -104,6 +106,18 @@ const router = createRouter({
             name: 'my-tournaments',
             component: MyTournamentsPage,
             meta: { requiresAuth: true },
+        },
+
+        {
+            path: '/:pathMatch(.*)*',
+            name: 'not-found',
+            component: NotFoundPage,
+        },
+
+        {
+            path: '/join/:id',
+            name: 'join-tournament',
+            component: JoinTournamentPage,
         },
 
     ],

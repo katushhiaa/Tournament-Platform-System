@@ -241,7 +241,7 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
-console.log("CREATE TOURNAMENT PAGE LOADED")
+
 const minStartDate = new Date()
   .toISOString()
   .slice(0, 16)
@@ -386,19 +386,15 @@ const validateField = (
   switch (field) {
     case 'title':
       if (!form.title.trim()) {
-        errors.title =
-          'Tournament name is required'
-      } else if (
-        form.title.length > 255
-      ) {
-        errors.title =
-          'Tournament name must be less than 255 characters'
+        errors.title = 'Tournament name is required'
+      } else if (form.title.trim().length < 3) {
+        errors.title = 'Minimum length is 3 characters'
+      } else if (form.title.length > 255) {
+        errors.title = 'Tournament name must be less than 255 characters'
       } else {
         errors.title = ''
       }
-
       break
-
     case 'sport':
       errors.sport = form.sport
         ? ''
