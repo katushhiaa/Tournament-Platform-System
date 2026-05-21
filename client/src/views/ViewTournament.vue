@@ -63,8 +63,29 @@ onMounted(async () => {
   }
 })
 
-const handleBracketGenerated = () => {
-  console.log('Bracket generated')
+const handleBracketGenerated = async () => {
+  const id = route.params.id as string
+  try {
+    const [updatedTournament, updatedBracket] = await Promise.all([
+      tournamentService.getTournamentById(id),
+      bracketService.getBracket(id),
+    ])
+    tournament.value = updatedTournament
+    bracket.value = updatedBracket
+    activeTab.value = 'grid'
+  } catch (e) {
+    console.error('Failed to refresh after bracket generation', e)
+  }
+}
+
+const handleRefreshParticipants = async () => {
+  const id = route.params.id as string
+  const [updatedParticipants, updatedTournament] = await Promise.all([
+    participationService.getTournamentParticipants(id),
+    tournamentService.getTournamentById(id),
+  ])
+  participants.value = updatedParticipants
+  tournament.value = updatedTournament
 }
 </script>
 
@@ -79,8 +100,12 @@ const handleBracketGenerated = () => {
       <template v-else-if="tournament">
         <TournamentHeader
           :tournament="tournament"
-          :current-user="authStore.currentUser ? { id: authStore.currentUser.userId, role: authStore.currentUser.role } : null"
+          :participants="participants"
+          :current-user="authStore.currentUser
+            ? { id: authStore.currentUser.userId, role: authStore.currentUser.role }
+            : null"
           @refresh-bracket="handleBracketGenerated"
+          @refresh-participants="handleRefreshParticipants"
         />
 
         <TournamentTabs

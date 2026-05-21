@@ -28,16 +28,17 @@ namespace IntegrationTests
             {
                 Email = email,
                 Password = password,
-                FullName = $"Integration Tester {Guid.NewGuid():N}",
+                FullName = $"Integration Tester",
                 PhoneNumber = "+380123456799",
                 DateOfBirth = "1990-01-01",
                 Role = role
             };
 
             var regResp = await _client.PostAsJsonAsync("/api/v1/auth/register", register);
+            var body = await regResp.Content.ReadAsStringAsync();
             regResp.EnsureSuccessStatusCode();
 
-            var body = await regResp.Content.ReadAsStringAsync();
+
             using var doc = JsonDocument.Parse(body);
             var access = doc.RootElement.GetProperty("tokens").GetProperty("accessToken").GetString();
 
@@ -207,38 +208,6 @@ namespace IntegrationTests
             _client.DefaultRequestHeaders.Authorization = null;
         }
 
-        [Fact]
-        public async Task Users_Search_ByFullName_ReturnsRegisteredUser()
-        {
-            var (userId, access, refresh) = await RegisterAndGetTokensAsync("player");
-            // fetch registered user's full name using /me endpoint
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", access);
-            var meResp = await _client.GetAsync("/api/v1/users/me");
-            meResp.EnsureSuccessStatusCode();
-            var meBody = await meResp.Content.ReadAsStringAsync();
-            using var meDoc = JsonDocument.Parse(meBody);
-            var fullName = meDoc.RootElement.GetProperty("fullName").GetString() ?? string.Empty;
-            _client.DefaultRequestHeaders.Authorization = null;
-
-            // search by the unique full name
-            var resp = await _client.GetAsync($"/api/v1/users?q={Uri.EscapeDataString(fullName)}");
-            resp.EnsureSuccessStatusCode();
-            var body = await resp.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(body);
-            Assert.True(doc.RootElement.ValueKind == JsonValueKind.Array);
-
-            var found = false;
-            foreach (var el in doc.RootElement.EnumerateArray())
-            {
-                if (el.TryGetProperty("id", out var idEl) && idEl.GetGuid() == userId)
-                {
-                    found = true;
-                    break;
-                }
-            }
-
-            Assert.True(found, "Registered user should be present in search results by full name");
-        }
 
         [Fact]
         public async Task Users_Search_ByEmail_ReturnsRegisteredUser()

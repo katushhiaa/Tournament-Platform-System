@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { tournamentService } from '../../services/tournamentService'
 
 const props = defineProps<{
   isOrganizer: boolean
   tournamentStatus: string
+  tournamentId: string
 }>()
 
 const emit = defineEmits<{
@@ -12,34 +14,27 @@ const emit = defineEmits<{
 
 const loading = ref(false)
 
-const canGenerate =
+/*const canGenerate = computed(() =>
   props.isOrganizer &&
-  props.tournamentStatus ===
-    'registration_closed'
+  props.tournamentStatus === 'registration_closed'
+)*/
+
+const canGenerate = computed(() => props.isOrganizer)
 
 const handleGenerate = async () => {
-  const confirmed = window.confirm(
-    'Generate tournament bracket?',
-  )
-
+  const confirmed = window.confirm('Generate tournament bracket?')
   if (!confirmed) return
 
   try {
     loading.value = true
-
-    /*
-      mock request
-    */
-
-    await new Promise((resolve) =>
-      setTimeout(resolve, 1500),
-    )
-
+    await tournamentService.startTournament(props.tournamentId)
     emit('generated')
-  } catch (e) {
-    console.error(e)
-
-    alert('Failed to generate bracket')
+  } catch (e: any) {
+    if (e?.errorCode === 'CONFLICT') {
+      alert('Not enough participants or tournament already started.')
+    } else {
+      alert('Failed to generate bracket. Please try again.')
+    }
   } finally {
     loading.value = false
   }

@@ -14,7 +14,8 @@ public class TeamProfile : Profile
             .ForMember(d => d.TournamentId, o => o.MapFrom(s => s.TournamentId))
             .ForMember(d => d.IsDisqualified, o => o.MapFrom(s => s.IsDisqualified))
             .ForMember(d => d.CreatedAt, o => o.MapFrom(s => s.CreatedAt))
-            .ForMember(d => d.UpdatedAt, o => o.MapFrom(s => s.UpdatedAt));
+            .ForMember(d => d.UpdatedAt, o => o.MapFrom(s => s.UpdatedAt))
+            .ForMember(d => d.Participants, o => o.MapFrom(s => s.UserTeams));
 
         CreateMap<Team, TeamModel>()
             .ForMember(d => d.MatchTeamAs, o => o.Ignore())

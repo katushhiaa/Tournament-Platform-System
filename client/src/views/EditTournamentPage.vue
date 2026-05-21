@@ -7,7 +7,7 @@
     </section>
 
     <section class="edit-tournament-page__content">
-      <EditTournamentForm />
+      <EditTournamentForm :tournament-id="tournamentId" />
     </section>
 
     <SiteFooter />
@@ -15,9 +15,14 @@
 </template>
 
 <script setup lang="ts">
+import { useRoute } from 'vue-router'
 import AppHeader from '../components/AppHeader.vue'
 import SiteFooter from '../components/SiteFooter.vue'
 import EditTournamentForm from '../components/forms/EditTournamentForm.vue'
+
+const route = useRoute()
+const tournamentId = route.params.id as string
+
 </script>
 
 <style scoped>

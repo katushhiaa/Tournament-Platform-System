@@ -240,6 +240,8 @@ public class TournamentService : ITournamentService
                         OrderNumber = m.OrderNumber,
                         Player1Id = m.TeamAId,
                         Player2Id = m.TeamBId,
+                        Player1Name = m.TeamAName,
+                        Player2Name = m.TeamBName,
                         Status = m.Status,
                         IsBye = m.IsBye,
                         ScorePlayer1 = m.TeamAScore,
@@ -382,7 +384,7 @@ public class TournamentService : ITournamentService
         if (already) throw new TournamentPlatformSystemWebApi.Common.Exceptions.ParticipantAlreadyAddedException("Player already added to tournament");
 
         // derive team name from user details
-        var teamName = user.UserDetail?.Email ?? user.FullName ?? $"player_{userId.ToString().Substring(0, 8)}";
+        var teamName = user.FullName ?? user.UserDetail?.Email ?? $"player_{userId.ToString().Substring(0, 8)}";
 
         var team = await _tournamentRepository.AddParticipantAsync(tournamentId, userId, teamName);
 
@@ -390,6 +392,7 @@ public class TournamentService : ITournamentService
         {
             Id = team.Id,
             Name = team.Name,
+            UserId = userId,
             TournamentId = team.TournamentId,
             IsDisqualified = team.IsDisqualified,
             CreatedAt = team.CreatedAt,
@@ -434,6 +437,7 @@ public class TournamentService : ITournamentService
         {
             Id = t.Id,
             Name = t.Name,
+            UserId = t.Participants.FirstOrDefault()?.UserId ?? Guid.Empty,
             TournamentId = t.TournamentId,
             IsDisqualified = t.IsDisqualified,
             CreatedAt = t.CreatedAt,
@@ -443,6 +447,60 @@ public class TournamentService : ITournamentService
         return dtos;
     }
 
+    public async Task<IReadOnlyList<TournamentPlatformSystemWebApi.Application.DTOs.EventDto>> GetTournamentEventsAsync(Guid tournamentId)
+    {
+        var existing = await _tournamentRepository.GetByIdAsync(tournamentId);
+        if (existing == null) throw new KeyNotFoundException("Tournament not found");
+
+        var events = new List<TournamentPlatformSystemWebApi.Application.DTOs.EventDto>();
+
+        // Created event
+        events.Add(new TournamentPlatformSystemWebApi.Application.DTOs.EventDto
+        {
+            Id = Guid.NewGuid(),
+            Type = "tournament_created",
+            Message = "Tournament created",
+            CreatedAt = existing.CreatedAt ?? DateTime.UtcNow
+        });
+
+        // Registration closed event if registration deadline passed or status indicates closed
+        if (existing.RegistrationDeadline != default && (existing.RegistrationDeadline <= DateTime.UtcNow || existing.Status == TournamentPlatformSystemWebApi.Core.Entities.TournamentStatus.REGISTRATION_CLOSED))
+        {
+            events.Add(new TournamentPlatformSystemWebApi.Application.DTOs.EventDto
+            {
+                Id = Guid.NewGuid(),
+                Type = "registration_closed",
+                Message = "Registration closed",
+                CreatedAt = existing.RegistrationDeadline
+            });
+        }
+
+        // Tournament started event when status is in progress
+        if (existing.Status == TournamentPlatformSystemWebApi.Core.Entities.TournamentStatus.IN_PROGRESS)
+        {
+            events.Add(new TournamentPlatformSystemWebApi.Application.DTOs.EventDto
+            {
+                Id = Guid.NewGuid(),
+                Type = "tournament_started",
+                Message = "Tournament started",
+                CreatedAt = existing.StartDate
+            });
+        }
+
+        // Tournament completed event when status is completed
+        if (existing.Status == TournamentPlatformSystemWebApi.Core.Entities.TournamentStatus.COMPLETED)
+        {
+            events.Add(new TournamentPlatformSystemWebApi.Application.DTOs.EventDto
+            {
+                Id = Guid.NewGuid(),
+                Type = "tournament_completed",
+                Message = "Tournament completed; winners determined",
+                CreatedAt = existing.EndDate != default ? existing.EndDate : DateTime.UtcNow
+            });
+        }
+
+        return events.AsReadOnly();
+    }
     public async Task<IReadOnlyList<TournamentPreviewDto>> GetTournamentsForUserAsync(Guid userId, int page, int pageSize, IReadOnlyList<TournamentStatus>? statuses)
     {
         if (page < 1)

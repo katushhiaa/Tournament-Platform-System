@@ -11,4 +11,24 @@ export const participationService = {
 
         return response.data
     },
+
+    async addParticipant(
+        tournamentId: string,
+        userId: string,
+    ): Promise<void> {
+        await axiosInstance.post(
+            `/tournaments/${tournamentId}/participants`,
+            { userId },
+        )
+    },
+
+    async removeParticipant(
+        tournamentId: string,
+        userId: string,
+        ): Promise<void> {
+        await axiosInstance.delete(
+            `/tournaments/${tournamentId}/participants/${userId}`,
+        )
+    },
 }
+
