@@ -185,6 +185,9 @@
       @close="showAddModal = false"
       @player-added="handlePlayerAdded"
     />
+    <div v-if="toast" class="edit-form__toast">
+      {{ toast }}
+    </div>
 
     <div class="edit-form__actions">
 
@@ -239,6 +242,8 @@ const showAddModal = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const previewImage = ref<string | null>(null)
 const isUploading = ref(false)
+
+const toast = ref('')
 
 const handleFileChange = async (e: Event) => {
   const file = (e.target as HTMLInputElement).files?.[0]
@@ -349,7 +354,12 @@ const handleSubmit = async () => {
       conditions: form.conditions || null,
     })
 
-    router.push(`/tournaments/${props.tournamentId}`)
+    toast.value = 'Changes saved successfully!'
+      setTimeout(() => {
+        toast.value = ''
+        router.push(`/tournaments/${props.tournamentId}`)
+      }, 2000)
+
   } catch (e: any) {
     if (e?.errorCode === 'CONFLICT') {
       alert('Editing is blocked. Tournament is already active.')
@@ -418,6 +428,17 @@ const handleSubmit = async () => {
   display: grid;
   grid-template-columns: repeat(2, 334px);
   gap: 22px 30px;
+}
+
+.edit-form__toast {
+  margin: 20px 0 0;
+  padding: 14px 24px;
+  border-radius: 12px;
+  background: #84c082;
+  color: #151d22;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
 }
 
 .edit-form__field label {

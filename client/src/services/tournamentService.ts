@@ -11,6 +11,7 @@ import type {
     ITournamentResponse,
     ITournamentUpdate,
 } from '../types/Tournament';
+import router from '../router';
 
 type BackendErrorResponse = {
     error?: {
@@ -179,13 +180,8 @@ export const tournamentService = {
                 }
 
                 if (status === 404) {
-
-                    window.location.href = '/404'
-
-                    throw {
-                        errorCode: 'NOT_FOUND',
-                        message: 'Tournament not found',
-                    }
+                    router.push({ name: 'not-found' })
+                    throw { errorCode: 'NOT_FOUND', message: 'Tournament not found' }
                 }
             }
 
