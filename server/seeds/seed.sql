@@ -21,6 +21,7 @@ INSERT INTO tournament_theme (name, image_url)
 SELECT 'Boxing', 'https://storage.googleapis.com/tournament-zvytiaga-images/boxing.jpg' WHERE NOT EXISTS (SELECT 1 FROM tournament_theme WHERE name = 'Boxing');
 INSERT INTO tournament_theme (name, image_url)
 SELECT 'Rocket League', 'https://storage.googleapis.com/tournament-zvytiaga-images/rocket-league.jpg' WHERE NOT EXISTS (SELECT 1 FROM tournament_theme WHERE name = 'Rocket League');
+
 -- ============================================================================
 -- SEED DATA FOR TOURNAMENT PLATFORM
 -- ============================================================================
@@ -82,7 +83,101 @@ WHERE NOT EXISTS (
 );
 
 -- ============================================================================
--- 2. INSERT USER DETAILS
+-- 2. INSERT TOURNAMENTS (Seeded showcase tournaments)
+-- ============================================================================
+
+INSERT INTO tournament (
+    name,
+    organizer_id,
+    theme_id,
+    max_teams,
+    background_img,
+    start_date,
+    registration_deadline,
+    end_date,
+    description,
+    conditions,
+    status
+)
+SELECT
+    'Spring Chess Open',
+    u.id,
+    t.id,
+    16,
+    t.image_url,
+    '2026-06-10 10:00:00',
+    '2026-06-05 23:59:00',
+    '2026-06-12 18:00:00',
+    'A fast-paced weekend Swiss-to-elimination showcase for intermediate players.',
+    'Open to ages 16+. Time control: 10+5. Fair play rules enforced; bring your own clock if possible.',
+    0
+FROM "user" u
+JOIN tournament_theme t ON t.name = 'Chess'
+WHERE u.id = '00000000-0000-0000-0000-000000000001'::uuid
+    AND NOT EXISTS (SELECT 1 FROM tournament WHERE name = 'Spring Chess Open');
+
+INSERT INTO tournament (
+    name,
+    organizer_id,
+    theme_id,
+    max_teams,
+    background_img,
+    start_date,
+    registration_deadline,
+    end_date,
+    description,
+    conditions,
+    status
+)
+SELECT
+    'City Tennis Cup',
+    u.id,
+    t.id,
+    32,
+    t.image_url,
+    '2026-07-03 09:00:00',
+    '2026-06-25 20:00:00',
+    '2026-07-05 20:00:00',
+    'Outdoor summer cup with group play and a knockout final.',
+    'Bring your own racket. Match format: best of 3 short sets. Dress code: light sportwear.',
+    0
+FROM "user" u
+JOIN tournament_theme t ON t.name = 'Tennis'
+WHERE u.id = '00000000-0000-0000-0000-000000000002'::uuid
+    AND NOT EXISTS (SELECT 1 FROM tournament WHERE name = 'City Tennis Cup');
+
+INSERT INTO tournament (
+    name,
+    organizer_id,
+    theme_id,
+    max_teams,
+    background_img,
+    start_date,
+    registration_deadline,
+    end_date,
+    description,
+    conditions,
+    status
+)
+SELECT
+    'Rocket League Night League',
+    u.id,
+    t.id,
+    8,
+    t.image_url,
+    '2026-06-20 19:00:00',
+    '2026-06-18 23:00:00',
+    '2026-06-20 23:00:00',
+    'Evening bracket for casual teams with quick rounds and highlight matches.',
+    'All players must join the event Discord. Best of 1 until semifinals, best of 3 for finals.',
+    0
+FROM "user" u
+JOIN tournament_theme t ON t.name = 'Rocket League'
+WHERE u.id = '00000000-0000-0000-0000-000000000001'::uuid
+    AND NOT EXISTS (SELECT 1 FROM tournament WHERE name = 'Rocket League Night League');
+
+-- ============================================================================
+-- 3. INSERT USER DETAILS
 -- ============================================================================
 
 INSERT INTO user_details (user_id, email, date_of_birth)
@@ -170,7 +265,7 @@ SELECT
 WHERE NOT EXISTS (SELECT 1 FROM user_details WHERE user_id = '00000000-0000-0000-0000-000000000012'::uuid);
 
 -- ============================================================================
--- 3. INSERT USER PHONE NUMBERS
+-- 4. INSERT USER PHONE NUMBERS
 -- ============================================================================
 
 INSERT INTO user_phone (user_id, phone_number)
