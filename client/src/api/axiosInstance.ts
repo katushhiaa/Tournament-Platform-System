@@ -3,6 +3,7 @@ import { useAuthStore } from '../stores/authStore';
 
 const axiosInstance = axios.create({
     baseURL: '/api/v1',
+    withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
@@ -55,10 +56,9 @@ axiosInstance.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                const response = await axios.post(
-                    '/api/v1/auth/refresh',
+                const response = await axiosInstance.post(
+                    '/auth/refresh',
                     null,
-                    { withCredentials: true },
                 );
 
                 const newToken = response.data?.accessToken ?? response.data?.tokens?.accessToken;

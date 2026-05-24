@@ -37,16 +37,10 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
             {
                 var result = await _authenticationService.RegisterAsync(dto);
 
-                var cookieOptions = new CookieOptions
+                if (!string.IsNullOrWhiteSpace(result.Tokens?.RefreshToken))
                 {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Strict,
-                    Path = "/api/v1/auth/refresh",
-                    Expires = DateTimeOffset.UtcNow.AddDays(15)
-                };
-
-                Response.Cookies.Append("refresh_token", result.Tokens.RefreshToken, cookieOptions);
+                    AppendRefreshCookies(result.Tokens.RefreshToken);
+                }
 
                 return Created(string.Empty, result);
             }
@@ -113,18 +107,9 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
             {
                 var tokens = await _authenticationService.LoginAsync(dto);
 
-                var cookieOptions = new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Strict,
-                    Path = "/api/v1/auth/refresh",
-                    Expires = DateTimeOffset.UtcNow.AddDays(15)
-                };
-
                 if (!string.IsNullOrWhiteSpace(tokens.Tokens?.RefreshToken))
                 {
-                    Response.Cookies.Append("refresh_token", tokens.Tokens.RefreshToken, cookieOptions);
+                    AppendRefreshCookies(tokens.Tokens.RefreshToken);
                 }
 
                 return Ok(tokens);
@@ -236,19 +221,7 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
                 // Сервіс повертає пару токенів (наприклад, об'єкт з AccessToken та RefreshToken)
                 var tokens = await _authenticationService.RefreshAsync(refreshToken, authHeader);
 
-                // Налаштування куки для НОВОГО refresh токена (Ротація токенів)
-                var cookieOptions = new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Strict,
-                    Path = "/api/v1/auth/refresh",
-                    Expires = DateTimeOffset.UtcNow.AddDays(15)
-                };
-
-                // Записуємо новий refresh_token в куки
-                Response.Cookies.Append("refresh_token", tokens.RefreshToken, cookieOptions);
-
+                AppendRefreshCookies(tokens.RefreshToken);
                 // Повертаємо у JSON ТІЛЬКИ access токен
                 var response = new TokensResponseDto
                 {
@@ -307,6 +280,20 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
                 Role = "Player"
             };
             return Ok(user);
+        }
+        private void AppendRefreshCookies(string token)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = Request.IsHttps,
+                SameSite = Request.IsHttps ? SameSiteMode.None : SameSiteMode.Lax,
+                Path = "/api/v1/auth/refresh",
+                Expires = DateTimeOffset.UtcNow.AddDays(15)
+            };
+
+            Response.Cookies.Append("refresh_token", token, cookieOptions);
+
         }
     }
 }
