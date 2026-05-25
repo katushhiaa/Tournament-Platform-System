@@ -656,6 +656,23 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
 
                 return Conflict(err);
             }
+            catch (TournamentPlatformSystemWebApi.Common.Exceptions.TournamentClosedForChangesException ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status409Conflict,
+                        Type = "Conflict",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return Conflict(err);
+            }
             catch (TournamentPlatformSystemWebApi.Common.Exceptions.InsufficientParticipantsException)
             {
                 var err = new ErrorResponseDto
@@ -1062,6 +1079,23 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
                 return Conflict(err);
             }
             catch (TournamentPlatformSystemWebApi.Common.Exceptions.MaxParticipantsReachedException ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status409Conflict,
+                        Type = "Conflict",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return Conflict(err);
+            }
+            catch (TournamentPlatformSystemWebApi.Common.Exceptions.TournamentClosedForChangesException ex)
             {
                 var err = new ErrorResponseDto
                 {
