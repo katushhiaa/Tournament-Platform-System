@@ -14,12 +14,11 @@ const emit = defineEmits<{
 
 const loading = ref(false)
 
-/*const canGenerate = computed(() =>
+const canGenerate = computed(() =>
   props.isOrganizer &&
   props.tournamentStatus === 'registration_closed'
-)*/
+)
 
-const canGenerate = computed(() => props.isOrganizer)
 
 const handleGenerate = async () => {
   const confirmed = window.confirm('Generate tournament bracket?')

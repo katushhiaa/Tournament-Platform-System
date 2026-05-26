@@ -242,10 +242,10 @@ export const tournamentService = {
                 }
 
                 if (status === 409) {
-
                     throw {
                         errorCode: 'CONFLICT',
                         message:
+                            error.response?.data?.error?.message ??
                             'Editing unavailable. Tournament already active.',
                     }
                 }

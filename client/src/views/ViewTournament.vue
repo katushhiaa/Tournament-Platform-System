@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { useAuthStore } from '../stores/authStore'
 
 import { tournamentService } from '../services/tournamentService'
 import { participationService } from '../services/participationService'
@@ -10,6 +11,8 @@ import type { ITournament } from '../types/Tournament'
 import type { Participant } from '../types/Participant'
 import type { IBracketStructure } from '../types/Bracket'
 
+import AppHeader from '../components/AppHeader.vue'
+import SiteFooter from '../components/SiteFooter.vue'
 import TournamentHeader from '../components/tournament/TournamentHeader.vue'
 import TournamentTabs from '../components/tournament/TournamentTabs.vue'
 import TournamentOverview from '../components/tournament/TournamentOverview.vue'
@@ -19,42 +22,29 @@ import TournamentOtherEvents from '../components/tournament/TournamentOtherEvent
 import TournamentSkeleton from '../components/tournament/TournamentSkeleton.vue'
 import TournamentError from '../components/tournament/TournamentError.vue'
 
-
-import AppHeader from '../components/AppHeader.vue'
-import SiteFooter from '../components/SiteFooter.vue'
-
 const route = useRoute()
+const authStore = useAuthStore()
 
 const tournament = ref<ITournament | null>(null)
 const participants = ref<Participant[]>([])
 const bracket = ref<IBracketStructure>([])
-
+const toast = ref('')
 const loading = ref(true)
 const error = ref(false)
-
 const activeTab = ref('overview')
-
-import { useAuthStore } from '../stores/authStore'
-
-const authStore = useAuthStore()
 
 onMounted(async () => {
   try {
     loading.value = true
-
     const id = route.params.id as string
-
-    const [tournamentData, participantsData, bracketData] =
-      await Promise.all([
-        tournamentService.getTournamentById(id),
-        participationService.getTournamentParticipants(id),
-        bracketService.getBracket(id),
-      ])
-
+    const [tournamentData, participantsData, bracketData] = await Promise.all([
+      tournamentService.getTournamentById(id),
+      participationService.getTournamentParticipants(id),
+      bracketService.getBracket(id),
+    ])
     tournament.value = tournamentData
     participants.value = participantsData
     bracket.value = bracketData
-
   } catch (e) {
     console.error(e)
     error.value = true
@@ -73,6 +63,8 @@ const handleBracketGenerated = async () => {
     tournament.value = updatedTournament
     bracket.value = updatedBracket
     activeTab.value = 'grid'
+    toast.value = 'Bracket generated successfully!'
+    setTimeout(() => { toast.value = '' }, 4000)
   } catch (e) {
     console.error('Failed to refresh after bracket generation', e)
   }
@@ -113,6 +105,8 @@ const handleRefreshParticipants = async () => {
           @change="activeTab = $event"
         />
 
+        <div v-if="toast" class="vt-toast">{{ toast }}</div>
+
         <TournamentOverview
           v-if="activeTab === 'overview'"
           :tournament="tournament"
@@ -138,15 +132,27 @@ const handleRefreshParticipants = async () => {
   </div>
 </template>
 
-
 <style scoped>
 .page {
   min-height: 100vh;
-
   background-image: url('../assets/Background_view.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+}
+
+.vt-toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #84c082;
+  color: #151d22;
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  z-index: 999;
 }
 
 @media (max-width: 768px) {

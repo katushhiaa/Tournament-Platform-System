@@ -171,9 +171,10 @@
         <button
           type="button"
           class="edit-form__disqualify"
+          :disabled="tournamentStatus !== 'registration_open' || isDisqualifying === participant.id"
           @click="disqualifyParticipant(participant)"
         >
-          Disqualify
+          {{ isDisqualifying === participant.id ? 'Disqualifying...' : 'Disqualify' }}
         </button>
       </div>
     </div>
@@ -243,6 +244,9 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const previewImage = ref<string | null>(null)
 const isUploading = ref(false)
 
+const isDisqualifying = ref<string | null>(null) // зберігає id учасника що дискваліфікується
+const tournamentStatus = ref('')
+
 const toast = ref('')
 
 const handleFileChange = async (e: Event) => {
@@ -311,7 +315,7 @@ onMounted(async () => {
     // Блокуємо редагування якщо реєстрація закрита
     const closedStatuses = ['registration_closed', 'in_progress', 'completed']
     isRegistrationClosed.value = closedStatuses.includes(tournament.status)
-
+    tournamentStatus.value = tournament.status
   } catch (e) {
     console.error('Failed to load tournament for edit', e)
   } finally {
@@ -323,14 +327,18 @@ const disqualifyParticipant = async (participant: Participant) => {
   const confirmed = window.confirm(`Disqualify ${participant.name}?`)
   if (!confirmed) return
 
+  isDisqualifying.value = participant.id
   try {
     await participationService.removeParticipant(
       props.tournamentId,
       participant.userId
     )
     participants.value = participants.value.filter(p => p.id !== participant.id)
-  } catch (e) {
-    alert('Failed to disqualify participant.')
+  } catch (e: any) {
+    const msg = e?.message ?? 'Failed to disqualify participant.'
+    alert(msg)
+  } finally {
+    isDisqualifying.value = null
   }
 }
 
@@ -362,12 +370,10 @@ const handleSubmit = async () => {
 
   } catch (e: any) {
     if (e?.errorCode === 'CONFLICT') {
-      alert('Editing is blocked. Tournament is already active.')
+      alert(e.message ?? 'Editing is blocked. Tournament is already active.')
     } else {
       alert('Failed to save changes. Please try again.')
     }
-  } finally {
-    isSubmitting.value = false
   }
 }
 </script>
@@ -582,6 +588,16 @@ const handleSubmit = async () => {
   text-decoration: underline;
 
   cursor: pointer;
+}
+
+.edit-form__disqualify:hover {
+  color: #e53935;
+}
+
+.edit-form__disqualify:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  text-decoration: none;
 }
 
 .edit-form__actions {
