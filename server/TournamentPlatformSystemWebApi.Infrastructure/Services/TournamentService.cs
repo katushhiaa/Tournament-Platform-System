@@ -169,10 +169,12 @@ public class TournamentService : ITournamentService
         if (existing.OrganizerId != organizerId) throw new UnauthorizedAccessException("Not the organizer");
         if (existing.Status == TournamentStatus.IN_PROGRESS)
             throw new TournamentPlatformSystemWebApi.Common.Exceptions.TournamentAlreadyStartedException("Tournament is already started");
+        if (existing.Status != TournamentStatus.REGISTRATION_CLOSED)
+            throw new TournamentPlatformSystemWebApi.Common.Exceptions.TournamentClosedForChangesException("Tournament is not in registration_closed status");
 
         var participantsCount = await _tournamentRepository.GetParticipantsCountAsync(tournamentId);
         if (participantsCount < 2)
-            ;//throw new TournamentPlatformSystemWebApi.Common.Exceptions.InsufficientParticipantsException("At least 2 participants are required to start the tournament");
+            throw new TournamentPlatformSystemWebApi.Common.Exceptions.InsufficientParticipantsException("At least 2 participants are required to start the tournament");
 
         // load teams and build bracket participants
         var teams = await _tournamentRepository.GetTeamsAsync(tournamentId);
