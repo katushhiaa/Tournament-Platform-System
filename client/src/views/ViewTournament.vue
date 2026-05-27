@@ -53,9 +53,14 @@ onMounted(async () => {
   }
 })
 
+const isBracketLoading = ref(false)
+const bracketError = ref('')
+
 const handleBracketGenerated = async () => {
   const id = route.params.id as string
   try {
+    isBracketLoading.value = true
+    bracketError.value = ''
     const [updatedTournament, updatedBracket] = await Promise.all([
       tournamentService.getTournamentById(id),
       bracketService.getBracket(id),
@@ -67,6 +72,10 @@ const handleBracketGenerated = async () => {
     setTimeout(() => { toast.value = '' }, 4000)
   } catch (e) {
     console.error('Failed to refresh after bracket generation', e)
+    bracketError.value = 'Failed to update bracket. Please refresh the page.'
+    setTimeout(() => { bracketError.value = '' }, 5000)
+  } finally {
+    isBracketLoading.value = false
   }
 }
 
@@ -105,7 +114,7 @@ const handleRefreshParticipants = async () => {
           @change="activeTab = $event"
         />
 
-        <div v-if="toast" class="vt-toast">{{ toast }}</div>
+        <div v-if="bracketError" class="vt-toast vt-toast--error">{{ bracketError }}</div>
 
         <TournamentOverview
           v-if="activeTab === 'overview'"
@@ -120,6 +129,10 @@ const handleRefreshParticipants = async () => {
         <TournamentBracket
           v-if="activeTab === 'grid'"
           :rounds="bracket"
+          :is-organizer="authStore.currentUser?.userId === tournament.organizerId"
+          :tournament-id="tournament.id"
+          :is-loading="isBracketLoading"
+          @bracket-updated="handleBracketGenerated"
         />
 
         <TournamentOtherEvents
@@ -153,6 +166,11 @@ const handleRefreshParticipants = async () => {
   font-size: 15px;
   font-weight: 600;
   z-index: 999;
+}
+
+.vt-toast--error {
+  background: #e57373;
+  color: #fff;
 }
 
 @media (max-width: 768px) {

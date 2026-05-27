@@ -22,4 +22,15 @@ export const bracketService = {
             throw error
         }
     },
+
+    async saveMatchResult(
+        tournamentId: string,
+        matchId: string,
+        data: { scorePlayer1: number; scorePlayer2: number; winnerId: string }
+    ): Promise<void> {
+        await axiosInstance.post(
+            `/tournaments/${tournamentId}/matches/${matchId}/result`,
+            data,
+        )
+    },
 }

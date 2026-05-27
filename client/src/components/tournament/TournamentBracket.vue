@@ -1,16 +1,39 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { IBracketStructure } from '../../types/Bracket'
 import type { MatchInfo } from '../../types/Match'
+import MatchResultModal from '../modals/MatchResultModal.vue'
 
 const props = defineProps<{
   rounds: IBracketStructure
   isOrganizer?: boolean
+  tournamentId: string
+  isLoading?: boolean
 }>()
+
+const emit = defineEmits<{ bracketUpdated: [] }>()
+
+const selectedMatch = ref<MatchInfo | null>(null)
+
+const canClick = (match: MatchInfo) =>
+  props.isOrganizer &&
+  !match.isBye &&
+  !!match.player1Id &&
+  !!match.player2Id &&
+  match.status !== 'completed'
+
+const handleMatchClick = (match: MatchInfo) => {
+  if (canClick(match)) selectedMatch.value = match
+}
+
+const handleSaved = () => {
+  selectedMatch.value = null
+  emit('bracketUpdated')
+}
 
 const CARD_H    = 40
 const CARD_GAP  = 4
-const MATCH_H   = CARD_H * 2 + CARD_GAP   // 84px
+const MATCH_H   = CARD_H * 2 + CARD_GAP
 const MATCH_GAP = 32
 const LABEL_H   = 56
 const TOP_PAD   = 24
@@ -30,18 +53,13 @@ const C_MUTED    = 'rgba(255,255,255,0.22)'
 const C_CONN     = 'rgba(255,255,255,0.3)'
 const C_LABEL    = 'rgba(255,255,255,0.42)'
 
-// Для кожного раунду вираховуємо Y-центри матчів
-// Перший раунд — рівномірно
-// Наступні — центр між відповідними парами попереднього
 const getMatchCentersY = (roundIndex: number): number[] => {
   const matchCount = props.rounds[roundIndex].matches.length
-
   if (roundIndex === 0) {
     return Array.from({ length: matchCount }, (_, i) =>
       LABEL_H + TOP_PAD + i * (MATCH_H + MATCH_GAP) + MATCH_H / 2
     )
   }
-
   const prevCenters = getMatchCentersY(roundIndex - 1)
   return Array.from({ length: matchCount }, (_, i) => {
     const a = prevCenters[i * 2] ?? prevCenters[prevCenters.length - 1]
@@ -79,23 +97,23 @@ const getPlayerName = (name: string | null, id: string | null) => {
 const cardFill = (match: MatchInfo, player: 1 | 2) => {
   const pid = player === 1 ? match.player1Id : match.player2Id
   if (!pid) return C_EMPTY
-  if (match.winnerId && match.winnerId === pid) return C_WIN
-  if (match.winnerId && match.winnerId !== pid) return C_ELIM
+  if (!match.isBye && match.winnerId && match.winnerId === pid) return C_WIN
+  if (!match.isBye && match.winnerId && match.winnerId !== pid) return C_ELIM
   return C_ACTIVE
 }
 
 const cardStroke = (match: MatchInfo, player: 1 | 2) => {
   const pid = player === 1 ? match.player1Id : match.player2Id
   if (!pid) return C_EMPTY_S
-  if (match.winnerId && match.winnerId === pid) return C_WIN_S
-  if (match.winnerId && match.winnerId !== pid) return C_ELIM_S
+  if (!match.isBye && match.winnerId && match.winnerId === pid) return C_WIN_S
+  if (!match.isBye && match.winnerId && match.winnerId !== pid) return C_ELIM_S
   return C_ACTIVE_S
 }
 
 const cardTextFill = (match: MatchInfo, player: 1 | 2) => {
   const pid = player === 1 ? match.player1Id : match.player2Id
   if (!pid) return C_MUTED
-  if (match.winnerId && match.winnerId !== pid) return 'rgba(255,255,255,0.35)'
+  if (!match.isBye && match.winnerId && match.winnerId !== pid) return 'rgba(255,255,255,0.35)'
   return C_TEXT
 }
 
@@ -103,16 +121,14 @@ interface RenderMatch {
   match: MatchInfo
   x: number
   cy: number
-  y1: number   // top of player1 card
-  y2: number   // top of player2 card
+  y1: number
+  y2: number
 }
 
 const renderData = computed(() => {
   if (!props.rounds.length) return { rounds: [], connectors: [] }
 
-  type ConnLine = {
-    x1: number; y1: number; x2: number; y2: number
-  }
+  type ConnLine = { x1: number; y1: number; x2: number; y2: number }
   const allConnLines: ConnLine[] = []
 
   const rounds = props.rounds.map((round, rIdx) => {
@@ -130,7 +146,6 @@ const renderData = computed(() => {
       }
     })
 
-    // Конектори від цього раунду до наступного
     if (rIdx < props.rounds.length - 1) {
       const nextCenters = getMatchCentersY(rIdx + 1)
       const nextCount = props.rounds[rIdx + 1].matches.length
@@ -143,15 +158,11 @@ const renderData = computed(() => {
         const src2 = centers[ni * 2 + 1] ?? src1
         const toY  = nextCenters[ni]
 
-        // горизонталь від src1
         allConnLines.push({ x1, y1: src1, x2: xMid, y2: src1 })
-        // горизонталь від src2 (якщо відрізняється)
         if (src2 !== src1) {
           allConnLines.push({ x1, y1: src2, x2: xMid, y2: src2 })
-          // вертикаль між ними
           allConnLines.push({ x1: xMid, y1: src1, x2: xMid, y2: src2 })
         }
-        // горизонталь до наступного раунду
         allConnLines.push({ x1: xMid, y1: toY, x2, y2: toY })
       }
     }
@@ -176,6 +187,9 @@ const renderData = computed(() => {
     </div>
 
     <div v-else class="bracket__scroll">
+      <div v-if="isLoading" class="bracket__loading">
+        Updating bracket...
+      </div>
       <svg
         :width="svgW"
         :height="svgH"
@@ -217,8 +231,8 @@ const renderData = computed(() => {
           <g
             v-for="rm in r.matches"
             :key="rm.match.matchId"
-            :class="{ 'match--clickable': isOrganizer && !rm.match.isBye }"
-            @click="isOrganizer && !rm.match.isBye ? $emit('matchClick', rm.match) : undefined"
+            :class="{ 'match--clickable': canClick(rm.match) }"
+            @click="handleMatchClick(rm.match)"
           >
             <!-- BYE badge -->
             <text
@@ -251,7 +265,7 @@ const renderData = computed(() => {
               font-family="inherit"
             >{{ getPlayerName(rm.match.player1Name, rm.match.player1Id) }}</text>
             <text
-              v-if="!rm.match.isBye && rm.match.status !== 'pending'"
+              v-if="rm.match.status === 'completed'"
               :x="rm.x + ROUND_W - 14"
               :y="rm.y1 + CARD_H / 2"
               dominant-baseline="central"
@@ -260,7 +274,7 @@ const renderData = computed(() => {
               font-size="14"
               font-weight="700"
               font-family="inherit"
-            >{{ rm.match.scorePlayer1 ?? 0 }}</text>
+            >{{ rm.match.scorePlayer1 }}</text>
 
             <!-- Player 2 -->
             <rect
@@ -282,7 +296,7 @@ const renderData = computed(() => {
               font-family="inherit"
             >{{ rm.match.isBye ? '—' : getPlayerName(rm.match.player2Name, rm.match.player2Id) }}</text>
             <text
-              v-if="!rm.match.isBye && rm.match.status !== 'pending'"
+              v-if="rm.match.status === 'completed'"
               :x="rm.x + ROUND_W - 14"
               :y="rm.y2 + CARD_H / 2"
               dominant-baseline="central"
@@ -291,11 +305,20 @@ const renderData = computed(() => {
               font-size="14"
               font-weight="700"
               font-family="inherit"
-            >{{ rm.match.scorePlayer2 ?? 0 }}</text>
+            >{{ rm.match.scorePlayer2 }}</text>
           </g>
         </g>
       </svg>
     </div>
+
+    <!-- Modal -->
+    <MatchResultModal
+      v-if="selectedMatch"
+      :tournament-id="tournamentId"
+      :match="selectedMatch"
+      @close="selectedMatch = null"
+      @saved="handleSaved"
+    />
   </section>
 </template>
 
@@ -329,6 +352,18 @@ const renderData = computed(() => {
 
 .match--clickable:hover rect {
   filter: brightness(1.12);
+}
+.bracket__loading {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 15px;
+  padding: 20px 0;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
 @media (max-width: 900px) {
