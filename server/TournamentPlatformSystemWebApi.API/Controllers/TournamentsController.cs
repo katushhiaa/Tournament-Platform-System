@@ -931,6 +931,143 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
             }
         }
 
+        [HttpPost("{id}/matches/{matchId}/result")]
+        [Authorize(Roles = "organizer")]
+        [SwaggerOperation(Summary = "Зберегти результат матчу", Description = "Зберігає результат матчу. Роль: Organizer.")]
+        [SwaggerResponse(200, Type = typeof(TournamentPlatformSystemWebApi.Application.DTOs.MatchDto), Description = "Оновлений матч")]
+        [SwaggerResponse(400, Type = typeof(ErrorResponseDto), Description = "Невалідний результат або матч не готовий")]
+        [SwaggerResponse(403, Type = typeof(ErrorResponseDto), Description = "Користувач не є організатором")]
+        [SwaggerResponse(404, Type = typeof(ErrorResponseDto), Description = "Турнір або матч не знайдено")]
+        [SwaggerResponse(409, Type = typeof(ErrorResponseDto), Description = "Результат для цього матчу вже збережено")]
+        [SwaggerRequestExample(typeof(TournamentPlatformSystemWebApi.Application.DTOs.MatchUpdateDto), typeof(Swagger.Examples.MatchUpdateExample))]
+        public async Task<IActionResult> SaveMatchResult(Guid id, Guid matchId, [FromBody] TournamentPlatformSystemWebApi.Application.DTOs.MatchUpdateDto dto)
+        {
+            var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+            if (!Guid.TryParse(sub, out var organizerId))
+            {
+                return Unauthorized(new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Type = "Unauthorized",
+                        Message = "Invalid user",
+                        Code = 401,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                });
+            }
+
+            try
+            {
+                var updatedMatch = await _tournamentService.SaveMatchResultAsync(id, matchId, dto, organizerId);
+                return Ok(updatedMatch);
+            }
+            catch (MatchNotFoundException)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status404NotFound,
+                        Type = "NotFound",
+                        Message = "Match not found",
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return NotFound(err);
+            }
+            catch (KeyNotFoundException)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status404NotFound,
+                        Type = "NotFound",
+                        Message = "Tournament not found",
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return NotFound(err);
+            }
+            catch (MatchResultAlreadySavedException ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status409Conflict,
+                        Type = "Conflict",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return Conflict(err);
+            }
+            catch (MatchNotReadyException ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status400BadRequest,
+                        Type = "ValidationError",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return BadRequest(err);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status403Forbidden,
+                        Type = "Forbidden",
+                        Message = "Not the organizer",
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return StatusCode(StatusCodes.Status403Forbidden, err);
+            }
+            catch (ValidationException ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status400BadRequest,
+                        Type = "ValidationError",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return BadRequest(err);
+            }
+        }
+
         [HttpGet("{id}/participants")]
         [SwaggerOperation(Summary = "Отримати учасників турніру", Description = "Повертає список учасників турніру.")]
         [SwaggerResponse(200, Type = typeof(IEnumerable<TournamentPlatformSystemWebApi.Application.DTOs.TeamDto>), Description = "Список учасників")]
