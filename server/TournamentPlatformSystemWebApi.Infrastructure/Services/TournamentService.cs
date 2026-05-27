@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using TournamentPlatformSystemWebApi.Application.DTOs;
@@ -256,6 +257,117 @@ public class TournamentService : ITournamentService
         return grouped;
     }
 
+    public async Task<TournamentPlatformSystemWebApi.Application.DTOs.MatchDto> SaveMatchResultAsync(Guid tournamentId, Guid matchId, MatchUpdateDto dto, Guid organizerId)
+    {
+        if (dto == null)
+            throw new ValidationException("Match result data is required");
+
+        if (dto.ScorePlayer1 < 0 || dto.ScorePlayer2 < 0)
+            throw new ValidationException("Scores must be non-negative");
+
+        if (dto.ScorePlayer1 == dto.ScorePlayer2)
+            throw new ValidationException("Match cannot end in a draw");
+
+        var existingTournament = await _tournamentRepository.GetByIdAsync(tournamentId);
+        if (existingTournament == null)
+            throw new KeyNotFoundException("Tournament not found");
+
+        if (existingTournament.OrganizerId != organizerId)
+            throw new UnauthorizedAccessException("Not the organizer");
+
+        if (existingTournament.Status != TournamentStatus.IN_PROGRESS)
+            throw new ValidationException("Tournament is not in progress");
+
+        var matches = (await _tournamentRepository.GetMatchesAsync(tournamentId)).ToList();
+        var match = matches.FirstOrDefault(m => m.Id == matchId);
+        if (match == null)
+            throw new MatchNotFoundException("Match not found");
+
+        if (match.IsBye == true)
+            throw new ValidationException("Cannot enter a result for a bye match");
+
+        if (!match.TeamAId.HasValue || !match.TeamBId.HasValue)
+            throw new MatchNotReadyException("Match is not ready for result entry");
+
+        if (match.WinnerId != null)
+            throw new MatchResultAlreadySavedException("Result for this match has already been saved");
+
+        if (dto.WinnerId.HasValue && dto.WinnerId != match.TeamAId && dto.WinnerId != match.TeamBId)
+            throw new ValidationException("WinnerId must be one of the participating teams");
+
+        var computedWinner = dto.ScorePlayer1 > dto.ScorePlayer2 ? match.TeamAId : match.TeamBId;
+        dto.WinnerId ??= computedWinner;
+
+        if (dto.WinnerId != computedWinner)
+            throw new ValidationException("WinnerId does not match the submitted score");
+
+        match.TeamAScore = dto.ScorePlayer1;
+        match.TeamBScore = dto.ScorePlayer2;
+        match.WinnerId = dto.WinnerId;
+        match.Status = "completed";
+
+        var nextLevel = match.Level + 1;
+        TournamentPlatformSystemWebApi.Core.Entities.Match? nextMatch = null;
+
+        var levelMatches = matches.Where(m => m.Level == match.Level).OrderBy(m => m.OrderNumber).ToList();
+        var currentIndex = levelMatches.FindIndex(m => m.Id == matchId);
+        if (currentIndex >= 0)
+        {
+            var nextLevelMatches = matches.Where(m => m.Level == nextLevel).OrderBy(m => m.OrderNumber).ToList();
+            if (nextLevelMatches.Any())
+            {
+                var nextIndex = currentIndex / 2;
+                if (nextIndex < nextLevelMatches.Count)
+                {
+                    nextMatch = nextLevelMatches[nextIndex];
+                    if (currentIndex % 2 == 0)
+                    {
+                        nextMatch.TeamAId = match.WinnerId;
+                        nextMatch.TeamAName = match.TeamAId == match.WinnerId ? match.TeamAName : match.TeamBName;
+                    }
+                    else
+                    {
+                        nextMatch.TeamBId = match.WinnerId;
+                        nextMatch.TeamBName = match.TeamAId == match.WinnerId ? match.TeamAName : match.TeamBName;
+                    }
+
+                    nextMatch.Status = nextMatch.TeamAId.HasValue && nextMatch.TeamBId.HasValue
+                        ? "scheduled"
+                        : "pending";
+                }
+            }
+        }
+
+        match.Status = "completed";
+
+        var updatedMatch = await _tournamentRepository.UpdateMatchAsync(match);
+        if (nextMatch != null)
+            await _tournamentRepository.UpdateMatchAsync(nextMatch);
+
+        var maxLevel = matches.Any() ? matches.Max(m => m.Level) : 0;
+        if (match.Level == maxLevel)
+        {
+            await _tournamentRepository.UpdateStatus(tournamentId, TournamentStatus.COMPLETED);
+        }
+
+        return new TournamentPlatformSystemWebApi.Application.DTOs.MatchDto
+        {
+            MatchId = updatedMatch.Id,
+            TournamentId = updatedMatch.TournamentId,
+            Round = updatedMatch.Level,
+            OrderNumber = updatedMatch.OrderNumber,
+            Player1Id = updatedMatch.TeamAId,
+            Player2Id = updatedMatch.TeamBId,
+            Player1Name = updatedMatch.TeamAName,
+            Player2Name = updatedMatch.TeamBName,
+            Status = updatedMatch.Status,
+            IsBye = updatedMatch.IsBye,
+            ScorePlayer1 = updatedMatch.TeamAScore,
+            ScorePlayer2 = updatedMatch.TeamBScore,
+            WinnerId = updatedMatch.WinnerId
+        };
+    }
+
     public async Task<TournamentPlatformSystemWebApi.Application.DTOs.TournamentDetailsDto> GetTournamentDetailsAsync(Guid tournamentId)
     {
         var existing = await _tournamentRepository.GetByIdAsync(tournamentId);
@@ -384,7 +496,30 @@ public class TournamentService : ITournamentService
         if (already) throw new TournamentPlatformSystemWebApi.Common.Exceptions.ParticipantAlreadyAddedException("Player already added to tournament");
 
         // derive team name from user details
-        var teamName = user.FullName ?? user.UserDetail?.Email ?? $"player_{userId.ToString().Substring(0, 8)}";
+        var displayName = user.FullName?.Trim();
+        var emailName = user.UserDetail?.Email?.Trim();
+        var teamName = !string.IsNullOrWhiteSpace(displayName)
+            ? displayName
+            : !string.IsNullOrWhiteSpace(emailName)
+                ? emailName
+                : $"player_{userId.ToString().Substring(0, 8)}";
+
+        if (await _tournamentRepository.IsTeamNameUsedAsync(tournamentId, teamName))
+        {
+            if (!string.IsNullOrWhiteSpace(emailName) && !string.Equals(teamName, emailName, StringComparison.InvariantCultureIgnoreCase))
+            {
+                teamName = emailName;
+            }
+            else
+            {
+                teamName = $"player_{userId.ToString().Substring(0, 8)}";
+            }
+        }
+
+        if (await _tournamentRepository.IsTeamNameUsedAsync(tournamentId, teamName))
+        {
+            teamName = $"player_{userId.ToString().Substring(0, 8)}";
+        }
 
         var team = await _tournamentRepository.AddParticipantAsync(tournamentId, userId, teamName);
 

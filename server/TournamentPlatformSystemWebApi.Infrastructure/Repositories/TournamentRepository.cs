@@ -93,6 +93,18 @@ public class TournamentRepository : BaseRepository<Tournament, TournamentModel>,
             .AnyAsync(ut => ut.UserId == userId && ut.Team.TournamentId == tournamentId);
     }
 
+    public async Task<bool> IsTeamNameUsedAsync(Guid tournamentId, string teamName)
+    {
+        if (string.IsNullOrWhiteSpace(teamName))
+            return false;
+
+        var normalized = teamName.Trim().ToLowerInvariant();
+        return await _context.Set<TeamModel>()
+            .AsNoTracking()
+            .Where(t => t.TournamentId == tournamentId)
+            .AnyAsync(t => t.Name != null && t.Name.ToLower() == normalized);
+    }
+
     public async Task<Team> AddParticipantAsync(Guid tournamentId, Guid userId, string teamName)
     {
         // create new team and user-team link
@@ -183,6 +195,31 @@ public class TournamentRepository : BaseRepository<Tournament, TournamentModel>,
             .ThenBy(m => m.OrderNumber)
             .ProjectTo<TournamentPlatformSystemWebApi.Core.Entities.Match>(_mapper.ConfigurationProvider)
             .ToListAsync();
+    }
+
+    public async Task<TournamentPlatformSystemWebApi.Core.Entities.Match> UpdateMatchAsync(TournamentPlatformSystemWebApi.Core.Entities.Match match)
+    {
+        if (match == null) throw new ArgumentNullException(nameof(match));
+
+        var dbModel = await _context.Set<MatchModel>().FindAsync(match.Id);
+        if (dbModel == null)
+            throw new KeyNotFoundException("Match not found");
+
+        _mapper.Map(match, dbModel);
+
+        if (dbModel.TeamAId == Guid.Empty)
+            dbModel.TeamAId = null;
+        if (dbModel.TeamBId == Guid.Empty)
+            dbModel.TeamBId = null;
+        if (dbModel.WinnerId == Guid.Empty)
+            dbModel.WinnerId = null;
+
+        dbModel.UpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+
+        _context.Set<MatchModel>().Update(dbModel);
+        await _context.SaveChangesAsync();
+
+        return _mapper.Map<TournamentPlatformSystemWebApi.Core.Entities.Match>(dbModel);
     }
 
     public async Task<IReadOnlyList<TournamentPreviewDto>> GetForUserAsync(Guid userId, int page, int pageSize, IReadOnlyList<TournamentStatus>? statuses)
