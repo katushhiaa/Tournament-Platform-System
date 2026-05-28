@@ -121,6 +121,64 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Repositories
             return _mapper.Map<User>(dbModel);
         }
 
+        public async Task<bool> UserExistsAsync(Guid userId)
+        {
+            return await _context.Set<UserModel>().AnyAsync(x => x.Id == userId);
+        }
+
+        public async Task<bool?> GetPreferencesSetupCompletedAsync(Guid userId)
+        {
+            var detail = await _context.Set<UserDetailModel>()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.UserId == userId);
+
+            return detail?.PreferencesSetupCompleted;
+        }
+
+        public async Task<bool> SetPreferencesSetupCompletedAsync(Guid userId, bool value)
+        {
+            var detail = await _context.Set<UserDetailModel>()
+                .FirstOrDefaultAsync(x => x.UserId == userId);
+
+            if (detail == null)
+            {
+                return false;
+            }
+
+            detail.PreferencesSetupCompleted = value;
+            _context.Set<UserDetailModel>().Update(detail);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task SetUserThemePreferencesAsync(Guid userId, IReadOnlyCollection<Guid> themeIds)
+        {
+            var existing = await _context.Set<UserTournamentThemePreferenceModel>()
+                .Where(x => x.UserId == userId)
+                .ToListAsync();
+
+            if (existing.Any())
+            {
+                _context.Set<UserTournamentThemePreferenceModel>().RemoveRange(existing);
+            }
+
+            if (themeIds != null && themeIds.Count > 0)
+            {
+                var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+                var items = themeIds.Distinct().Select(themeId => new UserTournamentThemePreferenceModel
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = userId,
+                    ThemeId = themeId,
+                    CreatedAt = now
+                });
+
+                await _context.Set<UserTournamentThemePreferenceModel>().AddRangeAsync(items);
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
         public async Task<bool> ExistsByEmailAsync(string email)
         {
             return await _context.Set<UserDetailModel>().AnyAsync(x => x.Email == email);

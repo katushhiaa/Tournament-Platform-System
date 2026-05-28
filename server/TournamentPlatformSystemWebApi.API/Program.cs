@@ -96,6 +96,7 @@ builder.Services.AddTransient<IDbStateChecker, DbStateChecker>(serviceProvider =
 // infra services
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IUserPreferencesService, UserPreferencesService>();
 builder.Services.AddScoped<ITournamentRepository, TournamentRepository>();
 builder.Services.AddScoped<IThemeRepository, ThemeRepository>();
 builder.Services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>(sp => new BcryptPasswordHasher(12));
