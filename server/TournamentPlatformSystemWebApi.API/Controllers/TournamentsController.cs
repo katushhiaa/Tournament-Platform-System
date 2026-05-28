@@ -1249,7 +1249,7 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
 
                 return Conflict(err);
             }
-            catch (KeyNotFoundException)
+            catch (KeyNotFoundException ex)
             {
                 var err = new ErrorResponseDto
                 {
@@ -1257,7 +1257,7 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
                     {
                         Code = StatusCodes.Status404NotFound,
                         Type = "NotFound",
-                        Message = "User or tournament not found",
+                        Message = ex.Message,
                         Path = HttpContext.GetEndpoint()?.DisplayName,
                         Timestamp = DateTime.UtcNow.ToString("o"),
                         TraceId = HttpContext.TraceIdentifier
@@ -1266,7 +1266,7 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
 
                 return NotFound(err);
             }
-            catch (UnauthorizedAccessException)
+            catch (UnauthorizedAccessException ex)
             {
                 var err = new ErrorResponseDto
                 {
@@ -1274,7 +1274,7 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
                     {
                         Code = StatusCodes.Status403Forbidden,
                         Type = "Forbidden",
-                        Message = "User does not have player role or action is forbidden",
+                        Message = ex.Message,
                         Path = HttpContext.GetEndpoint()?.DisplayName,
                         Timestamp = DateTime.UtcNow.ToString("o"),
                         TraceId = HttpContext.TraceIdentifier
