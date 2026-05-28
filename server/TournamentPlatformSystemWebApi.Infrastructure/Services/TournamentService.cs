@@ -537,6 +537,34 @@ public class TournamentService : ITournamentService
         };
     }
 
+    public async Task RemoveParticipantAsync(Guid tournamentId, Guid userId)
+    {
+        var existing = await _tournamentRepository.GetByIdAsync(tournamentId);
+        if (existing == null) throw new KeyNotFoundException("Tournament not found");
+
+        if (existing.RegistrationDeadline != default && existing.RegistrationDeadline <= DateTime.UtcNow)
+            throw new TournamentPlatformSystemWebApi.Common.Exceptions.TournamentClosedForChangesException("Registration is already closed");
+
+        if (existing.Status == TournamentPlatformSystemWebApi.Core.Entities.TournamentStatus.IN_PROGRESS
+            || existing.Status == TournamentPlatformSystemWebApi.Core.Entities.TournamentStatus.COMPLETED
+            || existing.Status == TournamentPlatformSystemWebApi.Core.Entities.TournamentStatus.REGISTRATION_CLOSED)
+        {
+            throw new TournamentPlatformSystemWebApi.Common.Exceptions.TournamentClosedForChangesException("Tournament is closed for changes");
+        }
+
+        var matches = await _tournamentRepository.GetMatchesAsync(tournamentId);
+        if (matches.Any())
+            throw new TournamentPlatformSystemWebApi.Common.Exceptions.TournamentClosedForChangesException("Tournament bracket has already been generated");
+
+        var isIn = await _tournamentRepository.IsUserInTournamentAsync(tournamentId, userId);
+        if (!isIn)
+            throw new TournamentPlatformSystemWebApi.Common.Exceptions.ParticipantNotFoundException("User is not a participant of this tournament");
+
+        var success = await _tournamentRepository.RemoveParticipantAsync(tournamentId, userId);
+        if (!success)
+            throw new Exception("Failed to remove participant from tournament");
+    }
+
     public async Task DisqualifyParticipantAsync(Guid tournamentId, Guid userId, Guid actorId)
     {
         var existing = await _tournamentRepository.GetByIdAsync(tournamentId);

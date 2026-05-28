@@ -189,6 +189,46 @@ namespace IntegrationTests
         }
 
         [Fact]
+        public async Task ParticipantCanWithdrawAndRejoinBeforeRegistrationCloses()
+        {
+            var (organizerId, organizerToken) = await RegisterAndGetTokenAsync("organizer");
+            var (playerId, playerToken) = await RegisterAndGetTokenAsync("player");
+
+            SetAuthHeader(organizerToken);
+            var createReq = new
+            {
+                Title = "Withdraw Tournament " + Guid.NewGuid().ToString("N"),
+                Description = "Desc",
+                Conditions = "Cond",
+                StartDate = DateTime.UtcNow.AddDays(10),
+                EndDate = DateTime.UtcNow.AddDays(12),
+                RegistrationCloseDate = DateTime.UtcNow.AddDays(9),
+                MaxParticipants = 8,
+                Sport = "7bf8042d-8e1a-4ffa-8ec7-baa73b86dc90"
+            };
+
+            var createResp = await _client.PostAsJsonAsync("/api/v1/tournaments", createReq);
+            createResp.EnsureSuccessStatusCode();
+            var createdBody = await createResp.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(createdBody);
+            var tournamentId = doc.RootElement.GetProperty("id").GetGuid();
+
+            ClearAuthHeader();
+            SetAuthHeader(playerToken);
+
+            var joinResp = await _client.PostAsJsonAsync($"/api/v1/tournaments/{tournamentId}/participants", new { UserId = playerId });
+            Assert.Equal(201, (int)joinResp.StatusCode);
+
+            var withdrawResp = await _client.DeleteAsync($"/api/v1/tournaments/{tournamentId}/participants");
+            Assert.Equal(204, (int)withdrawResp.StatusCode);
+
+            var rejoinResp = await _client.PostAsJsonAsync($"/api/v1/tournaments/{tournamentId}/participants", new { UserId = playerId });
+            Assert.Equal(201, (int)rejoinResp.StatusCode);
+
+            ClearAuthHeader();
+        }
+
+        [Fact]
         public async Task StartTournament_Creates_Matches()
         {
             var (organizerId, organizerToken) = await RegisterAndGetTokenAsync("organizer");
