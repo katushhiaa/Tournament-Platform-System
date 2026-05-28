@@ -38,9 +38,10 @@ const showToast = (msg: string) => {
   setTimeout(() => { toast.value = '' }, 4000)
 }
 
-onMounted(async () => {
+const loadData = async () => {
   try {
     loading.value = true
+    error.value = false
     const id = route.params.id as string
     const [tournamentData, participantsData, bracketData] = await Promise.all([
       tournamentService.getTournamentById(id),
@@ -52,9 +53,8 @@ onMounted(async () => {
     bracket.value = bracketData
     const joinToast = sessionStorage.getItem('joinToast')
     if (joinToast) {
-      toast.value = joinToast
+      showToast(joinToast)
       sessionStorage.removeItem('joinToast')
-      setTimeout(() => { toast.value = '' }, 4000)
     }
   } catch (e) {
     console.error(e)
@@ -62,7 +62,9 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
+}
+
+onMounted(loadData)
 
 const handleBracketGenerated = async () => {
   const id = route.params.id as string
@@ -74,8 +76,7 @@ const handleBracketGenerated = async () => {
     tournament.value = updatedTournament
     bracket.value = updatedBracket
     activeTab.value = 'grid'
-    toast.value = 'Bracket generated successfully!'
-    setTimeout(() => { toast.value = '' }, 4000)
+    showToast('Bracket generated successfully!')
   } catch (e) {
     console.error('Failed to refresh after bracket generation', e)
   }
@@ -98,7 +99,7 @@ const handleRefreshParticipants = async () => {
 
     <main>
       <TournamentSkeleton v-if="loading" />
-      <TournamentError v-else-if="error" />
+      <TournamentError v-else-if="error" @retry="loadData" />
 
       <template v-else-if="tournament">
         <TournamentHeader

@@ -348,8 +348,12 @@ const handlePlayerAdded = async () => {
 }
 
 const handleSubmit = async () => {
-  isSubmitting.value = true
+  if (Number(form.maxParticipants) < 1) {
+    alert('Participants count must be at least 1')
+    return
+  }
 
+  isSubmitting.value = true
   try {
     await tournamentService.updateTournament(props.tournamentId, {
       title: form.title,
@@ -361,19 +365,19 @@ const handleSubmit = async () => {
       description: form.description || null,
       conditions: form.conditions || null,
     })
-
     toast.value = 'Changes saved successfully!'
-      setTimeout(() => {
-        toast.value = ''
-        router.push(`/tournaments/${props.tournamentId}`)
-      }, 2000)
-
+    setTimeout(() => {
+      toast.value = ''
+      router.push(`/tournaments/${props.tournamentId}`)
+    }, 2000)
   } catch (e: any) {
     if (e?.errorCode === 'CONFLICT') {
       alert(e.message ?? 'Editing is blocked. Tournament is already active.')
     } else {
       alert('Failed to save changes. Please try again.')
     }
+  } finally {
+    isSubmitting.value = false
   }
 }
 </script>
