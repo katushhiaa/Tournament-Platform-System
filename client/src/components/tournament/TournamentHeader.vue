@@ -19,6 +19,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'refresh-bracket': []
   'refresh-participants': []
+  'show-toast': [message: string]
 }>()
 
 const router = useRouter()
@@ -83,6 +84,7 @@ const handleJoin = async () => {
       authStore.currentUser!.userId,
     )
     emit('refresh-participants')
+    emit('show-toast', `You have successfully joined the ${props.tournament.title}!`)
   } catch (e: any) {
     if (e?.response?.status === 409) {
       actionError.value = 'You are already registered or the tournament is full.'

@@ -19,6 +19,7 @@ onMounted(async () => {
 
   try {
     await participationService.addParticipant(id, authStore.currentUser!.userId)
+    sessionStorage.setItem('joinToast', `You have successfully joined the tournament!`)
   } catch (e: any) {
     // 409 — вже зареєстрований, просто йдемо на деталі
     console.warn('Join error (may already be registered):', e)
