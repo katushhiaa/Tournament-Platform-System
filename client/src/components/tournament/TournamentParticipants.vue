@@ -28,6 +28,7 @@ const goTo = (page: number) => {
     <h2 class="title">Participants</h2>
 
     <div class="list">
+      <p v-if="!participants.length" class="empty-state">No participants yet</p>
       <div
         v-for="participant in paginated"
         :key="participant.id"
@@ -36,6 +37,8 @@ const goTo = (page: number) => {
         {{ participant.name }}
       </div>
     </div>
+
+    <p v-if="!participants.length" class="empty-state">No participants yet</p>
 
     <div v-if="totalPages > 1" class="pagination">
       <button
@@ -131,6 +134,14 @@ const goTo = (page: number) => {
 .page:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}
+
+
+.empty-state {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 16px;
+  text-align: center;
+  padding: 20px 0;
 }
 
 @media (max-width: 900px) {
