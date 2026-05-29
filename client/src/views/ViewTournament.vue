@@ -33,6 +33,11 @@ const loading = ref(true)
 const error = ref(false)
 const activeTab = ref('overview')
 
+const showToast = (msg: string) => {
+  toast.value = msg
+  setTimeout(() => { toast.value = '' }, 4000)
+}
+
 onMounted(async () => {
   try {
     loading.value = true
@@ -45,6 +50,12 @@ onMounted(async () => {
     tournament.value = tournamentData
     participants.value = participantsData
     bracket.value = bracketData
+    const joinToast = sessionStorage.getItem('joinToast')
+    if (joinToast) {
+      toast.value = joinToast
+      sessionStorage.removeItem('joinToast')
+      setTimeout(() => { toast.value = '' }, 4000)
+    }
   } catch (e) {
     console.error(e)
     error.value = true
@@ -98,6 +109,7 @@ const handleRefreshParticipants = async () => {
             : null"
           @refresh-bracket="handleBracketGenerated"
           @refresh-participants="handleRefreshParticipants"
+          @show-toast="showToast"
         />
 
         <TournamentTabs
