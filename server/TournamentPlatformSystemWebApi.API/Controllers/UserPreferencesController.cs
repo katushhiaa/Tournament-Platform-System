@@ -52,7 +52,7 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
         }
 
         [HttpPatch("onboarding-complete")]
-        [SwaggerOperation(Summary = "Позначити онбординг завершеним", Description = "Встановлює preferences_setup_completed = true. Роль: Player/Organizer.")]
+        [SwaggerOperation(Summary = "Позначити онбординг завершеним. ЦЕ ТИПУ SKIP. ", Description = "Встановлює preferences_setup_completed = true. Роль: Player/Organizer.")]
         [SwaggerResponse(204, Description = "Оновлено")]
         [SwaggerResponse(401, Type = typeof(ErrorResponseDto), Description = "Неавторизовано")]
         [SwaggerResponse(404, Type = typeof(ErrorResponseDto), Description = "Користувач не знайдений")]

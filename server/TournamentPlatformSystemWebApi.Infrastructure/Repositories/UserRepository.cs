@@ -177,6 +177,8 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Repositories
             }
 
             await _context.SaveChangesAsync();
+
+            await SetPreferencesSetupCompletedAsync(userId, true);
         }
 
         public async Task<bool> ExistsByEmailAsync(string email)
