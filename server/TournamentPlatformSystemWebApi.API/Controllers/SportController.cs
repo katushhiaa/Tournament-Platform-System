@@ -29,7 +29,8 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
             return Ok(sports.Select(s => new SportDto
             {
                 Name = s.Name,
-                Id = s.Id
+                Id = s.Id,
+                ImageUrl = s.ImageUrl ?? "https://www.google.com/url?sa=t&source=web&rct=j&url=https%3A%2F%2Fwebhostingmedia.net%2Ferror-404-not-found%2F&ved=0CBYQjRxqFwoTCPC33fW45JQDFQAAAAAdAAAAABAG&opi=89978449"
             }));
         }
     }
