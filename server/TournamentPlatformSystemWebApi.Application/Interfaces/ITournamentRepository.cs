@@ -13,6 +13,7 @@ public interface ITournamentRepository : IRepository<Tournament, Guid>
     Task<bool> IsUserInTournamentAsync(Guid tournamentId, Guid userId);
     Task<bool> IsTeamNameUsedAsync(Guid tournamentId, string teamName);
     Task<Team> AddParticipantAsync(Guid tournamentId, Guid userId, string teamName);
+    Task<bool> RemoveParticipantAsync(Guid tournamentId, Guid userId);
     Task<bool> DisqualifyParticipantAsync(Guid tournamentId, Guid userId);
     Task AddMatchesAsync(IEnumerable<TournamentPlatformSystemWebApi.Core.Entities.Match> matches);
     Task<IReadOnlyList<TournamentPlatformSystemWebApi.Core.Entities.Match>> GetMatchesAsync(Guid tournamentId);

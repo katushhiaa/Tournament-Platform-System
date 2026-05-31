@@ -134,6 +134,31 @@ public class TournamentRepository : BaseRepository<Tournament, TournamentModel>,
         return _mapper.Map<Team>(teamModel);
     }
 
+    public async Task<bool> RemoveParticipantAsync(Guid tournamentId, Guid userId)
+    {
+        var userTeam = await _context.Set<UserTeamModel>()
+            .Include(ut => ut.Team)
+            .FirstOrDefaultAsync(ut => ut.UserId == userId && ut.Team.TournamentId == tournamentId);
+
+        if (userTeam == null)
+            return false;
+
+        var team = userTeam.Team;
+        _context.Set<UserTeamModel>().Remove(userTeam);
+
+        if (team != null)
+        {
+            var remaining = await _context.Set<UserTeamModel>().AnyAsync(ut => ut.TeamId == team.Id && ut.Id != userTeam.Id);
+            if (!remaining)
+            {
+                _context.Set<TeamModel>().Remove(team);
+            }
+        }
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
     public async Task<bool> DisqualifyParticipantAsync(Guid tournamentId, Guid userId)
     {
         // find user-team relation

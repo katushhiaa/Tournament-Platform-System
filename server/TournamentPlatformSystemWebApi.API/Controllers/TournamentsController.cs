@@ -1302,6 +1302,109 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
             }
         }
 
+        [HttpDelete("{id}/participants")]
+        [Authorize]
+        [SwaggerOperation(Summary = "Вийти з турніру", Description = "Забирає поточного користувача з турніру, якщо реєстрація ще відкрита.")]
+        [SwaggerResponse(204, Description = "Участь скасовано")]
+        [SwaggerResponse(400, Type = typeof(ErrorResponseDto), Description = "Реєстрація закрита або турнір вже почався/закінчений")]
+        [SwaggerResponse(401, Type = typeof(ErrorResponseDto), Description = "Не авторизований")]
+        [SwaggerResponse(403, Type = typeof(ErrorResponseDto), Description = "Forbidden")]
+        [SwaggerResponse(404, Type = typeof(ErrorResponseDto), Description = "Турнір не знайдено")]
+        [SwaggerResponse(409, Type = typeof(ErrorResponseDto), Description = "Користувач не є учасником турніру")]
+        public async Task<IActionResult> RemoveParticipant(Guid id)
+        {
+            var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+            if (!Guid.TryParse(sub, out var userId))
+            {
+                return Unauthorized(new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Type = "Unauthorized",
+                        Message = "Invalid user",
+                        Code = 401,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                });
+            }
+
+            try
+            {
+                await _tournamentService.RemoveParticipantAsync(id, userId);
+                return NoContent();
+            }
+            catch (TournamentPlatformSystemWebApi.Common.Exceptions.ParticipantNotFoundException ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status409Conflict,
+                        Type = "Conflict",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return Conflict(err);
+            }
+            catch (TournamentPlatformSystemWebApi.Common.Exceptions.TournamentClosedForChangesException ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status400BadRequest,
+                        Type = "ValidationError",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return BadRequest(err);
+            }
+            catch (KeyNotFoundException)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status404NotFound,
+                        Type = "NotFound",
+                        Message = "Tournament not found",
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return NotFound(err);
+            }
+            catch (Exception ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status500InternalServerError,
+                        Type = "InternalServerError",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return StatusCode(500, err);
+            }
+        }
+
         [HttpDelete("{id}/participants/{userId}")]
         [Authorize(Roles = "organizer")]
         [SwaggerOperation(Summary = "Дискваліфікувати учасника", Description = "Дискваліфікує гравця з турніру. Роль: Organizer.")]
