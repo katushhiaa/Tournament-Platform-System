@@ -92,11 +92,21 @@ CREATE TABLE tournament_theme (
 
 -- Insert default themes
 INSERT INTO tournament_theme (name, image_url) VALUES
-    ('Chess', 'https://storage.googleapis.com/tournament-zvytiaga-images/chess.jpg'),
-    ('Tennis', 'https://storage.googleapis.com/tournament-zvytiaga-images/tennis.jpg'),
-    ('Shooting', 'https://storage.googleapis.com/tournament-zvytiaga-images/shooting.jpg'),
-    ('Boxing', 'https://storage.googleapis.com/tournament-zvytiaga-images/boxing.jpg'),
-    ('Rocket League', 'https://storage.googleapis.com/tournament-zvytiaga-images/rocket-league.jpg');
+    ('Armwrestling', 'https://storage.googleapis.com/tournament-zvytiaga-images/themes/armwrestling_sport_image.png'),
+    ('Badminton', 'https://storage.googleapis.com/tournament-zvytiaga-images/themes/badminton_sport_image.png'),
+    ('Billiards', 'https://storage.googleapis.com/tournament-zvytiaga-images/themes/billiards_sport_image.png'),
+    ('Boxing', 'https://storage.googleapis.com/tournament-zvytiaga-images/themes/boxing_sport_image.png'),
+    ('Chess', 'https://storage.googleapis.com/tournament-zvytiaga-images/themes/chess_sport_image.png'),
+    ('Darts', 'https://storage.googleapis.com/tournament-zvytiaga-images/themes/darts_sport_image.png'),
+    ('Fencing', 'https://storage.googleapis.com/tournament-zvytiaga-images/themes/fencing_sport_image.png'),
+    ('Judo', 'https://storage.googleapis.com/tournament-zvytiaga-images/themes/judo_sport_image.png'),
+    ('Karate', 'https://storage.googleapis.com/tournament-zvytiaga-images/themes/karate_sport_image.png'),
+    ('MMA', 'https://storage.googleapis.com/tournament-zvytiaga-images/themes/mma_sport_image.png'),
+    ('Muay Thai', 'https://storage.googleapis.com/tournament-zvytiaga-images/themes/muay_thai_sport_image.png'),
+    ('Rocket League', 'https://storage.googleapis.com/tournament-zvytiaga-images/themes/rocket_league_sport_image.png'),
+    ('Shooting', 'https://storage.googleapis.com/tournament-zvytiaga-images/themes/shooting_sport_image.png'),
+    ('Table Tennis', 'https://storage.googleapis.com/tournament-zvytiaga-images/themes/table_tennis_sport_image.png'),
+    ('Tennis', 'https://storage.googleapis.com/tournament-zvytiaga-images/themes/tennis_sport_image.png');
 
 -- ============================================================================
 -- 6.1. CREATE USER_TOURNAMENT_THEME_PREFERENCE TABLE
