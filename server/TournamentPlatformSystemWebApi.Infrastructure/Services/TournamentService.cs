@@ -27,6 +27,22 @@ public class TournamentService : ITournamentService
         _userRepository = userRepository;
     }
 
+    private async Task<Tournament> GetTournamentWithRefreshedStatusAsync(Guid tournamentId)
+    {
+        var existing = await _tournamentRepository.GetByIdAsync(tournamentId);
+        if (existing == null) throw new KeyNotFoundException("Tournament not found");
+
+        if (existing.Status == TournamentStatus.REGISTRATION_OPEN
+            && existing.RegistrationDeadline != default
+            && existing.RegistrationDeadline <= DateTime.UtcNow)
+        {
+            await _tournamentRepository.UpdateStatus(existing.Id, TournamentStatus.REGISTRATION_CLOSED);
+            existing.Status = TournamentStatus.REGISTRATION_CLOSED;
+        }
+
+        return existing;
+    }
+
     public async Task<TournamentDto> CreateTournamentAsync(TournamentCreateDto dto, Guid organizerId)
     {
         if (dto == null)
@@ -164,7 +180,7 @@ public class TournamentService : ITournamentService
 
     public async Task<TournamentPlatformSystemWebApi.Application.DTOs.TournamentStartResponse> StartTournament(Guid tournamentId, Guid organizerId)
     {
-        var existing = await _tournamentRepository.GetByIdAsync(tournamentId);
+        var existing = await GetTournamentWithRefreshedStatusAsync(tournamentId);
         if (existing == null) throw new KeyNotFoundException("Tournament not found");
         if (existing.OrganizerId != organizerId) throw new UnauthorizedAccessException("Not the organizer");
         if (existing.Status == TournamentStatus.IN_PROGRESS)
@@ -270,7 +286,7 @@ public class TournamentService : ITournamentService
         if (dto.ScorePlayer1 == dto.ScorePlayer2)
             throw new ValidationException("Match cannot end in a draw");
 
-        var existingTournament = await _tournamentRepository.GetByIdAsync(tournamentId);
+        var existingTournament = await GetTournamentWithRefreshedStatusAsync(tournamentId);
         if (existingTournament == null)
             throw new KeyNotFoundException("Tournament not found");
 
@@ -372,9 +388,7 @@ public class TournamentService : ITournamentService
 
     public async Task<TournamentPlatformSystemWebApi.Application.DTOs.TournamentDetailsDto> GetTournamentDetailsAsync(Guid tournamentId)
     {
-        var existing = await _tournamentRepository.GetByIdAsync(tournamentId);
-        if (existing == null) throw new KeyNotFoundException("Tournament not found");
-
+        var existing = await GetTournamentWithRefreshedStatusAsync(tournamentId);
         var participantsCount = await _tournamentRepository.GetParticipantsCountAsync(tournamentId);
 
 
@@ -472,7 +486,7 @@ public class TournamentService : ITournamentService
 
     public async Task<TournamentPlatformSystemWebApi.Application.DTOs.TeamDto> AddParticipantAsync(Guid tournamentId, Guid userId, Guid actorId)
     {
-        var existing = await _tournamentRepository.GetByIdAsync(tournamentId);
+        var existing = await GetTournamentWithRefreshedStatusAsync(tournamentId);
         if (existing == null) throw new KeyNotFoundException("Tournament not found");
 
         // Only allow adding participants while registration is open
@@ -567,8 +581,7 @@ public class TournamentService : ITournamentService
 
     public async Task DisqualifyParticipantAsync(Guid tournamentId, Guid userId, Guid actorId)
     {
-        var existing = await _tournamentRepository.GetByIdAsync(tournamentId);
-        if (existing == null) throw new KeyNotFoundException("Tournament not found");
+        var existing = await GetTournamentWithRefreshedStatusAsync(tournamentId);
 
         // disallow if registration closed, in progress, or completed
         if (existing.Status == TournamentPlatformSystemWebApi.Core.Entities.TournamentStatus.REGISTRATION_CLOSED
@@ -593,9 +606,7 @@ public class TournamentService : ITournamentService
 
     public async Task<IReadOnlyList<TournamentPlatformSystemWebApi.Application.DTOs.TeamDto>> GetTournamentParticipantsAsync(Guid tournamentId)
     {
-        var existing = await _tournamentRepository.GetByIdAsync(tournamentId);
-        if (existing == null) throw new KeyNotFoundException("Tournament not found");
-
+        var existing = await GetTournamentWithRefreshedStatusAsync(tournamentId);
         var teams = await _tournamentRepository.GetTeamsAsync(tournamentId);
 
         var dtos = teams.Select(t => new TournamentPlatformSystemWebApi.Application.DTOs.TeamDto
@@ -614,8 +625,7 @@ public class TournamentService : ITournamentService
 
     public async Task<IReadOnlyList<TournamentPlatformSystemWebApi.Application.DTOs.EventDto>> GetTournamentEventsAsync(Guid tournamentId)
     {
-        var existing = await _tournamentRepository.GetByIdAsync(tournamentId);
-        if (existing == null) throw new KeyNotFoundException("Tournament not found");
+        var existing = await GetTournamentWithRefreshedStatusAsync(tournamentId);
 
         var events = new List<TournamentPlatformSystemWebApi.Application.DTOs.EventDto>();
 
