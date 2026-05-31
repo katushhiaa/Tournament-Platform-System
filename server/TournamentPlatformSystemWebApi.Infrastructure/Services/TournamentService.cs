@@ -477,11 +477,11 @@ public class TournamentService : ITournamentService
 
         // Only allow adding participants while registration is open
         if (existing.Status != TournamentPlatformSystemWebApi.Core.Entities.TournamentStatus.REGISTRATION_OPEN)
-            throw new TournamentPlatformSystemWebApi.Common.Exceptions.TournamentClosedForChangesException("Tournament is closed for registration");
+            throw new TournamentPlatformSystemWebApi.Common.Exceptions.TournamentClosedForChangesException("Registration for tournament is already finished");
         // check max participants
         var participantsCount = await _tournamentRepository.GetParticipantsCountAsync(tournamentId);
         if (existing.MaxTeams > 0 && participantsCount >= existing.MaxTeams)
-            throw new TournamentPlatformSystemWebApi.Common.Exceptions.MaxParticipantsReachedException("Maximum participants reached");
+            throw new TournamentPlatformSystemWebApi.Common.Exceptions.MaxParticipantsReachedException("Maximum amount of participants is achieved, there is no spot for you");
 
         // check user exists
         var user = await _userRepository.GetUserWithDetails(userId);
@@ -495,7 +495,7 @@ public class TournamentService : ITournamentService
 
         // check already added
         var already = await _tournamentRepository.IsUserInTournamentAsync(tournamentId, userId);
-        if (already) throw new TournamentPlatformSystemWebApi.Common.Exceptions.ParticipantAlreadyAddedException("Player already added to tournament");
+        if (already) throw new TournamentPlatformSystemWebApi.Common.Exceptions.ParticipantAlreadyAddedException("You already joined to this tournament");
 
         // derive team name from user details
         var displayName = user.FullName?.Trim();
