@@ -805,7 +805,6 @@ const handleSubmit = async () => {
       applyBackendErrors(apiError.fieldErrors);
       submitError.value = apiError.message ?? 'Validation error';
     } else {
-      toastMessage.value = 'Помилка сервера';
       submitError.value = apiError.message ?? 'Server error. Please try again later.';
     }
   } finally {

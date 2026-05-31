@@ -25,7 +25,7 @@ const validate = (): boolean => {
   error.value = null
 
   if (score1.value === '' || score2.value === '') {
-    error.value = 'Будь ласка, введіть рахунок матчу'
+    error.value = 'Please enter the match score.'
     return false
   }
 
@@ -33,17 +33,17 @@ const validate = (): boolean => {
   const s2 = Number(score2.value)
 
   if (!Number.isInteger(s1) || !Number.isInteger(s2) || isNaN(s1) || isNaN(s2)) {
-    error.value = 'Рахунок повинен бути цілим числом'
+    error.value = 'The score must be a whole number'
     return false
   }
 
   if (s1 < 0 || s2 < 0) {
-    error.value = 'Рахунок не може бути від\'ємним'
+    error.value = 'The score cannot be negative'
     return false
   }
 
   if (s1 === s2) {
-    error.value = 'Нічия неможлива у матчах на виліт. Визначте переможця'
+    error.value = 'A tie is not possible in elimination matches. Please determine a winner.'
     return false
   }
 
@@ -69,11 +69,11 @@ const handleSave = async () => {
   } catch (e: any) {
     const msg = e?.response?.data?.error?.message
     if (e?.response?.status === 409) {
-      error.value = 'Результат для цього матчу вже збережено'
+      error.value = 'Result for this match is already saved'
     } else if (e?.response?.status === 400) {
-      error.value = msg ?? 'Некоректний результат матчу'
+      error.value = msg ?? 'Invalid match result'
     } else {
-      error.value = msg ?? 'Не вдалося зберегти результат. Спробуйте ще раз'
+      error.value = msg ?? 'Failed to save result. Please try again'
     }
   } finally {
     isSaving.value = false
