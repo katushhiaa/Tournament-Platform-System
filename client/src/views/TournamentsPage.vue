@@ -6,7 +6,10 @@ import TournamentCard from '../components/TournamentCard.vue'
 import { tournamentService } from '../services/tournamentService'
 import type { ITournamentPreview } from '../types/Tournament'
 import defaultCardBg from '../assets/hero-card.jpg'
+import { useAuthStore } from '../stores/authStore'
+import { getSportPreferences, sortByPreferences } from '../utils/sortByPreferences'
 
+const authStore = useAuthStore()
 const tournaments = ref<ITournamentPreview[]>([])
 const loading = ref(true)
 const error = ref(false)
@@ -23,7 +26,11 @@ const formatTime = (iso: string) =>
 
 onMounted(async () => {
   try {
-    tournaments.value = await tournamentService.getTournaments({ pageSize: 20 })
+    const raw = await tournamentService.getTournaments({ pageSize: 20 })
+    const prefs = authStore.currentUser
+      ? getSportPreferences(authStore.currentUser.userId)
+      : []
+    tournaments.value = sortByPreferences(raw, prefs)
   } catch (e) {
     error.value = true
   } finally {
