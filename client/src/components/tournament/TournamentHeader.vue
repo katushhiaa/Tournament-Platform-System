@@ -145,8 +145,18 @@ const handleEditTournament = () => {
 
     <div class="right">
       <div class="top">
-        <h1 class="title">{{ tournament.title }}</h1>
-        <div class="format">Format: Single Elimination</div>
+        <h1 class="title">
+          {{ tournament.title }}
+        </h1>
+
+        <div class="right-top">
+          <div class="status-badge" :class="`status-badge--${tournament.status}`">
+            {{ tournament.status.replace(/_/g, ' ').toUpperCase() }}
+          </div>
+          <div class="format">
+            Format: Single Elimination
+          </div>
+        </div>
       </div>
 
       <div class="bottom">
@@ -269,6 +279,52 @@ const handleEditTournament = () => {
   font-size: 16px;
   color: #84c082;
   white-space: nowrap;
+}
+
+.right-top {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.status-badge {
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.status-badge--registration_open {
+  background: rgba(21, 49, 206, 0.35);
+  border: 1px solid #1531ce;
+  color: #7b9fff;
+}
+
+.status-badge--registration_closed {
+  background: rgba(255, 152, 0, 0.15);
+  border: 1px solid #ff9800;
+  color: #ff9800;
+}
+
+.status-badge--in_progress {
+  background: rgba(255, 193, 7, 0.15);
+  border: 1px solid #ffc107;
+  color: #ffc107;
+}
+
+.status-badge--completed {
+  background: rgba(22, 101, 52, 0.35);
+  border: 1px solid rgba(52, 211, 100, 0.5);
+  color: #84c082;
+}
+
+.status-badge--draft {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.5);
 }
 
 .bottom {

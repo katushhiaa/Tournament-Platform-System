@@ -128,7 +128,8 @@ const handleRefreshParticipants = async () => {
         />
 
         <div v-if="bracketError" class="vt-toast vt-toast--error">{{ bracketError }}</div>
-
+        <div v-if="toast" class="vt-toast">{{ toast }}</div>
+        
         <TournamentOverview
           v-if="activeTab === 'overview'"
           :tournament="tournament"
