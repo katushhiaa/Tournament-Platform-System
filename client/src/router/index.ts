@@ -12,6 +12,7 @@ import TournamentsPage from '../views/TournamentsPage.vue'
 import MyTournamentsPage from '../views/MyTournamentsPage.vue'
 import NotFoundPage from '../views/NotFoundPage.vue'
 import JoinTournamentPage from '../views/JoinTournamentPage.vue'
+import SportSelectionPage from '../views/SportSelectionPage.vue'
 
 const router = createRouter({
     history: createWebHistory(),
@@ -120,6 +121,12 @@ const router = createRouter({
             component: JoinTournamentPage,
         },
 
+        {
+            path: '/onboarding/sports',
+            name: 'sport-selection',
+            component: SportSelectionPage,
+            meta: { requiresAuth: true },
+        },
     ],
 });
 

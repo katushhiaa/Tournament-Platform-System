@@ -60,12 +60,6 @@ export interface ITournamentResponse
     registrationUrl: string
 }
 
-export interface IThemeOption {
-    id: string
-
-    name: string
-}
-
 export interface ITournamentPreview {
     id: string
     title: string
@@ -75,4 +69,10 @@ export interface ITournamentPreview {
     startDate: string
     participantsCount: number
     maxParticipants: number
+}
+
+export interface IThemeOption {
+    id: string
+    name: string
+    imageUrl?: string | null
 }
