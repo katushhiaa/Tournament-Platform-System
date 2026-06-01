@@ -25,9 +25,15 @@ export const participationService = {
     async removeParticipant(
         tournamentId: string,
         userId: string,
-        ): Promise<void> {
+    ): Promise<void> {
         await axiosInstance.delete(
             `/tournaments/${tournamentId}/participants/${userId}`,
+        )
+    },
+
+    async leaveParticipant(tournamentId: string): Promise<void> {
+        await axiosInstance.delete(
+            `/tournaments/${tournamentId}/participants`,
         )
     },
 }

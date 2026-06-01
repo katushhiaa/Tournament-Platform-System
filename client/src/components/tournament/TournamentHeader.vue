@@ -25,11 +25,11 @@ const emit = defineEmits<{
 const router = useRouter()
 const authStore = useAuthStore()
 
-// --- Стан ---
 const isJoining = ref(false)
+const isCancelling = ref(false)
 const actionError = ref<string | null>(null)
+const showCancelConfirm = ref(false)
 
-// --- Обчислення ---
 const coverImage = computed(() =>
   props.tournament.backgroundImg ?? defaultBg
 )
@@ -47,32 +47,32 @@ const isOrganizer = computed(() =>
 
 const isGuest = computed(() => !authStore.isAuthenticated)
 
-//видалити
 const isAlreadyRegistered = computed(() =>
-  props.participants.some(
-    p => p.name === authStore.currentUser?.email
-  )
+  props.participants.some(p => p.userId === authStore.currentUser?.userId)
 )
 
-//розкомітити після видалення вище
-/*const isAlreadyRegistered = computed(() =>
-    props.participants.some(p => p.userId === authStore.currentUser?.userId)
-)*/
+const canCancel = computed(() => {
+  const status = props.tournament.status
+  const regClose = new Date(props.tournament.registrationCloseDate)
+  return (
+    isAlreadyRegistered.value &&
+    !isOrganizer.value &&
+    status !== 'in_progress' &&
+    status !== 'completed' &&
+    status !== 'registration_closed' &&
+    new Date() < regClose
+  )
+})
 
 const showSubmitButton = computed(() =>
-  !isOrganizer.value && !isAlreadyRegistered.value &&
+  !isOrganizer.value &&
+  !isAlreadyRegistered.value &&
   props.tournament.status === 'registration_open'
 )
 
-const showCancelButton = computed(() =>
-  !isOrganizer.value && isAlreadyRegistered.value
-)
-
-// --- Дії ---
 const handleJoin = async () => {
-  
   if (isGuest.value) {
-    router.push('/login')
+    actionError.value = 'You need to log in to participate in a tournament.'
     return
   }
 
@@ -84,15 +84,53 @@ const handleJoin = async () => {
       authStore.currentUser!.userId,
     )
     emit('refresh-participants')
-    emit('show-toast', `You have successfully joined the ${props.tournament.title}!`)
+    emit('show-toast', `You have successfully joined ${props.tournament.title}!`)
   } catch (e: any) {
-    if (e?.response?.status === 409) {
-      actionError.value = 'You are already registered or the tournament is full.'
+    const status = e?.response?.status
+    const msg = e?.response?.data?.error?.message
+
+    if (status === 400) {
+      actionError.value = 'Tournament registration is already closed.'
+    } else if (status === 401) {
+      actionError.value = 'You need to log in to participate in a tournament.'
+    } else if (status === 404) {
+      actionError.value = 'Tournament not found.'
+    } else if (status === 409) {
+      actionError.value = msg ?? 'You are already registered or the tournament is full.'
+    } else if (status === 500) {
+      actionError.value = 'Internal server error. Please try again later.'
+    } else if (!status) {
+      actionError.value = 'Connection error. Please try again.'
     } else {
       actionError.value = 'Failed to join. Please try again.'
     }
   } finally {
     isJoining.value = false
+  }
+}
+
+const handleCancelConfirm = async () => {
+  try {
+    isCancelling.value = true
+    actionError.value = null
+    await participationService.leaveParticipant(props.tournament.id)
+    showCancelConfirm.value = false
+    emit('refresh-participants')
+    emit('show-toast', 'You have successfully cancelled your participation.')
+  } catch (e: any) {
+    const status = e?.response?.status
+    const msg = e?.response?.data?.error?.message
+    showCancelConfirm.value = false
+
+    if (status === 400) {
+      actionError.value = msg ?? 'Registration is already closed.'
+    } else if (status === 409) {
+      actionError.value = msg ?? 'You are not a participant of this tournament.'
+    } else {
+      actionError.value = 'Failed to cancel participation. Please try again.'
+    }
+  } finally {
+    isCancelling.value = false
   }
 }
 
@@ -103,38 +141,21 @@ const handleEditTournament = () => {
 
 <template>
   <section class="header">
-    <img
-      :src="coverImage"
-      alt="Tournament"
-      class="image"
-    />
+    <img :src="coverImage" alt="Tournament" class="image" />
 
     <div class="right">
       <div class="top">
-        <h1 class="title">
-          {{ tournament.title }}
-        </h1>
-
-        <div class="format">
-          Format: Single Elimination
-        </div>
+        <h1 class="title">{{ tournament.title }}</h1>
+        <div class="format">Format: Single Elimination</div>
       </div>
 
       <div class="bottom">
         <div class="details">
-          <p>
-            Sport Type:
-            {{ tournament.sportName }}
-          </p>
-
+          <p>Sport Type: {{ tournament.sportName }}</p>
           <p>Date start: {{ formatDate(tournament.startDate) }}</p>
           <p>Date end: {{ formatDate(tournament.endDate) }}</p>
           <p>End of registration: {{ formatDate(tournament.registrationCloseDate) }}</p>
-
-          <p>
-            Participants:
-            {{ tournament.maxParticipants }}
-          </p>
+          <p>Participants: {{ tournament.maxParticipants }}</p>
         </div>
 
         <div class="side">
@@ -143,7 +164,6 @@ const handleEditTournament = () => {
           </div>
 
           <div class="buttons">
-            
             <GenerateBracketButton
               v-if="isOrganizer"
               :is-organizer="isOrganizer"
@@ -152,7 +172,6 @@ const handleEditTournament = () => {
               @generated="emit('refresh-bracket')"
             />
 
-            <!-- Організатор: Edit (тільки якщо його турнір) -->
             <button
               v-if="isOrganizer"
               class="button"
@@ -161,7 +180,7 @@ const handleEditTournament = () => {
               Edit Tournament
             </button>
 
-            <!-- Гравець / Гість: Submit -->
+            <!-- Submit -->
             <button
               v-if="showSubmitButton"
               class="button button--join"
@@ -171,17 +190,42 @@ const handleEditTournament = () => {
               {{ isJoining ? 'Joining...' : 'Submit an application' }}
             </button>
 
-            <!-- Гравець: Cancel (тільки до старту) -->
+            <!-- Cancel -->
             <button
-              v-if="showCancelButton"
+              v-if="canCancel"
               class="button button--cancel"
-              disabled
+              :disabled="isCancelling"
+              @click="showCancelConfirm = true"
             >
-              Cancel participation
+              {{ isCancelling ? 'Cancelling...' : 'Cancel participation' }}
             </button>
-
-            <p v-if="actionError" class="action-error">{{ actionError }}</p>
           </div>
+
+          <!-- Error -->
+          <p v-if="actionError" class="action-error">{{ actionError }}</p>
+
+          <!-- Login hint -->
+          <p v-if="actionError && isGuest" class="action-login">
+            <a @click="router.push('/login')">Log in</a> to participate
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cancel confirmation modal -->
+    <div v-if="showCancelConfirm" class="confirm-overlay" @mousedown.self="showCancelConfirm = false">
+      <div class="confirm-modal">
+        <p class="confirm-modal__text">Are you sure you want to cancel your participation?</p>
+        <div class="confirm-modal__actions">
+          <button
+            class="confirm-modal__btn confirm-modal__btn--no"
+            @click="showCancelConfirm = false"
+          >No</button>
+          <button
+            class="confirm-modal__btn confirm-modal__btn--yes"
+            :disabled="isCancelling"
+            @click="handleCancelConfirm"
+          >{{ isCancelling ? 'Cancelling...' : 'Yes, cancel' }}</button>
         </div>
       </div>
     </div>
@@ -191,30 +235,22 @@ const handleEditTournament = () => {
 <style scoped>
 .header {
   padding-top: 197px;
-
   margin-left: 80px;
   margin-right: 83px;
-
   display: flex;
   align-items: flex-start;
-
   gap: 32px;
 }
 
 .image {
   width: 373px;
   height: 244px;
-
   object-fit: cover;
-
   border-radius: 24px;
-
   flex-shrink: 0;
 }
 
-.right {
-  flex: 1;
-}
+.right { flex: 1; }
 
 .top {
   display: flex;
@@ -224,40 +260,30 @@ const handleEditTournament = () => {
 
 .title {
   margin: 0;
-
   font-size: 32px;
   font-weight: 600;
-
   color: white;
 }
 
 .format {
   font-size: 16px;
-
   color: #84c082;
-
   white-space: nowrap;
 }
 
 .bottom {
   margin-top: 30px;
-
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-
   gap: 32px;
 }
 
-.details {
-  max-width: 373px;
-}
+.details { max-width: 373px; }
 
 .details p {
   margin-bottom: 20px;
-
   font-size: 14px;
-
   color: white;
 }
 
@@ -269,41 +295,30 @@ const handleEditTournament = () => {
 
 .count {
   margin-bottom: 10px;
-
   font-size: 12px;
-
   color: #ffffff;
 }
 
 .buttons {
   display: flex;
   align-items: center;
-
   gap: 14px;
 }
 
 .button {
   width: 166px;
   height: 52px;
-
   border: none;
   border-radius: 14px;
-
   background: #ff9800;
-
   color: white;
-
   font-size: 14px;
   font-weight: 600;
-
   cursor: pointer;
-
   transition: opacity 0.2s ease;
 }
 
-.button:hover {
-  opacity: 0.9;
-}
+.button:hover { opacity: 0.9; }
 
 .button--join {
   background: #ff9800;
@@ -316,73 +331,123 @@ const handleEditTournament = () => {
   color: #e57373;
 }
 
-.button--cancel:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
+.button--cancel:disabled,
 .button--join:disabled {
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
 .action-error {
   color: #e57373;
   font-size: 13px;
-  margin-top: 8px;
+  margin-top: 10px;
+  max-width: 340px;
+  text-align: right;
+}
+
+.action-login {
+  font-size: 13px;
+  margin-top: 6px;
+  color: rgba(255,255,255,0.6);
+  text-align: right;
+}
+
+.action-login a {
+  color: #4d6eff;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* Confirm modal */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.65);
+}
+
+.confirm-modal {
+  background: #252e35;
+  border: 1px solid #1531ce;
+  border-radius: 20px;
+  padding: 40px 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  max-width: 440px;
   width: 100%;
+}
+
+.confirm-modal__text {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.confirm-modal__actions {
+  display: flex;
+  gap: 20px;
+}
+
+.confirm-modal__btn {
+  width: 140px;
+  height: 48px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.confirm-modal__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.confirm-modal__btn--no {
+  border: 1px solid #1531ce;
+  background: transparent;
+  color: #1531ce;
+}
+
+.confirm-modal__btn--yes {
+  border: none;
+  background: #e57373;
+  color: white;
+}
+
+.confirm-modal__btn--yes:hover:not(:disabled) {
+  opacity: 0.88;
 }
 
 @media (max-width: 1200px) {
   .header {
     margin-left: 24px;
     margin-right: 24px;
-
     flex-direction: column;
   }
-
-  .right {
-    width: 100%;
-  }
-
-  .top {
-    flex-direction: column;
-
-    gap: 16px;
-  }
-
-  .bottom {
-    flex-direction: column;
-  }
-
-  .side {
-    align-items: flex-start;
-  }
-
-  .buttons {
-    flex-wrap: wrap;
-  }
+  .right { width: 100%; }
+  .top { flex-direction: column; gap: 16px; }
+  .bottom { flex-direction: column; }
+  .side { align-items: flex-start; }
+  .buttons { flex-wrap: wrap; }
+  .action-error,
+  .action-login { text-align: left; }
 }
 
 @media (max-width: 768px) {
-  .header {
-    padding-top: 140px;
-  }
-
-  .image {
-    width: 100%;
-    height: auto;
-  }
-
+  .header { padding-top: 140px; }
+  .image { width: 100%; height: auto; }
   .buttons {
     width: 100%;
-
     flex-direction: column;
     align-items: stretch;
   }
-
-  .button {
-    width: 100%;
-  }
+  .button { width: 100%; }
 }
 </style>
