@@ -7,6 +7,7 @@ using TournamentPlatformSystemWebApi.Application.Interfaces;
 using TournamentPlatformSystemWebApi.Core.Entities;
 using System.ComponentModel.DataAnnotations;
 using TournamentPlatformSystemWebApi.Common.Exceptions;
+using TournamentPlatformSystemWebApi.Infrastructure.Context;
 
 namespace TournamentPlatformSystemWebApi.Infrastructure.Services;
 
@@ -17,14 +18,16 @@ public class TournamentService : ITournamentService
     private readonly IMapper _mapper;
     private readonly TournamentPlatformSystemWebApi.Application.Interfaces.IStorageService _storageService;
     private readonly TournamentPlatformSystemWebApi.Application.Interfaces.IUserRepository _userRepository;
+    private readonly TournamentdbContext _context;
 
-    public TournamentService(ITournamentRepository tournamentRepository, IThemeRepository themeRepository, IMapper mapper, TournamentPlatformSystemWebApi.Application.Interfaces.IStorageService storageService, TournamentPlatformSystemWebApi.Application.Interfaces.IUserRepository userRepository)
+    public TournamentService(ITournamentRepository tournamentRepository, IThemeRepository themeRepository, IMapper mapper, TournamentPlatformSystemWebApi.Application.Interfaces.IStorageService storageService, TournamentPlatformSystemWebApi.Application.Interfaces.IUserRepository userRepository, TournamentdbContext context)
     {
         _tournamentRepository = tournamentRepository;
         _mapper = mapper;
         _storageService = storageService;
         _themeRepository = themeRepository;
         _userRepository = userRepository;
+        _context = context;
     }
 
     private async Task<Tournament> GetTournamentWithRefreshedStatusAsync(Guid tournamentId)
@@ -358,32 +361,53 @@ public class TournamentService : ITournamentService
 
         match.Status = "completed";
 
-        var updatedMatch = await _tournamentRepository.UpdateMatchAsync(match);
-        if (nextMatch != null)
-            await _tournamentRepository.UpdateMatchAsync(nextMatch);
+        var provider = _context.Database.ProviderName ?? string.Empty;
+        var useTransaction = !provider.Contains("InMemory", StringComparison.OrdinalIgnoreCase);
 
-        var maxLevel = matches.Any() ? matches.Max(m => m.Level) : 0;
-        if (match.Level == maxLevel)
+        await using var txn = useTransaction ? await _context.Database.BeginTransactionAsync() : null;
+        try
         {
-            await _tournamentRepository.UpdateStatus(tournamentId, TournamentStatus.COMPLETED);
+            var updatedMatch = await _tournamentRepository.UpdateMatchAsync(match);
+            if (nextMatch != null)
+                await _tournamentRepository.UpdateMatchAsync(nextMatch);
+
+            var maxLevel = matches.Any() ? matches.Max(m => m.Level) : 0;
+            if (match.Level == maxLevel)
+            {
+                await _tournamentRepository.UpdateStatus(tournamentId, TournamentStatus.COMPLETED);
+            }
+
+            if (useTransaction && txn != null)
+            {
+                await txn.CommitAsync();
+            }
+
+            return new TournamentPlatformSystemWebApi.Application.DTOs.MatchDto
+            {
+                MatchId = updatedMatch.Id,
+                TournamentId = updatedMatch.TournamentId,
+                Round = updatedMatch.Level,
+                OrderNumber = updatedMatch.OrderNumber,
+                Player1Id = updatedMatch.TeamAId,
+                Player2Id = updatedMatch.TeamBId,
+                Player1Name = updatedMatch.TeamAName,
+                Player2Name = updatedMatch.TeamBName,
+                Status = updatedMatch.Status,
+                IsBye = updatedMatch.IsBye,
+                ScorePlayer1 = updatedMatch.TeamAScore,
+                ScorePlayer2 = updatedMatch.TeamBScore,
+                WinnerId = updatedMatch.WinnerId
+            };
         }
-
-        return new TournamentPlatformSystemWebApi.Application.DTOs.MatchDto
+        catch
         {
-            MatchId = updatedMatch.Id,
-            TournamentId = updatedMatch.TournamentId,
-            Round = updatedMatch.Level,
-            OrderNumber = updatedMatch.OrderNumber,
-            Player1Id = updatedMatch.TeamAId,
-            Player2Id = updatedMatch.TeamBId,
-            Player1Name = updatedMatch.TeamAName,
-            Player2Name = updatedMatch.TeamBName,
-            Status = updatedMatch.Status,
-            IsBye = updatedMatch.IsBye,
-            ScorePlayer1 = updatedMatch.TeamAScore,
-            ScorePlayer2 = updatedMatch.TeamBScore,
-            WinnerId = updatedMatch.WinnerId
-        };
+            if (useTransaction && txn != null)
+            {
+                await txn.RollbackAsync();
+            }
+
+            throw;
+        }
     }
 
     public async Task<TournamentPlatformSystemWebApi.Application.DTOs.TournamentDetailsDto> GetTournamentDetailsAsync(Guid tournamentId)
