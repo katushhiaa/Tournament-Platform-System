@@ -792,8 +792,9 @@ const handleSubmit = async () => {
     clearFormDraft();
 
     setTimeout(() => {
-      router.push(authStore.getDashboardRouteByRole(response.role));
+      router.push('/onboarding/sports');
     }, 900);
+    
   } catch (error: unknown) {
     const apiError = error as IApiError;
 
