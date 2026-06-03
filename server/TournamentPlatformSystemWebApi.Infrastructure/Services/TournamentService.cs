@@ -1,13 +1,16 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using TournamentPlatformSystemWebApi.Application.DTOs;
 using TournamentPlatformSystemWebApi.Application.Interfaces;
 using TournamentPlatformSystemWebApi.Core.Entities;
+using TournamentPlatformSystemWebApi.Infrastructure.Context;
+using TournamentPlatformSystemWebApi.Infrastructure.Entities;
 using System.ComponentModel.DataAnnotations;
 using TournamentPlatformSystemWebApi.Common.Exceptions;
-using TournamentPlatformSystemWebApi.Infrastructure.Context;
 
 namespace TournamentPlatformSystemWebApi.Infrastructure.Services;
 
@@ -88,6 +91,8 @@ public class TournamentService : ITournamentService
         var createdId = await _tournamentRepository.CreateAsync(entity);
 
         var newTournamentWithDetails = await _tournamentRepository.GetByIdAsync(createdId);
+        if (newTournamentWithDetails == null)
+            throw new InvalidOperationException("Created tournament could not be loaded");
 
         var result = new TournamentDto
         {
@@ -103,7 +108,7 @@ public class TournamentService : ITournamentService
             MaxParticipants = entity.MaxTeams,
             Status = "registration_open",
             OrganizerId = organizerId,
-            OrganizerName = newTournamentWithDetails.OrganizerName
+            OrganizerName = newTournamentWithDetails.OrganizerName ?? string.Empty
         };
 
         return result;
@@ -137,6 +142,8 @@ public class TournamentService : ITournamentService
         var createdId = await _tournamentRepository.CreateAsync(entity);
 
         var newTournamentWithDetails = await _tournamentRepository.GetByIdAsync(createdId);
+        if (newTournamentWithDetails == null)
+            throw new InvalidOperationException("Created tournament draft could not be loaded");
 
         var result = new TournamentDto
         {
@@ -152,7 +159,7 @@ public class TournamentService : ITournamentService
             MaxParticipants = entity.MaxTeams,
             Status = "draft",
             OrganizerId = organizerId,
-            OrganizerName = newTournamentWithDetails.OrganizerName
+            OrganizerName = newTournamentWithDetails.OrganizerName ?? string.Empty
         };
 
         return result;
@@ -487,6 +494,8 @@ public class TournamentService : ITournamentService
         var updated = await _tournamentRepository.UpdateAsync(existing);
 
         var newTournamentWithDetails = await _tournamentRepository.GetByIdAsync(updated.Id);
+        if (newTournamentWithDetails == null)
+            throw new InvalidOperationException("Updated tournament could not be loaded");
 
         var result = new TournamentPlatformSystemWebApi.Application.DTOs.TournamentDto
         {
@@ -502,7 +511,7 @@ public class TournamentService : ITournamentService
             MaxParticipants = updated.MaxTeams,
             Status = updated.Status.ToString().ToLowerInvariant(),
             OrganizerId = organizerId,
-            OrganizerName = newTournamentWithDetails.OrganizerName
+            OrganizerName = newTournamentWithDetails.OrganizerName ?? string.Empty
         };
 
         return result;
@@ -720,5 +729,75 @@ public class TournamentService : ITournamentService
             throw new ValidationException("PageSize must be greater than or equal to 1");
 
         return await _tournamentRepository.GetAllPreviewAsync(page, pageSize, randomize, statuses);
+    }
+
+    public async Task<IReadOnlyList<Guid>> GetUserPreferredThemeIdsAsync(Guid userId)
+    {
+        if (userId == Guid.Empty)
+            return Array.Empty<Guid>();
+
+        return await _context.Set<UserTournamentThemePreferenceModel>()
+            .AsNoTracking()
+            .Where(p => p.UserId == userId)
+            .Select(p => p.ThemeId)
+            .Distinct()
+            .ToListAsync();
+    }
+
+    public async Task<IReadOnlyList<TournamentPreviewDto>> GetPersonalizedTournamentsAsync(IReadOnlyCollection<Guid> preferredThemeIds, int page, int pageSize, bool randomize, IReadOnlyList<TournamentStatus>? statuses)
+    {
+        if (preferredThemeIds == null || preferredThemeIds.Count == 0)
+            return Array.Empty<TournamentPreviewDto>();
+
+        if (page < 1)
+            throw new ValidationException("Page must be greater than or equal to 1");
+
+        if (pageSize < 1)
+            throw new ValidationException("PageSize must be greater than or equal to 1");
+
+        var skip = (page - 1) * pageSize;
+
+        var statusFilters = statuses != null && statuses.Count > 0
+            ? statuses.Select(s => (TournamentStatusType)s).ToList()
+            : new List<TournamentStatusType> { TournamentStatusType.REGISTRATION_OPEN, TournamentStatusType.IN_PROGRESS };
+
+        var query = _context.Set<TournamentModel>()
+            .AsNoTracking()
+            .Where(t => preferredThemeIds.Contains(t.ThemeId));
+
+        if (statusFilters != null)
+            query = query.Where(t => statusFilters.Contains(t.Status));
+
+        query = randomize
+            ? query.OrderBy(_ => EF.Functions.Random())
+            : query.OrderByDescending(t => t.StartDate).ThenBy(t => t.Id);
+
+        var rows = await query
+            .Skip(skip)
+            .Take(pageSize)
+            .Select(t => new
+            {
+                t.Id,
+                Title = t.Name,
+                t.Status,
+                t.BackgroundImg,
+                SportName = t.Theme != null ? t.Theme.Name : null,
+                t.StartDate,
+                t.MaxTeams,
+                ParticipantsCount = t.Teams.Count(team => team.IsDisqualified == null || team.IsDisqualified == false)
+            })
+            .ToListAsync();
+
+        return rows.Select(r => new TournamentPreviewDto
+        {
+            Id = r.Id,
+            Title = r.Title,
+            Status = r.Status.ToString().ToLowerInvariant(),
+            BackgroundImg = r.BackgroundImg,
+            SportName = r.SportName,
+            StartDate = r.StartDate,
+            ParticipantsCount = r.ParticipantsCount,
+            MaxParticipants = r.MaxTeams
+        }).ToList();
     }
 }

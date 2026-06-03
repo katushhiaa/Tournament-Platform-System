@@ -710,17 +710,62 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
         }
 
         [HttpGet]
-        [SwaggerOperation(Summary = "Список турнірів (preview)", Description = "Повертає список турнірів для списків UI. Роль: Guest/Player/Organizer. Опційні параметри: page, pageSize, randomize, status (CSV; case-insensitive). Допустимі значення status: REGISTRATION_OPEN, REGISTRATION_CLOSED, IN_PROGRESS, COMPLETED, DRAFT.")]
-        [SwaggerResponse(200, Type = typeof(IEnumerable<TournamentPreviewDto>), Description = "Список турнірів")]
-        [SwaggerResponseExample(200, typeof(Swagger.Examples.TournamentPreviewListExample))]
+        [SwaggerOperation(Summary = "Список турнірів (preview)", Description = "Повертає список турнірів для списків UI. Роль: Guest/Player/Organizer. Опційні параметри: page, pageSize, randomize, status (CSV; case-insensitive), is_personalized. Допустимі значення status: REGISTRATION_OPEN, REGISTRATION_CLOSED, IN_PROGRESS, COMPLETED, DRAFT.")]
+        [SwaggerResponse(200, Type = typeof(TournamentPreviewListResponseDto), Description = "Список турнірів")]
+        [SwaggerResponseExample(200, typeof(Swagger.Examples.TournamentPreviewListResponseExample))]
         [SwaggerResponse(400, Type = typeof(ErrorResponseDto), Description = "Невалідні дані")]
-        public async Task<IActionResult> GetAllTournaments([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] bool randomize = false, [FromQuery] string? status = null)
+        public async Task<IActionResult> GetAllTournaments([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] bool randomize = false, [FromQuery] string? status = null, [FromQuery(Name = "is_personalized")] bool isPersonalized = false)
         {
             try
             {
                 var statuses = ParseStatuses(status);
-                var tournaments = await _tournamentService.GetAllTournamentsAsync(page, pageSize, randomize, statuses);
-                return Ok(tournaments);
+                IReadOnlyList<TournamentPreviewDto> tournaments = Array.Empty<TournamentPreviewDto>();
+                var isResponsePersonalized = false;
+                string? fallbackReason = null;
+
+                if (isPersonalized)
+                {
+                    var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+                    if (Guid.TryParse(sub, out var userId))
+                    {
+                        var preferredThemeIds = await _tournamentService.GetUserPreferredThemeIdsAsync(userId);
+
+                        if (preferredThemeIds != null && preferredThemeIds.Count > 0)
+                        {
+                            tournaments = await _tournamentService.GetPersonalizedTournamentsAsync(preferredThemeIds, page, pageSize, randomize, statuses);
+                            if (tournaments.Count > 0)
+                            {
+                                isResponsePersonalized = true;
+                            }
+                            else
+                            {
+                                fallbackReason = "no_matching_tournaments";
+                            }
+                        }
+                        else
+                        {
+                            fallbackReason = "no_preferences";
+                        }
+                    }
+                    else
+                    {
+                        fallbackReason = "not_authenticated";
+                    }
+                }
+
+                if (!isResponsePersonalized)
+                {
+                    tournaments = await _tournamentService.GetAllTournamentsAsync(page, pageSize, randomize, statuses);
+                }
+
+                var response = new TournamentPreviewListResponseDto
+                {
+                    Tournaments = tournaments,
+                    IsPersonalized = isResponsePersonalized,
+                    FallbackReason = fallbackReason
+                };
+
+                return Ok(response);
             }
             catch (ValidationException ex)
             {
