@@ -24,13 +24,15 @@ public class AuthenticationService : IAuthenticationService
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IMemoryCache _cache;
     private readonly int _refreshTokenDays;
+    private readonly TournamentdbContext? _context;
 
-    public AuthenticationService(IUserRepository userRepository, IPasswordHasher passwordHasher, IJwtTokenService jwtTokenService, IConfiguration configuration, IMemoryCache? cache = null)
+    public AuthenticationService(IUserRepository userRepository, IPasswordHasher passwordHasher, IJwtTokenService jwtTokenService, IConfiguration configuration, IMemoryCache? cache = null, TournamentdbContext? context = null)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
         _jwtTokenService = jwtTokenService;
         _cache = cache ?? new MemoryCache(new MemoryCacheOptions());
+        _context = context;
         var daysStr = configuration["REFRESH_TOKEN_DAYS"];
         if (!int.TryParse(daysStr, out _refreshTokenDays))
         {
@@ -174,28 +176,47 @@ public class AuthenticationService : IAuthenticationService
             }
         };
 
-        var createdUserId = await _userRepository.CreateAsync(userEntity);
-
-        var isOrganizer = string.Equals(request.Role, "organizer", StringComparison.OrdinalIgnoreCase);
-        var (token, jwtId, accessExpires) = _jwtTokenService.GenerateToken(createdUserId, request.Email, request.Role, isOrganizer);
-        var refreshToken = _jwtTokenService.GenerateRefreshToken();
-
-        // persist refresh token (7 days expiry)
-        var refreshExpires = DateTime.UtcNow.AddDays(_refreshTokenDays);
-        await _userRepository.SetRefreshTokenForUser(createdUserId, refreshToken, jwtId, refreshExpires);
-
-        return new RegisterUserResponse
+        var useTransaction = _context != null && _context.Database.CurrentTransaction == null && !(_context.Database.ProviderName?.Contains("InMemory", StringComparison.OrdinalIgnoreCase) ?? false);
+        await using var txn = useTransaction ? await _context!.Database.BeginTransactionAsync() : null;
+        try
         {
-            UserId = createdUserId,
-            Email = email,
-            FullName = request.FullName,
-            Role = request.Role,
-            Tokens = new TokensResponseDto
+            var createdUserId = await _userRepository.CreateAsync(userEntity);
+
+            var isOrganizer = string.Equals(request.Role, "organizer", StringComparison.OrdinalIgnoreCase);
+            var (token, jwtId, accessExpires) = _jwtTokenService.GenerateToken(createdUserId, request.Email, request.Role, isOrganizer);
+            var refreshToken = _jwtTokenService.GenerateRefreshToken();
+
+            // persist refresh token (7 days expiry)
+            var refreshExpires = DateTime.UtcNow.AddDays(_refreshTokenDays);
+            await _userRepository.SetRefreshTokenForUser(createdUserId, refreshToken, jwtId, refreshExpires);
+
+            if (useTransaction && txn != null)
             {
-                AccessToken = token,
-                RefreshToken = refreshToken
+                await txn.CommitAsync();
             }
-        };
+
+            return new RegisterUserResponse
+            {
+                UserId = createdUserId,
+                Email = email,
+                FullName = request.FullName,
+                Role = request.Role,
+                Tokens = new TokensResponseDto
+                {
+                    AccessToken = token,
+                    RefreshToken = refreshToken
+                }
+            };
+        }
+        catch
+        {
+            if (useTransaction && txn != null)
+            {
+                await txn.RollbackAsync();
+            }
+
+            throw;
+        }
     }
 
     public async Task<LoginResponseDto> LoginAsync(LoginRequestDto request)
