@@ -294,14 +294,15 @@ export const tournamentService = {
         pageSize?: number
         status?: string
     }): Promise<ITournamentPreview[]> {
-        const response = await axiosInstance.get<ITournamentPreview[]>('/tournaments', {
+        const response = await axiosInstance.get<ITournamentPreview[] | { tournaments: ITournamentPreview[] }>('/tournaments', {
             params: {
                 page: params?.page ?? 1,
                 pageSize: params?.pageSize ?? 8,
                 ...(params?.status ? { status: params.status } : {}),
             },
         })
-        return response.data
+        const data = response.data
+        return Array.isArray(data) ? data : (data.tournaments ?? [])
     },
 
     async getUserTournaments(params: {
