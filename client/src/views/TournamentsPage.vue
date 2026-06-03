@@ -16,7 +16,7 @@ const loading = ref(true)
 const error = ref(false)
 const searchQuery = ref('')
 const currentPage = ref(1)
-const PAGE_SIZE = 15
+const PAGE_SIZE = 12
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' })
