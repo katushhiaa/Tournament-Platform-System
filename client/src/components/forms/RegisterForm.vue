@@ -792,6 +792,7 @@ const handleSubmit = async () => {
     clearFormDraft();
 
     setTimeout(() => {
+      sessionStorage.setItem(`new_user_${response.userId}`, '1')
       router.push('/onboarding/sports');
     }, 900);
     

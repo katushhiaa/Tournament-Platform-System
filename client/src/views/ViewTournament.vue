@@ -22,6 +22,8 @@ import TournamentOtherEvents from '../components/tournament/TournamentOtherEvent
 import TournamentSkeleton from '../components/tournament/TournamentSkeleton.vue'
 import TournamentError from '../components/tournament/TournamentError.vue'
 
+import AppToast from '../components/ui/AppToast.vue'
+
 const route = useRoute()
 const authStore = useAuthStore()
 
@@ -127,9 +129,9 @@ const handleRefreshParticipants = async () => {
           @change="activeTab = $event"
         />
 
-        <div v-if="bracketError" class="vt-toast vt-toast--error">{{ bracketError }}</div>
-        <div v-if="toast" class="vt-toast">{{ toast }}</div>
-        
+        <AppToast v-if="bracketError" :message="bracketError" type="error" />
+        <AppToast v-if="toast" :message="toast" type="success" />
+
         <TournamentOverview
           v-if="activeTab === 'overview'"
           :tournament="tournament"
@@ -183,7 +185,7 @@ const handleRefreshParticipants = async () => {
 }
 
 .vt-toast--error {
-  background: #e57373;
+  background: #ce0f0f;
   color: #fff;
 }
 

@@ -6,6 +6,7 @@ import { tournamentService } from '../services/tournamentService'
 import { userService } from '../services/userService'
 import type { IThemeOption } from '../types/Tournament'
 import { useAuthStore } from '../stores/authStore'
+
 const authStore = useAuthStore()
 const router = useRouter()
 
@@ -38,6 +39,12 @@ const toggleSport = (id: string) => {
   selected.value = next
 }
 
+const finishOnboarding = () => {
+  const uid = authStore.currentUser!.userId
+  sessionStorage.removeItem(`new_user_${uid}`)
+  localStorage.setItem(`onboarding_done_${uid}`, '1')
+}
+
 const handleSave = async () => {
   if (!canSave.value) return
   try {
@@ -53,6 +60,7 @@ const handleSave = async () => {
       JSON.stringify(selectedNames)
     )
 
+    finishOnboarding()
     router.push(authStore.getDashboardRouteByRole(authStore.currentUser!.role))
   } catch (e: any) {
     saveError.value =
@@ -61,12 +69,15 @@ const handleSave = async () => {
     isSaving.value = false
   }
 }
+
 const handleSkipConfirm = async () => {
   try {
     isSkipping.value = true
     skipError.value = null
     await userService.completeOnboarding()
     showSkipModal.value = false
+
+    finishOnboarding()
     router.push(authStore.getDashboardRouteByRole(authStore.currentUser!.role))
   } catch (e: any) {
     skipError.value =
@@ -111,7 +122,9 @@ const handleSkipConfirm = async () => {
               :alt="sport.name"
               class="card__img"
             />
-            
+            <div class="card__overlay" />
+            <span class="card__name">{{ sport.name.toUpperCase() }}</span>
+            <span v-if="selected.has(sport.id)" class="card__check">✓</span>
           </button>
         </div>
 
@@ -129,7 +142,6 @@ const handleSkipConfirm = async () => {
       </div>
     </main>
 
-
     <div v-if="showSkipModal" class="modal-overlay" @mousedown.self="showSkipModal = false">
       <div class="modal">
         <div class="modal__icon">
@@ -140,8 +152,8 @@ const handleSkipConfirm = async () => {
         </div>
         <h2 class="modal__title">Confirmation</h2>
         <p class="modal__text">
-          Are you sure you want to cancel this action?<br />
-          This changes cannot be undone.
+          If you skip sport selection, tournaments on the home page<br />
+          will be shown without considering your preferences.
         </p>
         <div class="modal__actions">
           <button
@@ -218,7 +230,6 @@ const handleSkipConfirm = async () => {
   color: #fff;
 }
 
-/* Grid */
 .grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -226,7 +237,6 @@ const handleSkipConfirm = async () => {
   margin-bottom: 32px;
 }
 
-/* Card */
 .card {
   position: relative;
   aspect-ratio: 1 / 1.15;
@@ -254,6 +264,28 @@ const handleSkipConfirm = async () => {
   display: block;
 }
 
+.card__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    160deg,
+    rgba(180, 140, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+}
+
+.card__name {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.07em;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
 
 .card__check {
   position: absolute;
@@ -262,10 +294,9 @@ const handleSkipConfirm = async () => {
   font-size: 16px;
   color: #ff9800;
   font-weight: 900;
-  text-shadow: 0 0 6px rgba(0,0,0,0.8);
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
 }
 
-/* Save button */
 .save-btn {
   width: 100%;
   height: 52px;
@@ -293,15 +324,13 @@ const handleSkipConfirm = async () => {
   opacity: 1;
 }
 
-/* Error */
 .error-text {
-  color: #e57373;
+  color: #ce0f0f;
   font-size: 14px;
   margin-bottom: 12px;
   text-align: center;
 }
 
-/* Modal */
 .modal-overlay {
   position: fixed;
   inset: 0;

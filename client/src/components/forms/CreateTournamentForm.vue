@@ -2,7 +2,7 @@
   <form class="create-tournament-form" @submit.prevent="handleSubmit">
     <div class="create-tournament-form__top-card">
       <div class="create-tournament-form__upload">
-                <button
+        <button
           type="button"
           class="create-tournament-form__upload"
           @click="handleBannerClick"
@@ -14,16 +14,13 @@
             class="create-tournament-form__file-input"
             @change="handleBannerChange"
           />
-
           <img :src="uploadBannerIcon" alt="" class="create-tournament-form__upload-icon" />
-
           <p class="create-tournament-form__upload-title">
             {{ bannerFileName || 'Upload Banner' }}
           </p>
           <p class="create-tournament-form__upload-text">PNG, JPG up to 5MB</p>
           <p class="create-tournament-form__upload-text">Recommended 16:9</p>
         </button>
-        
       </div>
 
       <div class="create-tournament-form__grid">
@@ -68,28 +65,48 @@
           <p class="create-tournament-form__error">{{ errors.startDate || '' }}</p>
         </div>
 
+        
         <div class="create-tournament-form__field">
-          <label for="sport">Sport Type</label>
+          <label>Sport Type</label>
           <div
             class="create-tournament-form__input-wrapper"
             :class="{ 'create-tournament-form__input-wrapper--error': errors.sport }"
           >
             <img :src="sportIcon" alt="" class="create-tournament-form__icon" />
 
-            <select
-              id="sport"
-              ref="sportInput"
-              v-model="form.sport"
-              class="create-tournament-form__select"
-              @blur="validateField('sport')"
-              @change="validateField('sport')"
+            <div
+              ref="sportDropdownRef"
+              class="custom-select"
+              :class="{ 'custom-select--open': sportDropdownOpen, 'custom-select--error': errors.sport }"
             >
-              <option v-for="sport in sports" :key="sport.id" :value="sport.id">
-                {{ sport.name }}
-              </option>
-            </select>
+              <button
+                type="button"
+                class="custom-select__trigger"
+                @click="sportDropdownOpen = !sportDropdownOpen"
+              >
+                <span :class="{ 'custom-select__placeholder': !form.sport }">
+                  {{ selectedSportName || 'Select sport type' }}
+                </span>
+                <img
+                  :src="dropdownIcon"
+                  alt=""
+                  class="custom-select__arrow"
+                  :class="{ 'custom-select__arrow--open': sportDropdownOpen }"
+                />
+              </button>
 
-            <img :src="dropdownIcon" alt="" class="create-tournament-form__dropdown-icon" />
+              <ul v-if="sportDropdownOpen" class="custom-select__list">
+                <li
+                  v-for="sport in sports"
+                  :key="sport.id"
+                  class="custom-select__item"
+                  :class="{ 'custom-select__item--selected': form.sport === sport.id }"
+                  @click="selectSport(sport)"
+                >
+                  {{ sport.name }}
+                </li>
+              </ul>
+            </div>
           </div>
           <p class="create-tournament-form__error">{{ errors.sport || '' }}</p>
         </div>
@@ -139,9 +156,7 @@
           <label for="registrationCloseDate">End of Registration</label>
           <div
             class="create-tournament-form__input-wrapper"
-            :class="{
-              'create-tournament-form__input-wrapper--error': errors.registrationCloseDate,
-            }"
+            :class="{ 'create-tournament-form__input-wrapper--error': errors.registrationCloseDate }"
           >
             <img :src="timeIcon" alt="" class="create-tournament-form__icon" />
             <input
@@ -153,9 +168,7 @@
               @change="validateDateFields"
             />
           </div>
-          <p class="create-tournament-form__error">
-            {{ errors.registrationCloseDate || '' }}
-          </p>
+          <p class="create-tournament-form__error">{{ errors.registrationCloseDate || '' }}</p>
         </div>
       </div>
     </div>
@@ -203,7 +216,6 @@
         Cancel
       </button>
     </div>
-
   </form>
 </template>
 
@@ -211,6 +223,7 @@
 import {
   computed,
   onMounted,
+  onUnmounted,
   reactive,
   ref,
 } from 'vue'
@@ -242,9 +255,7 @@ const emit = defineEmits<{
 
 const router = useRouter()
 
-const minStartDate = new Date()
-  .toISOString()
-  .slice(0, 16)
+const minStartDate = new Date().toISOString().slice(0, 16)
 
 type CreateTournamentFormValues = {
   title: string
@@ -257,58 +268,53 @@ type CreateTournamentFormValues = {
   conditions: string
 }
 
-type FormErrors = Partial<
-  Record<
-    keyof CreateTournamentFormValues,
-    string
-  >
->
+type FormErrors = Partial<Record<keyof CreateTournamentFormValues, string>>
 
-const form =
-  reactive<CreateTournamentFormValues>({
-    title: '',
-    sport: '',
-    startDate: '',
-    endDate: '',
-    registrationCloseDate: '',
-    maxParticipants: null,
-    description: '',
-    conditions: '',
-  })
+const form = reactive<CreateTournamentFormValues>({
+  title: '',
+  sport: '',
+  startDate: '',
+  endDate: '',
+  registrationCloseDate: '',
+  maxParticipants: null,
+  description: '',
+  conditions: '',
+})
 
 const errors = reactive<FormErrors>({})
-
 const sports = ref<IThemeOption[]>([])
-
 const isSubmitting = ref(false)
-
 const toastMessage = ref('')
 const successMessage = ref('')
 
-const bannerInput =
-  ref<HTMLInputElement | null>(null)
-
+const bannerInput = ref<HTMLInputElement | null>(null)
 const bannerFileName = ref('')
-
 const bannerFile = ref<File | null>(null)
 
-const titleInput =
-  ref<HTMLInputElement | null>(null)
+const titleInput = ref<HTMLInputElement | null>(null)
+const startDateInput = ref<HTMLInputElement | null>(null)
+const endDateInput = ref<HTMLInputElement | null>(null)
+const registrationCloseDateInput = ref<HTMLInputElement | null>(null)
+const maxParticipantsInput = ref<HTMLInputElement | null>(null)
 
-const sportInput =
-  ref<HTMLSelectElement | null>(null)
+const sportDropdownOpen = ref(false)
+const sportDropdownRef = ref<HTMLElement | null>(null)
 
-const startDateInput =
-  ref<HTMLInputElement | null>(null)
+const selectedSportName = computed(() =>
+  sports.value.find(s => s.id === form.sport)?.name ?? ''
+)
 
-const endDateInput =
-  ref<HTMLInputElement | null>(null)
+const selectSport = (sport: IThemeOption) => {
+  form.sport = sport.id
+  sportDropdownOpen.value = false
+  validateField('sport')
+}
 
-const registrationCloseDateInput =
-  ref<HTMLInputElement | null>(null)
-
-const maxParticipantsInput =
-  ref<HTMLInputElement | null>(null)
+const handleOutsideClick = (e: MouseEvent) => {
+  if (sportDropdownRef.value && !sportDropdownRef.value.contains(e.target as Node)) {
+    sportDropdownOpen.value = false
+  }
+}
 
 const minTeams = 2
 const maxTeams = 128
@@ -329,23 +335,14 @@ const handleBannerClick = () => {
   bannerInput.value?.click()
 }
 
-const handleBannerChange = (
-  event: Event,
-) => {
-  const input =
-    event.target as HTMLInputElement
-
+const handleBannerChange = (event: Event) => {
+  const input = event.target as HTMLInputElement
   const file = input.files?.[0]
-
   if (!file) return
-
   if (file.size > 5 * 1024 * 1024) {
-    toastMessage.value =
-      'Image must be less than 5MB'
-
+    toastMessage.value = 'Image must be less than 5MB'
     return
   }
-
   bannerFile.value = file
   bannerFileName.value = file.name
 }
@@ -353,36 +350,14 @@ const handleBannerChange = (
 const toIsoDate = (value: string) => value
 
 const focusFirstError = () => {
-  if (errors.title) {
-    return titleInput.value?.focus()
-  }
-
-  if (errors.sport) {
-    return sportInput.value?.focus()
-  }
-
-  if (errors.startDate) {
-    return startDateInput.value?.focus()
-  }
-
-  if (errors.endDate) {
-    return endDateInput.value?.focus()
-  }
-
-  if (errors.registrationCloseDate) {
-    return registrationCloseDateInput.value?.focus()
-  }
-
-  if (errors.maxParticipants) {
-    return maxParticipantsInput.value?.focus()
-  }
-
-  return undefined
+  if (errors.title) return titleInput.value?.focus()
+  if (errors.startDate) return startDateInput.value?.focus()
+  if (errors.endDate) return endDateInput.value?.focus()
+  if (errors.registrationCloseDate) return registrationCloseDateInput.value?.focus()
+  if (errors.maxParticipants) return maxParticipantsInput.value?.focus()
 }
 
-const validateField = (
-  field: keyof CreateTournamentFormValues,
-) => {
+const validateField = (field: keyof CreateTournamentFormValues) => {
   switch (field) {
     case 'title':
       if (!form.title.trim()) {
@@ -395,86 +370,51 @@ const validateField = (
         errors.title = ''
       }
       break
-    case 'sport':
-      errors.sport = form.sport
-        ? ''
-        : 'Sport type is required'
 
+    case 'sport':
+      errors.sport = form.sport ? '' : 'Sport type is required'
       break
 
     case 'startDate':
       if (!form.startDate) {
-        errors.startDate =
-          'Start date is required'
+        errors.startDate = 'Start date is required'
+      } else if (new Date(form.startDate) < new Date()) {
+        errors.startDate = 'Start date cannot be in the past'
       } else {
-        const selectedDate = new Date(
-          form.startDate,
-        )
-
-        const now = new Date()
-
-        if (selectedDate < now) {
-          errors.startDate =
-            'Start date cannot be in the past'
-        } else {
-          errors.startDate = ''
-        }
+        errors.startDate = ''
       }
-
       break
 
     case 'endDate':
       if (!form.endDate) {
-        errors.endDate =
-          'End date is required'
-      } else if (
-        new Date(form.endDate) <
-        new Date(form.startDate)
-      ) {
-        errors.endDate =
-          'Date end must be greater than or equal to date start'
+        errors.endDate = 'End date is required'
+      } else if (new Date(form.endDate) < new Date(form.startDate)) {
+        errors.endDate = 'Date end must be greater than or equal to date start'
       } else {
         errors.endDate = ''
       }
-
       break
 
     case 'registrationCloseDate':
       if (!form.registrationCloseDate) {
-        errors.registrationCloseDate =
-          'End of registration is required'
-      } else if (
-        new Date(
-          form.registrationCloseDate,
-        ) > new Date(form.startDate)
-      ) {
-        errors.registrationCloseDate =
-          'End of registration must be less than or equal to date start'
+        errors.registrationCloseDate = 'End of registration is required'
+      } else if (new Date(form.registrationCloseDate) > new Date(form.startDate)) {
+        errors.registrationCloseDate = 'End of registration must be less than or equal to date start'
       } else {
-        errors.registrationCloseDate =
-          ''
+        errors.registrationCloseDate = ''
       }
-
       break
 
     case 'maxParticipants':
       if (!form.maxParticipants) {
-        errors.maxParticipants =
-          'Participants max count is required'
-      } else if (
-        form.maxParticipants < minTeams
-      ) {
-        errors.maxParticipants =
-          `Participants max count must be at least ${minTeams}`
-      } else if (
-        form.maxParticipants > maxTeams
-      ) {
-        errors.maxParticipants =
-          `Participants max count must be less than or equal to ${maxTeams}`
+        errors.maxParticipants = 'Participants max count is required'
+      } else if (form.maxParticipants < minTeams) {
+        errors.maxParticipants = `Participants max count must be at least ${minTeams}`
+      } else if (form.maxParticipants > maxTeams) {
+        errors.maxParticipants = `Participants max count must be less than or equal to ${maxTeams}`
       } else {
         errors.maxParticipants = ''
       }
-
       break
 
     default:
@@ -485,9 +425,7 @@ const validateField = (
 const validateDateFields = () => {
   validateField('startDate')
   validateField('endDate')
-  validateField(
-    'registrationCloseDate',
-  )
+  validateField('registrationCloseDate')
 }
 
 const validateForm = () => {
@@ -495,10 +433,7 @@ const validateForm = () => {
   validateField('sport')
   validateDateFields()
   validateField('maxParticipants')
-
-  return !Object.values(errors).some(
-    Boolean,
-  )
+  return !Object.values(errors).some(Boolean)
 }
 
 const handleSubmit = async () => {
@@ -506,99 +441,43 @@ const handleSubmit = async () => {
   successMessage.value = ''
 
   const isValid = validateForm()
-
   if (!isValid) {
     focusFirstError()
-
     return
   }
 
   isSubmitting.value = true
 
   try {
-    const payload: ITournamentCreate =
-      {
-        title: form.title.trim(),
+    const payload: ITournamentCreate = {
+      title: form.title.trim(),
+      description: form.description.trim() || null,
+      conditions: form.conditions.trim() || null,
+      startDate: toIsoDate(form.startDate),
+      endDate: toIsoDate(form.endDate),
+      registrationCloseDate: toIsoDate(form.registrationCloseDate),
+      sport: form.sport,
+      maxParticipants: Number(form.maxParticipants),
+    }
 
-        description:
-          form.description.trim() ||
-          null,
-
-        conditions:
-          form.conditions.trim() || null,
-
-        startDate: toIsoDate(
-          form.startDate,
-        ),
-
-        endDate: toIsoDate(
-          form.endDate,
-        ),
-
-        registrationCloseDate:
-          toIsoDate(
-            form.registrationCloseDate,
-          ),
-
-        sport: form.sport,
-
-        maxParticipants: Number(
-          form.maxParticipants,
-        ),
-      }
-
-    const response =
-      await tournamentService.createTournament(
-        payload,
-      )
+    const response = await tournamentService.createTournament(payload)
 
     if (bannerFile.value) {
       const formData = new FormData()
-
-      formData.append(
-        'file',
-        bannerFile.value,
-      )
-
-      await tournamentService.uploadTournamentImage(
-        response.id,
-        formData,
-      )
+      formData.append('file', bannerFile.value)
+      await tournamentService.uploadTournamentImage(response.id, formData)
     }
 
-    successMessage.value =
-      'Tournament created successfully'
-
+    successMessage.value = 'Tournament created successfully'
     emit('created', response)
-
-    /*
-      redirect disabled temporarily
-      to allow Add Players modal rendering
-    */
-
-    // router.push('/my-tournaments')
   } catch (error: unknown) {
-    const apiError =
-      error as IApiError
-
-    if (
-      apiError.errorCode ===
-      'CONFLICT'
-    ) {
-      toastMessage.value =
-        apiError.message ||
-        'Conflict. Please check tournament data.'
-    } else if (
-      apiError.errorCode ===
-      'VALIDATION_ERROR'
-    ) {
-      toastMessage.value =
-        apiError.message ||
-        'Validation error'
+    const apiError = error as IApiError
+    if (apiError.errorCode === 'CONFLICT') {
+      toastMessage.value = apiError.message || 'Conflict. Please check tournament data.'
+    } else if (apiError.errorCode === 'VALIDATION_ERROR') {
+      toastMessage.value = apiError.message || 'Validation error'
     } else {
-      toastMessage.value =
-        apiError.message ||
-        'Server error. Please try again later.'
+      toastMessage.value = apiError.message || 'Server error. Please try again later.'
     }
   } finally {
     isSubmitting.value = false
@@ -606,13 +485,16 @@ const handleSubmit = async () => {
 }
 
 onMounted(async () => {
+  document.addEventListener('click', handleOutsideClick)
   try {
-    sports.value =
-      await tournamentService.getSports()
+    sports.value = await tournamentService.getSports()
   } catch {
-    toastMessage.value =
-      'Failed to load sports'
+    toastMessage.value = 'Failed to load sports'
   }
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleOutsideClick)
 })
 </script>
 
@@ -655,10 +537,10 @@ onMounted(async () => {
 }
 
 .create-tournament-form__icon,
-.create-tournament-form__dropdown-icon,
 .create-tournament-form__button-icon {
   filter: brightness(0) invert(1);
 }
+
 .create-tournament-form__upload-icon {
   width: 64px;
   height: 64px;
@@ -676,17 +558,6 @@ onMounted(async () => {
   margin: 0;
   font-size: 14px;
   opacity: 0.9;
-}
-
-.create-tournament-form__dropdown-icon {
-  position: absolute;
-  top: 50%;
-  right: 14px;
-  width: 24px;
-  height: 24px;
-  transform: translateY(-50%);
-  pointer-events: none;
-  object-fit: contain;
 }
 
 .create-tournament-form__input-wrapper input[type='datetime-local']::-webkit-calendar-picker-indicator {
@@ -718,8 +589,7 @@ onMounted(async () => {
   width: 334px;
 }
 
-.create-tournament-form__input-wrapper input,
-.create-tournament-form__input-wrapper select {
+.create-tournament-form__input-wrapper input {
   width: 334px;
   height: 44px;
   border: 1px solid #1531ce;
@@ -729,27 +599,10 @@ onMounted(async () => {
   padding: 0 44px 0 48px;
   font-size: 13px;
   outline: none;
+  box-sizing: border-box;
 }
 
-.create-tournament-form__select {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-color: rgba(21, 49, 206, 0.47);
-  color: #fffcf2;
-}
-
-.create-tournament-form__select::-ms-expand {
-  display: none;
-}
-
-.create-tournament-form__select option {
-  background: #1531ce;
-  color: #fffcf2;
-}
-
-.create-tournament-form__input-wrapper input::placeholder,
-.create-tournament-form__card textarea::placeholder {
+.create-tournament-form__input-wrapper input::placeholder {
   color: rgba(255, 252, 242, 0.65);
   font-size: 13px;
 }
@@ -762,16 +615,106 @@ onMounted(async () => {
   height: 24px;
   transform: translateY(-50%);
   object-fit: contain;
+  z-index: 2;
+  pointer-events: none;
 }
 
-.create-tournament-form__dropdown-icon {
-  position: absolute;
-  top: 50%;
-  right: 14px;
-  width: 24px;
-  height: 24px;
-  transform: translateY(-50%);
+/* Кастомний дропдаун */
+.custom-select {
+  position: relative;
+  width: 100%;
+}
+
+.custom-select__trigger {
+  width: 100%;
+  height: 44px;
+  border: 1px solid #1531ce;
+  border-radius: 10px;
+  background: rgba(21, 49, 206, 0.47);
+  color: #fffcf2;
+  padding: 0 44px 0 48px;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.custom-select--open .custom-select__trigger {
+  border-color: #ff9800;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.custom-select--error .custom-select__trigger {
+  border-color: #ff6b6b;
+}
+
+.custom-select__placeholder {
+  color: rgba(255, 252, 242, 0.65);
+}
+
+.custom-select__arrow {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: brightness(0) invert(1);
+  transition: transform 0.2s;
   pointer-events: none;
+}
+
+.custom-select__arrow--open {
+  transform: rotate(180deg);
+}
+
+.custom-select__list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  border: 1px solid #1531ce;
+  border-top: none;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  background: #1a2540;
+  max-height: 220px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #1531ce transparent;
+}
+
+.custom-select__list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-select__list::-webkit-scrollbar-thumb {
+  background: #1531ce;
+  border-radius: 4px;
+}
+
+.custom-select__item {
+  padding: 10px 20px;
+  font-size: 13px;
+  color: #fffcf2;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.custom-select__item:hover {
+  background: rgba(21, 49, 206, 0.5);
+}
+
+.custom-select__item--selected {
+  background: rgba(255, 152, 0, 0.2);
+  color: #ff9800;
 }
 
 .create-tournament-form__card {
@@ -796,6 +739,11 @@ onMounted(async () => {
   padding: 18px 20px;
   font-size: 13px;
   outline: none;
+}
+
+.create-tournament-form__card textarea::placeholder {
+  color: rgba(255, 252, 242, 0.65);
+  font-size: 13px;
 }
 
 .create-tournament-form__hint {
@@ -850,8 +798,7 @@ onMounted(async () => {
   cursor: pointer;
 }
 
-.create-tournament-form__input-wrapper--error input,
-.create-tournament-form__input-wrapper--error select {
+.create-tournament-form__input-wrapper--error input {
   border-color: #ff6b6b;
 }
 
@@ -860,6 +807,20 @@ onMounted(async () => {
   margin: 6px 0 0;
   color: #ff6b6b;
   font-size: 12px;
+}
+
+.create-tournament-form__toast {
+  margin: 16px 0 0;
+  color: #ce0f0f;
+  font-size: 14px;
+  text-align: center;
+}
+
+.create-tournament-form__success {
+  margin: 16px 0 0;
+  color: #84c082;
+  font-size: 14px;
+  text-align: center;
 }
 
 @media (max-width: 1100px) {
@@ -881,8 +842,11 @@ onMounted(async () => {
   }
 
   .create-tournament-form__input-wrapper,
-  .create-tournament-form__input-wrapper input,
-  .create-tournament-form__input-wrapper select {
+  .create-tournament-form__input-wrapper input {
+    width: 100%;
+  }
+
+  .custom-select__trigger {
     width: 100%;
   }
 }
