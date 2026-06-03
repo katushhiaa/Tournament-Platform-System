@@ -86,7 +86,7 @@ const handleSave = async () => {
     <div class="modal">
       <h2 class="modal__title">MATCH RESULT</h2>
 
-      <!-- Player 1 -->
+      
       <div class="modal__field">
         <label class="modal__label">Player 1</label>
         <div class="modal__input-wrapper modal__input-wrapper--readonly">
@@ -98,7 +98,7 @@ const handleSave = async () => {
         </div>
       </div>
 
-      <!-- Score Player 1 -->
+      
       <div class="modal__field">
         <label class="modal__label">Score Player 1</label>
         <input
@@ -113,7 +113,7 @@ const handleSave = async () => {
         <p class="modal__hint">Example text: "e.g. 1"</p>
       </div>
 
-      <!-- Player 2 -->
+     
       <div class="modal__field">
         <label class="modal__label">Player 2</label>
         <div class="modal__input-wrapper modal__input-wrapper--readonly">
@@ -125,7 +125,7 @@ const handleSave = async () => {
         </div>
       </div>
 
-      <!-- Score Player 2 -->
+     
       <div class="modal__field">
         <label class="modal__label">Score Player 2</label>
         <input
@@ -140,7 +140,7 @@ const handleSave = async () => {
         <p class="modal__hint">Example text: "e.g. 2"</p>
       </div>
 
-      <!-- Actions -->
+     
       <div class="modal__actions">
         <button
           class="modal__btn modal__btn--cancel"
@@ -154,11 +154,11 @@ const handleSave = async () => {
         >{{ isSaving ? 'Saving...' : 'Save' }}</button>
       </div>
 
-      <!-- Error -->
+     
       <div v-if="error" class="modal__error-box">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <circle cx="10" cy="10" r="9" stroke="#e57373" stroke-width="1.5"/>
-          <path d="M10 6v5M10 13v1" stroke="#e57373" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="10" cy="10" r="9" stroke="#ce0f0f" stroke-width="1.5"/>
+          <path d="M10 6v5M10 13v1" stroke="#ce0f0f" stroke-width="1.5" stroke-linecap="round"/>
         </svg>
         <span>{{ error }}</span>
       </div>
@@ -319,9 +319,9 @@ const handleSave = async () => {
   align-items: center;
   gap: 12px;
   padding: 16px 20px;
-  border: 1px solid #e57373;
+  border: 1px solid #ce0f0f;
   border-radius: 14px;
-  color: #e57373;
+  color: #ce0f0f;
   font-size: 14px;
 }
 </style>

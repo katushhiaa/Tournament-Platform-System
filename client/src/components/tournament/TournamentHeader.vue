@@ -7,7 +7,7 @@ import type { ITournament } from '../../types/Tournament'
 import type { Participant } from '../../types/Participant'
 import { useAuthStore } from '../../stores/authStore'
 import { participationService } from '../../services/participationService'
-
+import ConfirmModal from '../ui/ConfirmModal.vue'
 import defaultBg from '../../assets/hero-card.jpg'
 
 const props = defineProps<{
@@ -190,7 +190,6 @@ const handleEditTournament = () => {
               Edit Tournament
             </button>
 
-            <!-- Submit -->
             <button
               v-if="showSubmitButton"
               class="button button--join"
@@ -200,7 +199,6 @@ const handleEditTournament = () => {
               {{ isJoining ? 'Joining...' : 'Submit an application' }}
             </button>
 
-            <!-- Cancel -->
             <button
               v-if="canCancel"
               class="button button--cancel"
@@ -211,10 +209,8 @@ const handleEditTournament = () => {
             </button>
           </div>
 
-          <!-- Error -->
           <p v-if="actionError" class="action-error">{{ actionError }}</p>
 
-          <!-- Login hint -->
           <p v-if="actionError && isGuest" class="action-login">
             <a @click="router.push('/login')">Log in</a> to participate
           </p>
@@ -222,23 +218,16 @@ const handleEditTournament = () => {
       </div>
     </div>
 
-    <!-- Cancel confirmation modal -->
-    <div v-if="showCancelConfirm" class="confirm-overlay" @mousedown.self="showCancelConfirm = false">
-      <div class="confirm-modal">
-        <p class="confirm-modal__text">Are you sure you want to cancel your participation?</p>
-        <div class="confirm-modal__actions">
-          <button
-            class="confirm-modal__btn confirm-modal__btn--no"
-            @click="showCancelConfirm = false"
-          >No</button>
-          <button
-            class="confirm-modal__btn confirm-modal__btn--yes"
-            :disabled="isCancelling"
-            @click="handleCancelConfirm"
-          >{{ isCancelling ? 'Cancelling...' : 'Yes, cancel' }}</button>
-        </div>
-      </div>
-    </div>
+    <ConfirmModal
+      v-if="showCancelConfirm"
+      message="Are you sure you want to cancel your participation?"
+      confirm-text="Yes, cancel"
+      cancel-text="No"
+      confirm-danger
+      :loading="isCancelling"
+      @confirm="handleCancelConfirm"
+      @cancel="showCancelConfirm = false"
+    />
   </section>
 </template>
 
@@ -383,8 +372,8 @@ const handleEditTournament = () => {
 
 .button--cancel {
   background: transparent;
-  border: 2px solid #e57373;
-  color: #e57373;
+  border: 2px solid #ce0f0f;
+  color: #ce0f0f;
 }
 
 .button--cancel:disabled,
@@ -394,7 +383,7 @@ const handleEditTournament = () => {
 }
 
 .action-error {
-  color: #e57373;
+  color: #ce0f0f;
   font-size: 13px;
   margin-top: 10px;
   max-width: 340px;
@@ -412,73 +401,6 @@ const handleEditTournament = () => {
   color: #4d6eff;
   cursor: pointer;
   text-decoration: underline;
-}
-
-/* Confirm modal */
-.confirm-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,0.65);
-}
-
-.confirm-modal {
-  background: #252e35;
-  border: 1px solid #1531ce;
-  border-radius: 20px;
-  padding: 40px 48px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 28px;
-  max-width: 440px;
-  width: 100%;
-}
-
-.confirm-modal__text {
-  color: white;
-  font-size: 18px;
-  font-weight: 600;
-  text-align: center;
-}
-
-.confirm-modal__actions {
-  display: flex;
-  gap: 20px;
-}
-
-.confirm-modal__btn {
-  width: 140px;
-  height: 48px;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-
-.confirm-modal__btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.confirm-modal__btn--no {
-  border: 1px solid #1531ce;
-  background: transparent;
-  color: #1531ce;
-}
-
-.confirm-modal__btn--yes {
-  border: none;
-  background: #e57373;
-  color: white;
-}
-
-.confirm-modal__btn--yes:hover:not(:disabled) {
-  opacity: 0.88;
 }
 
 @media (max-width: 1200px) {

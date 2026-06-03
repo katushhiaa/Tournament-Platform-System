@@ -14,7 +14,10 @@ import organizersTitleIcon from '../assets/icons/organizers-title-icon.svg'
 import playersTitleIcon from '../assets/icons/players-title-icon.svg'
 import checkIconBlue from '../assets/icons/check-icon-blue.svg'
 import checkIconGreen from '../assets/icons/check-icon-green.svg'
+import { useAuthStore } from '../stores/authStore'
+import { getSportPreferences, sortByPreferences } from '../utils/sortByPreferences'
 
+const authStore = useAuthStore()
 
 import defaultCardBg from '../assets/hero-card.jpg'
 
@@ -40,17 +43,21 @@ const formatTime = (iso: string): string => {
 }
 
 onMounted(async () => {
-    try {
-        tournaments.value = await tournamentService.getTournaments({
-          pageSize: 4,
-          status: 'IN_PROGRESS,REGISTRATION_OPEN',
-        })
-    } catch (e) {
-        console.error(e)
-        tournamentsError.value = true
-    } finally {
-        tournamentsLoading.value = false
-    }
+  try {
+    const raw = await tournamentService.getTournaments({
+      pageSize: 4,
+      status: 'IN_PROGRESS,REGISTRATION_OPEN',
+    })
+    const prefs = authStore.currentUser
+      ? getSportPreferences(authStore.currentUser.userId)
+      : []
+    tournaments.value = sortByPreferences(raw, prefs)
+  } catch (e) {
+    console.error(e)
+    tournamentsError.value = true
+  } finally {
+    tournamentsLoading.value = false
+  }
 })
 
 </script>
@@ -68,7 +75,7 @@ onMounted(async () => {
           games. Compete with other players, organize your own events, and reach
           new heights.
         </p>
-        <button class="hero__button">Get started</button>
+        <router-link to="/login" class="hero__button main-button--link">Get started</router-link>
       </div>
     </section>
 
@@ -80,7 +87,7 @@ onMounted(async () => {
         </p>
 
         <div class="tournaments-grid">
-          <!-- Скелетони поки грузиться -->
+       
           <template v-if="tournamentsLoading">
             <div
               v-for="n in 4"
@@ -89,12 +96,12 @@ onMounted(async () => {
             />
           </template>
 
-        <!-- Помилка -->
+        
         <p v-else-if="tournamentsError" class="tournaments-error">
           Failed to load tournaments. Please try again later.
         </p>
 
-        <!-- Реальні дані -->
+        
         <TournamentCard
           v-else
           v-for="t in tournaments"

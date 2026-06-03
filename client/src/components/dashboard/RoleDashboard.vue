@@ -121,6 +121,7 @@ import type { ITournamentPreview } from '../../types/Tournament'
 
 import heroBg from '../../assets/hero-bg.png'
 import defaultCardBg from '../../assets/hero-card.jpg'
+import { getSportPreferences, sortByPreferences } from '../../utils/sortByPreferences'
 
 defineProps<{
   heroSubtitle: string
@@ -142,7 +143,7 @@ const goToCreateTournament = () => {
   router.push({ name: 'create-tournament' })
 }
 
-// --- Дані ---
+
 const activeTournaments = ref<ITournamentPreview[]>([])
 const myTournaments = ref<ITournamentPreview[]>([])
 const loadingActive = ref(true)
@@ -162,19 +163,23 @@ const formatTime = (iso: string) =>
   })
 
 onMounted(async () => {
-  // Активні турніри
+
   try {
-    activeTournaments.value = await tournamentService.getTournaments({
+    const raw = await tournamentService.getTournaments({
       pageSize: 4,
       status: 'IN_PROGRESS,REGISTRATION_OPEN',
     })
+    const prefs = authStore.currentUser
+      ? getSportPreferences(authStore.currentUser.userId)
+      : []
+    activeTournaments.value = sortByPreferences(raw, prefs)
   } catch (e) {
     console.error('Failed to load active tournaments', e)
   } finally {
     loadingActive.value = false
   }
 
-  // Мої турніри
+ 
   if (authStore.currentUser) {
     try {
       myTournaments.value = await tournamentService.getUserTournaments({
@@ -292,6 +297,7 @@ onMounted(async () => {
 }
 
 .dashboard-button {
+  text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -353,6 +359,7 @@ onMounted(async () => {
   font-size: 16px;
   line-height: 1;
 }
+
 
 @media (max-width: 1200px) {
   .dashboard-section__grid {

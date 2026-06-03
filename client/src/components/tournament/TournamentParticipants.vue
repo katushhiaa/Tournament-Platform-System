@@ -38,7 +38,7 @@ const goTo = (page: number) => {
       </div>
     </div>
 
-    <p v-if="!participants.length" class="empty-state">No participants yet</p>
+    
 
     <div v-if="totalPages > 1" class="pagination">
       <button
@@ -69,6 +69,7 @@ const goTo = (page: number) => {
 <style scoped>
 .participants {
   margin-top: 104px;
+  margin-bottom: 80px; 
   display: flex;
   flex-direction: column;
   align-items: center;
