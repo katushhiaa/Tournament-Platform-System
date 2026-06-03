@@ -83,12 +83,12 @@ const router = createRouter({
             component: SportSelectionPage,
             meta: { requiresAuth: true },
         },
-        {
+{
             path: '/:pathMatch(.*)*',
             name: 'not-found',
             component: NotFoundPage,
         },
-    ],
+],
 });
 
 router.beforeEach((to) => {
