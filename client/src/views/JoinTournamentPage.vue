@@ -18,9 +18,25 @@ onMounted(async () => {
 
   try {
     await participationService.addParticipant(id, authStore.currentUser!.userId)
-    sessionStorage.setItem('joinToast', `You have successfully joined the tournament!`)
+    sessionStorage.setItem('joinToast', 'You have successfully joined the tournament!')
+    router.push(`/tournaments/${id}`)
   } catch (e: any) {
-    console.warn('Join error (may already be registered):', e)
+    const status = e?.response?.status
+    let message = 'Something went wrong. Please try again.'
+    if (status === 409) {
+      const msg = e?.response?.data?.error?.message ?? ''
+      if (msg.toLowerCase().includes('no spot') || msg.toLowerCase().includes('maximum')) {
+        message = 'No spots available. The tournament is full.'
+      } else {
+        message = 'Registration for this tournament is closed.'
+      }
+    } else if (status === 403) {
+      message = 'You do not have permission to join this tournament.'
+    } else if (!status) {
+      message = 'Connection error. Please check your internet connection.'
+    }
+    sessionStorage.setItem('joinToastError', message)
+    router.push(`/tournaments/${id}`)
   }
 
   router.push(`/tournaments/${id}`)

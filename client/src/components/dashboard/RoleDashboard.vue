@@ -71,10 +71,10 @@
               class="tournament-card-skeleton"
             />
 
-            <p
-              v-else-if="!myTournaments.length"
-              class="dashboard-section__empty"
-            >
+           <p v-else-if="errorMy" class="dashboard-section__empty dashboard-section__empty--error">
+              Failed to load your tournaments. Please try again.
+            </p>
+            <p v-else-if="!myTournaments.length" class="dashboard-section__empty">
               You have no tournaments yet.
             </p>
 
@@ -148,6 +148,7 @@ const activeTournaments = ref<ITournamentPreview[]>([])
 const myTournaments = ref<ITournamentPreview[]>([])
 const loadingActive = ref(true)
 const loadingMy = ref(true)
+const errorMy = ref(false)
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('uk-UA', {
@@ -165,16 +166,17 @@ const formatTime = (iso: string) =>
 onMounted(async () => {
 
   try {
-    const raw = await tournamentService.getTournaments({
+    const res = await tournamentService.getTournaments({
       pageSize: 4,
       status: 'IN_PROGRESS,REGISTRATION_OPEN',
     })
     const prefs = authStore.currentUser
       ? getSportPreferences(authStore.currentUser.userId)
       : []
-    activeTournaments.value = sortByPreferences(raw, prefs)
+    activeTournaments.value = sortByPreferences(res.tournaments, prefs)
   } catch (e) {
-    console.error('Failed to load active tournaments', e)
+  console.error('Failed to load my tournaments', e)
+  errorMy.value = true
   } finally {
     loadingActive.value = false
   }
@@ -358,6 +360,10 @@ onMounted(async () => {
   justify-content: center;
   font-size: 16px;
   line-height: 1;
+}
+
+.dashboard-section__empty--error {
+  color: #e81212;
 }
 
 
