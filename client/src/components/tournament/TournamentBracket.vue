@@ -197,7 +197,7 @@ const renderData = computed(() => {
         xmlns="http://www.w3.org/2000/svg"
         overflow="visible"
       >
-        <!-- LABELS -->
+       
         <text
           v-for="r in renderData.rounds"
           :key="'lbl-' + r.label"
@@ -212,7 +212,7 @@ const renderData = computed(() => {
           font-family="inherit"
         >{{ r.label }}</text>
 
-        <!-- CONNECTORS -->
+       
         <line
           v-for="(l, i) in renderData.connectors"
           :key="'conn-' + i"
@@ -223,7 +223,7 @@ const renderData = computed(() => {
           stroke-linecap="round"
         />
 
-        <!-- MATCHES -->
+      
         <g
           v-for="r in renderData.rounds"
           :key="'round-' + r.label"
@@ -234,7 +234,7 @@ const renderData = computed(() => {
             :class="{ 'match--clickable': canClick(rm.match) }"
             @click="handleMatchClick(rm.match)"
           >
-            <!-- BYE badge -->
+           
             <text
               v-if="rm.match.isBye"
               :x="rm.x + 6"
@@ -246,7 +246,7 @@ const renderData = computed(() => {
               font-family="inherit"
             >BYE</text>
 
-            <!-- Player 1 -->
+           
             <rect
               :x="rm.x" :y="rm.y1"
               :width="ROUND_W" :height="CARD_H"
@@ -276,7 +276,7 @@ const renderData = computed(() => {
               font-family="inherit"
             >{{ rm.match.scorePlayer1 }}</text>
 
-            <!-- Player 2 -->
+           
             <rect
               :x="rm.x" :y="rm.y2"
               :width="ROUND_W" :height="CARD_H"
@@ -311,7 +311,7 @@ const renderData = computed(() => {
       </svg>
     </div>
 
-    <!-- Modal -->
+    
     <MatchResultModal
       v-if="selectedMatch"
       :tournament-id="tournamentId"
