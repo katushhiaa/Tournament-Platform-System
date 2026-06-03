@@ -1,4 +1,5 @@
 using System;
+using System.Linq.Expressions;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
@@ -292,7 +293,7 @@ public class TournamentRepository : BaseRepository<Tournament, TournamentModel>,
         }).ToList();
     }
 
-    public async Task<IReadOnlyList<TournamentPreviewDto>> GetAllPreviewAsync(int page, int pageSize, bool randomize, IReadOnlyList<TournamentStatus>? statuses)
+    public async Task<IReadOnlyList<TournamentPreviewDto>> GetAllPreviewAsync(int page, int pageSize, bool randomize, IReadOnlyList<TournamentStatus>? statuses, string? searchQuery = null)
     {
         var skip = (page - 1) * pageSize;
 
@@ -306,9 +307,8 @@ public class TournamentRepository : BaseRepository<Tournament, TournamentModel>,
         if (statusFilters != null)
             query = query.Where(t => statusFilters.Contains(t.Status));
 
-        query = randomize
-            ? query.OrderBy(_ => EF.Functions.Random())
-            : query.OrderByDescending(t => t.StartDate).ThenBy(t => t.Id);
+        query = ApplySearchFilter(query, searchQuery);
+        query = ApplySearchRanking(query, searchQuery, randomize);
 
         var rows = await query
             .Skip(skip)
@@ -339,5 +339,56 @@ public class TournamentRepository : BaseRepository<Tournament, TournamentModel>,
         }).ToList();
     }
 
+    private static IQueryable<TournamentModel> ApplySearchFilter(IQueryable<TournamentModel> query, string? searchQuery)
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery))
+            return query;
+
+        var normalized = searchQuery.Trim().ToLowerInvariant();
+        return query.Where(t =>
+            t.Name.ToLower().Contains(normalized) ||
+            (t.Description != null && t.Description.ToLower().Contains(normalized)));
+    }
+
+    private static IOrderedQueryable<TournamentModel> ApplySearchRanking(IQueryable<TournamentModel> query, string searchQuery, bool randomize)
+    {
+        var normalized = searchQuery.Trim().ToLowerInvariant();
+        var tokens = searchQuery.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        var ordered = query
+            .OrderByDescending(t => t.Name.ToLower().Contains(normalized))
+            .ThenByDescending(t => t.Description != null && t.Description.ToLower().Contains(normalized))
+            .ThenByDescending(BuildContainsAnyExpression(tokens, t => t.Name))
+            .ThenByDescending(BuildContainsAnyExpression(tokens, t => t.Description));
+
+        if (randomize)
+            ordered = ordered.ThenBy(_ => EF.Functions.Random());
+        else
+            ordered = ordered.ThenByDescending(t => t.StartDate).ThenBy(t => t.Id);
+
+        return ordered;
+    }
+
+    private static Expression<Func<TournamentModel, bool>> BuildContainsAnyExpression(string[] tokens, Expression<Func<TournamentModel, string?>> propertySelector)
+    {
+        var parameter = propertySelector.Parameters[0];
+        var property = propertySelector.Body;
+        var stringType = typeof(string);
+        var toLowerMethod = stringType.GetMethod(nameof(string.ToLower), Type.EmptyTypes)!;
+        var containsMethod = stringType.GetMethod(nameof(string.Contains), new[] { stringType })!;
+
+        Expression body = Expression.Constant(false);
+        var notNull = Expression.NotEqual(property, Expression.Constant(null, typeof(string)));
+
+        foreach (var token in tokens)
+        {
+            var lowered = Expression.Call(property, toLowerMethod);
+            var containsCall = Expression.Call(lowered, containsMethod, Expression.Constant(token));
+            var condition = Expression.AndAlso(notNull, containsCall);
+            body = Expression.OrElse(body, condition);
+        }
+
+        return Expression.Lambda<Func<TournamentModel, bool>>(body, parameter);
+    }
 }
 
