@@ -11,7 +11,6 @@ const authStore = useAuthStore()
 onMounted(async () => {
   const id = route.params.id as string
 
-  // Гість — перенаправляємо на логін, після логіну повернемось сюди
   if (!authStore.isAuthenticated) {
     router.push({ path: '/login', query: { redirect: `/join/${id}` } })
     return
@@ -21,7 +20,6 @@ onMounted(async () => {
     await participationService.addParticipant(id, authStore.currentUser!.userId)
     sessionStorage.setItem('joinToast', `You have successfully joined the tournament!`)
   } catch (e: any) {
-    // 409 — вже зареєстрований, просто йдемо на деталі
     console.warn('Join error (may already be registered):', e)
   }
 

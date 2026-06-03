@@ -297,6 +297,7 @@ onMounted(async () => {
 }
 
 .dashboard-button {
+  text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -358,6 +359,7 @@ onMounted(async () => {
   font-size: 16px;
   line-height: 1;
 }
+
 
 @media (max-width: 1200px) {
   .dashboard-section__grid {

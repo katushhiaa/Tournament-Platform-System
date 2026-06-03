@@ -75,7 +75,7 @@ onMounted(async () => {
           games. Compete with other players, organize your own events, and reach
           new heights.
         </p>
-        <button class="hero__button">Get started</button>
+        <router-link to="/login" class="hero__button main-button--link">Get started</router-link>
       </div>
     </section>
 

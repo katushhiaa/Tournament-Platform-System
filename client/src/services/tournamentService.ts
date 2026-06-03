@@ -127,16 +127,19 @@ export const tournamentService = {
         tournamentId: string,
         formData: FormData,
     ): Promise<void> {
-        await axiosInstance.post(
-            `/tournaments/${tournamentId}/image`,
-            formData,
-            {
-                headers: {
-                    'Content-Type':
-                        'multipart/form-data',
+        try {
+            await axiosInstance.post(
+                `/tournaments/${tournamentId}/image`,
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
                 },
-            },
-        );
+            );
+        } catch (error) {
+            throw buildTournamentApiError(error);
+        }
     },
 
     async getTournamentById(

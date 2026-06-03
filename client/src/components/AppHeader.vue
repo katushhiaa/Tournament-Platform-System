@@ -14,8 +14,17 @@
         Home
       </router-link>
 
-      <router-link to="/tournaments" class="nav-link">
+      <router-link to="/tournaments" class="nav-link" active-class="active">
         Browse Tournaments
+      </router-link>
+
+      <router-link
+        v-if="isAuthenticated"
+        to="/my-tournaments"
+        class="nav-link"
+        active-class="active"
+      >
+        My Tournaments
       </router-link>
     </nav>
 
