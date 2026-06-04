@@ -6,7 +6,6 @@ import OrganizerDashboardPage from '../views/OrganizerDashboardPage.vue';
 import PlayerDashboardPage from '../views/PlayerDashboardPage.vue';
 import { useAuthStore } from '../stores/authStore';
 import CreateTournamentPage from '../views/CreateTournamentPage.vue';
-
 import EditTournamentPage from '../views/EditTournamentPage.vue';
 import TournamentsPage from '../views/TournamentsPage.vue';
 import MyTournamentsPage from '../views/MyTournamentsPage.vue';
@@ -56,6 +55,7 @@ const router = createRouter({
             path: '/tournaments/:id/edit',
             name: 'edit-tournament',
             component: EditTournamentPage,
+            meta: { requiresAuth: true, role: 'organizer' },
         },
         {
             path: '/tournaments/:id',
@@ -78,20 +78,17 @@ const router = createRouter({
             name: 'join-tournament',
             component: JoinTournamentPage,
         },
-
         {
             path: '/onboarding/sports',
             name: 'sport-selection',
             component: SportSelectionPage,
             meta: { requiresAuth: true },
         },
-
         {
             path: '/:pathMatch(.*)*',
             name: 'not-found',
             component: NotFoundPage,
         },
-
     ],
 });
 
@@ -105,7 +102,6 @@ router.beforeEach((to) => {
     const isAuthenticated = authStore.isAuthenticated;
     const role = authStore.currentUser?.role;
 
-
     if (to.name !== 'sport-selection' && isAuthenticated) {
         const userId = authStore.currentUser?.userId;
         if (userId) {
@@ -113,7 +109,7 @@ router.beforeEach((to) => {
             const onboardingDone = localStorage.getItem(`onboarding_done_${userId}`);
             const isNewUser = sessionStorage.getItem(`new_user_${userId}`);
             if (!prefs && !onboardingDone && isNewUser) {
-                return '/onboarding/sports';
+                return { name: 'sport-selection' };
             }
         }
     }

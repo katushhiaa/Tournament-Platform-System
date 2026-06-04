@@ -6,7 +6,7 @@ import TournamentCard from '../components/TournamentCard.vue'
 import { tournamentService } from '../services/tournamentService'
 import { useAuthStore } from '../stores/authStore'
 import type { ITournamentPreview } from '../types/Tournament'
-import defaultCardBg from '../assets/hero-card.jpg'
+import defaultCardBg from '../assets/hero-card.png'
 import heroBg from '../assets/Background_2.png'
 
 const authStore = useAuthStore()
@@ -362,7 +362,7 @@ const visiblePages = computed(() => {
   cursor: not-allowed;
 }
 
-/* ── Responsive ── */
+
 @media (max-width: 1200px) {
   .grid {
     grid-template-columns: repeat(3, 1fr);

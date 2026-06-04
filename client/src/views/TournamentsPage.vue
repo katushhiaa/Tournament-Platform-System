@@ -5,7 +5,7 @@ import SiteFooter from '../components/SiteFooter.vue'
 import TournamentCard from '../components/TournamentCard.vue'
 import { tournamentService } from '../services/tournamentService'
 import type { ITournamentPreview } from '../types/Tournament'
-import defaultCardBg from '../assets/hero-card.jpg'
+import defaultCardBg from '../assets/hero-card.png'
 import tournamentsBg from '../assets/hero-bg.png'
 
 const allTournaments = ref<ITournamentPreview[]>([])

@@ -619,7 +619,7 @@ onUnmounted(() => {
   pointer-events: none;
 }
 
-/* Кастомний дропдаун */
+
 .custom-select {
   position: relative;
   width: 100%;

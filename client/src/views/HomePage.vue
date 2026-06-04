@@ -19,7 +19,7 @@ import { getSportPreferences, sortByPreferences } from '../utils/sortByPreferenc
 
 const authStore = useAuthStore()
 
-import defaultCardBg from '../assets/hero-card.jpg'
+import defaultCardBg from '../assets/hero-card.png'
 
 const tournaments = ref<ITournamentPreview[]>([])
 const tournamentsLoading = ref(true)
@@ -378,7 +378,6 @@ onMounted(async () => {
   font-size: 16px;
 }
 
-/* OUR PURPOSE */
 .purpose-grid {
   display: grid;
   grid-template-columns: repeat(2, 506px);
@@ -492,7 +491,6 @@ onMounted(async () => {
   text-decoration: none;
 }
 
-/* CTA */
 .cta {
   position: relative;
   min-height: 260px;

@@ -1,11 +1,11 @@
 import axiosInstance from '../api/axiosInstance';
-import type { IMatchDto } from '../types/Match';
+import type { MatchInfo } from '../types/Match';
 
 class MatchService {
     async getTournamentMatches(
         tournamentId: string,
-    ): Promise<IMatchDto[]> {
-        const response = await axiosInstance.get<IMatchDto[]>(
+    ): Promise<MatchInfo[]> {
+        const response = await axiosInstance.get<MatchInfo[]>(
             `/api/v1/matches/${tournamentId}`,
         );
 

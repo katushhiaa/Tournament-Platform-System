@@ -262,7 +262,7 @@ const handleSave = async () => {
   cursor: not-allowed;
 }
 
-/* hide number input arrows */
+
 .modal__input[type=number]::-webkit-inner-spin-button,
 .modal__input[type=number]::-webkit-outer-spin-button {
   -webkit-appearance: none;
