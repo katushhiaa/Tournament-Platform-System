@@ -6,17 +6,15 @@ import TournamentCard from '../components/TournamentCard.vue'
 import { tournamentService } from '../services/tournamentService'
 import type { ITournamentPreview } from '../types/Tournament'
 import defaultCardBg from '../assets/hero-card.jpg'
-import { useAuthStore } from '../stores/authStore'
-import { getSportPreferences, sortByPreferences } from '../utils/sortByPreferences'
 import tournamentsBg from '../assets/hero-bg.png'
 
-const authStore = useAuthStore()
 const allTournaments = ref<ITournamentPreview[]>([])
 const loading = ref(true)
 const error = ref(false)
+const isFallback = ref(false)
 const searchQuery = ref('')
 const currentPage = ref(1)
-const PAGE_SIZE = 12
+const PAGE_SIZE = 15
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -24,36 +22,37 @@ const formatDate = (iso: string) =>
 const formatTime = (iso: string) =>
   new Date(iso).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })
 
-onMounted(async () => {
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
+
+async function fetchTournaments(q?: string) {
+  loading.value = true
+  error.value = false
   try {
-    const raw = await tournamentService.getTournaments({ pageSize: 100 })
-    const prefs = authStore.currentUser
-      ? getSportPreferences(authStore.currentUser.userId)
-      : []
-    allTournaments.value = sortByPreferences(raw, prefs)
+    const res = await tournamentService.getTournaments({ pageSize: 100, q: q || undefined })
+    allTournaments.value = res.tournaments
+    isFallback.value = res.fallback_reason === 'NO_MATCHING_TOURNAMENTS'
   } catch {
     error.value = true
   } finally {
     loading.value = false
   }
+}
+
+onMounted(() => fetchTournaments())
+
+watch(searchQuery, (val) => {
+  currentPage.value = 1
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => fetchTournaments(val.trim()), 350)
 })
 
-const filtered = computed(() => {
-  const q = searchQuery.value.trim().toLowerCase()
-  if (!q) return allTournaments.value
-  return allTournaments.value.filter(t =>
-    t.title.toLowerCase().includes(q) ||
-    t.sportName?.toLowerCase().includes(q)
-  )
-})
-
-watch(searchQuery, () => { currentPage.value = 1 })
-
-const totalPages = computed(() => Math.max(1, Math.ceil(filtered.value.length / PAGE_SIZE)))
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(allTournaments.value.length / PAGE_SIZE))
+)
 
 const paginated = computed(() => {
   const start = (currentPage.value - 1) * PAGE_SIZE
-  return filtered.value.slice(start, start + PAGE_SIZE)
+  return allTournaments.value.slice(start, start + PAGE_SIZE)
 })
 
 const visiblePages = computed(() => {
@@ -90,6 +89,10 @@ const visiblePages = computed(() => {
     </div>
 
     <main class="main">
+      <p v-if="isFallback" class="fallback-msg">
+        No tournaments found for your preferred sports. Showing all available tournaments.
+      </p>
+
       <template v-if="loading">
         <div class="grid">
           <div v-for="n in 12" :key="n" class="skeleton" />
@@ -216,15 +219,21 @@ const visiblePages = computed(() => {
   padding: 48px 80px 80px;
 }
 
+.fallback-msg {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
 .grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 24px;
-  justify-content: center;
 }
 
 .skeleton {
-  width: 230px;
+  width: 100%;
   min-height: 306px;
   border-radius: 18px;
   background: linear-gradient(90deg, #2e3a42 25%, #3a4a54 50%, #2e3a42 75%);
@@ -282,8 +291,23 @@ const visiblePages = computed(() => {
   cursor: not-allowed;
 }
 
+@media (max-width: 1200px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .main { padding: 32px 16px 60px; }
   .hero__title { font-size: 32px; }
+  .grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

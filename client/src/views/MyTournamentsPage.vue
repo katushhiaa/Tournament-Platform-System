@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
 import AppHeader from '../components/AppHeader.vue'
 import SiteFooter from '../components/SiteFooter.vue'
 import TournamentCard from '../components/TournamentCard.vue'
@@ -28,39 +28,40 @@ const formatTime = (iso: string) =>
     hour: '2-digit', minute: '2-digit',
   })
 
-onMounted(async () => {
-  if (!authStore.currentUser) return
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
+async function fetchTournaments(q?: string) {
+  if (!authStore.currentUser) return
+  loading.value = true
+  error.value = false
   try {
     allTournaments.value = await tournamentService.getUserTournaments({
       userId: authStore.currentUser.userId,
       pageSize: 100,
+      q: q || undefined,
     })
   } catch {
     error.value = true
   } finally {
     loading.value = false
   }
-})
+}
 
-const filtered = computed(() => {
-  const q = searchQuery.value.trim().toLowerCase()
-  if (!q) return allTournaments.value
-  return allTournaments.value.filter(t =>
-    t.title.toLowerCase().includes(q) ||
-    t.sportName?.toLowerCase().includes(q)
-  )
-})
+onMounted(() => fetchTournaments())
 
-watch(searchQuery, () => { currentPage.value = 1 })
+watch(searchQuery, (val) => {
+  currentPage.value = 1
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => fetchTournaments(val.trim()), 350)
+})
 
 const totalPages = computed(() =>
-  Math.max(1, Math.ceil(filtered.value.length / PAGE_SIZE))
+  Math.max(1, Math.ceil(allTournaments.value.length / PAGE_SIZE))
 )
 
 const paginated = computed(() => {
   const start = (currentPage.value - 1) * PAGE_SIZE
-  return filtered.value.slice(start, start + PAGE_SIZE)
+  return allTournaments.value.slice(start, start + PAGE_SIZE)
 })
 
 const visiblePages = computed(() => {
@@ -234,14 +235,13 @@ const visiblePages = computed(() => {
 }
 
 .grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 24px;
-  justify-content: center;
 }
 
 .skeleton {
-  width: 230px;
+  width: 100%;
   min-height: 306px;
   border-radius: 18px;
   background: linear-gradient(90deg, #2e3a42 25%, #3a4a54 50%, #2e3a42 75%);
@@ -299,6 +299,18 @@ const visiblePages = computed(() => {
   cursor: not-allowed;
 }
 
+@media (max-width: 1200px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .main {
     padding: 100px 16px 80px;
@@ -316,6 +328,10 @@ const visiblePages = computed(() => {
 
   .search-wrap {
     max-width: 100%;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

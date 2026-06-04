@@ -9,6 +9,7 @@ import type {
     ITournamentCreate,
     ITournamentPreview,
     ITournamentResponse,
+    ITournamentsResponse,
     ITournamentUpdate,
 } from '../types/Tournament';
 import router from '../router';
@@ -293,16 +294,21 @@ export const tournamentService = {
         page?: number
         pageSize?: number
         status?: string
-    }): Promise<ITournamentPreview[]> {
-        const response = await axiosInstance.get<ITournamentPreview[] | { tournaments: ITournamentPreview[] }>('/tournaments', {
+        q?: string
+        randomize?: boolean
+        is_personalized?: boolean
+    }): Promise<ITournamentsResponse> {
+        const response = await axiosInstance.get<ITournamentsResponse>('/tournaments', {
             params: {
                 page: params?.page ?? 1,
                 pageSize: params?.pageSize ?? 8,
                 ...(params?.status ? { status: params.status } : {}),
+                ...(params?.q ? { q: params.q } : {}),
+                ...(params?.randomize !== undefined ? { randomize: params.randomize } : {}),
+                ...(params?.is_personalized !== undefined ? { is_personalized: params.is_personalized } : {}),
             },
         })
-        const data = response.data
-        return Array.isArray(data) ? data : (data.tournaments ?? [])
+        return response.data
     },
 
     async getUserTournaments(params: {
@@ -310,6 +316,7 @@ export const tournamentService = {
         page?: number
         pageSize?: number
         status?: string
+        q?: string
     }): Promise<ITournamentPreview[]> {
         try {
             const response = await axiosInstance.get<ITournamentPreview[]>(
@@ -320,6 +327,7 @@ export const tournamentService = {
                         page: params.page ?? 1,
                         pageSize: params.pageSize ?? 4,
                         ...(params.status ? { status: params.status } : {}),
+                        ...(params.q ? { q: params.q } : {}),
                     },
                 },
             )

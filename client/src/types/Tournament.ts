@@ -76,3 +76,9 @@ export interface IThemeOption {
     name: string
     imageUrl?: string | null
 }
+
+export interface ITournamentsResponse {
+    tournaments: ITournamentPreview[]
+    is_personalized: boolean
+    fallback_reason: string | null
+}
