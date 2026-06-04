@@ -710,11 +710,11 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
         }
 
         [HttpGet]
-        [SwaggerOperation(Summary = "Список турнірів (preview)", Description = "Повертає список турнірів для списків UI. Роль: Guest/Player/Organizer. Опційні параметри: page, pageSize, randomize, status (CSV; case-insensitive), is_personalized. Допустимі значення status: REGISTRATION_OPEN, REGISTRATION_CLOSED, IN_PROGRESS, COMPLETED, DRAFT.")]
+        [SwaggerOperation(Summary = "Список турнірів (preview)", Description = "Повертає список турнірів для списків UI. Роль: Guest/Player/Organizer. Опційні параметри: page, pageSize, randomize, status (CSV; case-insensitive), is_personalized, q. Допустимі значення status: REGISTRATION_OPEN, REGISTRATION_CLOSED, IN_PROGRESS, COMPLETED, DRAFT.")]
         [SwaggerResponse(200, Type = typeof(TournamentPreviewListResponseDto), Description = "Список турнірів")]
         [SwaggerResponseExample(200, typeof(Swagger.Examples.TournamentPreviewListResponseExample))]
         [SwaggerResponse(400, Type = typeof(ErrorResponseDto), Description = "Невалідні дані")]
-        public async Task<IActionResult> GetAllTournaments([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] bool randomize = false, [FromQuery] string? status = null, [FromQuery(Name = "is_personalized")] bool isPersonalized = false)
+        public async Task<IActionResult> GetAllTournaments([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] bool randomize = false, [FromQuery] string? status = null, [FromQuery(Name = "is_personalized")] bool isPersonalized = false, [FromQuery(Name = "q")] string? searchQuery = null)
         {
             try
             {
@@ -732,7 +732,7 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
 
                         if (preferredThemeIds != null && preferredThemeIds.Count > 0)
                         {
-                            tournaments = await _tournamentService.GetPersonalizedTournamentsAsync(preferredThemeIds, page, pageSize, randomize, statuses);
+                            tournaments = await _tournamentService.GetPersonalizedTournamentsAsync(preferredThemeIds, page, pageSize, randomize, statuses, searchQuery);
                             if (tournaments.Count > 0)
                             {
                                 isResponsePersonalized = true;
@@ -755,7 +755,7 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
 
                 if (!isResponsePersonalized)
                 {
-                    tournaments = await _tournamentService.GetAllTournamentsAsync(page, pageSize, randomize, statuses);
+                    tournaments = await _tournamentService.GetAllTournamentsAsync(page, pageSize, randomize, statuses, searchQuery);
                 }
 
                 var response = new TournamentPreviewListResponseDto

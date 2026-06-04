@@ -44,14 +44,14 @@ const formatTime = (iso: string): string => {
 
 onMounted(async () => {
   try {
-    const raw = await tournamentService.getTournaments({
+    const res = await tournamentService.getTournaments({
       pageSize: 4,
       status: 'IN_PROGRESS,REGISTRATION_OPEN',
     })
     const prefs = authStore.currentUser
       ? getSportPreferences(authStore.currentUser.userId)
       : []
-    tournaments.value = sortByPreferences(raw, prefs)
+    tournaments.value = sortByPreferences(res.tournaments, prefs)
   } catch (e) {
     console.error(e)
     tournamentsError.value = true

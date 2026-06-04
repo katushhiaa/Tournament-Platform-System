@@ -19,5 +19,5 @@ public interface ITournamentRepository : IRepository<Tournament, Guid>
     Task<IReadOnlyList<TournamentPlatformSystemWebApi.Core.Entities.Match>> GetMatchesAsync(Guid tournamentId);
     Task<TournamentPlatformSystemWebApi.Core.Entities.Match> UpdateMatchAsync(TournamentPlatformSystemWebApi.Core.Entities.Match match);
     Task<IReadOnlyList<TournamentPreviewDto>> GetForUserAsync(Guid userId, int page, int pageSize, IReadOnlyList<TournamentStatus>? statuses);
-    Task<IReadOnlyList<TournamentPreviewDto>> GetAllPreviewAsync(int page, int pageSize, bool randomize, IReadOnlyList<TournamentStatus>? statuses);
+    Task<IReadOnlyList<TournamentPreviewDto>> GetAllPreviewAsync(int page, int pageSize, bool randomize, IReadOnlyList<TournamentStatus>? statuses, string? searchQuery = null);
 }

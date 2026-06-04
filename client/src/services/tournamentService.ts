@@ -9,8 +9,8 @@ import type {
     ITournamentCreate,
     ITournamentPreview,
     ITournamentResponse,
-    ITournamentUpdate,
     ITournamentsResponse,
+    ITournamentUpdate,
 } from '../types/Tournament';
 import router from '../router';
 
@@ -257,9 +257,6 @@ export const tournamentService = {
 
             throw buildTournamentApiError(error)
         }
-
-
-
     },
 
     async startTournament(
@@ -294,12 +291,18 @@ export const tournamentService = {
         page?: number
         pageSize?: number
         status?: string
+        q?: string
+        randomize?: boolean
+        is_personalized?: boolean
     }): Promise<ITournamentsResponse> {
         const response = await axiosInstance.get<ITournamentsResponse>('/tournaments', {
             params: {
                 page: params?.page ?? 1,
                 pageSize: params?.pageSize ?? 8,
                 ...(params?.status ? { status: params.status } : {}),
+                ...(params?.q ? { q: params.q } : {}),
+                ...(params?.randomize !== undefined ? { randomize: params.randomize } : {}),
+                ...(params?.is_personalized !== undefined ? { is_personalized: params.is_personalized } : {}),
             },
         })
         return response.data
@@ -310,6 +313,7 @@ export const tournamentService = {
         page?: number
         pageSize?: number
         status?: string
+        q?: string
     }): Promise<ITournamentPreview[]> {
         try {
             const response = await axiosInstance.get<ITournamentPreview[]>(
@@ -320,6 +324,7 @@ export const tournamentService = {
                         page: params.page ?? 1,
                         pageSize: params.pageSize ?? 4,
                         ...(params.status ? { status: params.status } : {}),
+                        ...(params.q ? { q: params.q } : {}),
                     },
                 },
             )

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
@@ -741,7 +742,7 @@ public class TournamentService : ITournamentService
         return await _tournamentRepository.GetForUserAsync(userId, page, pageSize, statuses);
     }
 
-    public async Task<IReadOnlyList<TournamentPreviewDto>> GetAllTournamentsAsync(int page, int pageSize, bool randomize, IReadOnlyList<TournamentStatus>? statuses)
+    public async Task<IReadOnlyList<TournamentPreviewDto>> GetAllTournamentsAsync(int page, int pageSize, bool randomize, IReadOnlyList<TournamentStatus>? statuses, string? query = null)
     {
         if (page < 1)
             throw new ValidationException("Page must be greater than or equal to 1");
@@ -749,7 +750,59 @@ public class TournamentService : ITournamentService
         if (pageSize < 1)
             throw new ValidationException("PageSize must be greater than or equal to 1");
 
-        return await _tournamentRepository.GetAllPreviewAsync(page, pageSize, randomize, statuses);
+        return await _tournamentRepository.GetAllPreviewAsync(page, pageSize, randomize, statuses, query);
+    }
+
+    private static IQueryable<TournamentModel> ApplySearchQuery(IQueryable<TournamentModel> query, string? searchQuery)
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery))
+            return query;
+
+        var normalized = searchQuery.Trim().ToLowerInvariant();
+        return query.Where(t =>
+            t.Name.ToLower().Contains(normalized) ||
+            (t.Description != null && t.Description.ToLower().Contains(normalized)));
+    }
+
+    private static IOrderedQueryable<TournamentModel> ApplySearchRanking(IQueryable<TournamentModel> query, string searchQuery, bool randomize)
+    {
+        var normalized = searchQuery.Trim().ToLowerInvariant();
+        var tokens = searchQuery.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        var ordered = query
+            .OrderByDescending(t => t.Name.ToLower().Contains(normalized))
+            .ThenByDescending(t => t.Description != null && t.Description.ToLower().Contains(normalized))
+            .ThenByDescending(BuildContainsAnyExpression(tokens, t => t.Name))
+            .ThenByDescending(BuildContainsAnyExpression(tokens, t => t.Description));
+
+        if (randomize)
+            ordered = ordered.ThenBy(_ => EF.Functions.Random());
+        else
+            ordered = ordered.ThenByDescending(t => t.StartDate).ThenBy(t => t.Id);
+
+        return ordered;
+    }
+
+    private static Expression<Func<TournamentModel, bool>> BuildContainsAnyExpression(string[] tokens, Expression<Func<TournamentModel, string?>> propertySelector)
+    {
+        var parameter = propertySelector.Parameters[0];
+        var property = propertySelector.Body;
+        var stringType = typeof(string);
+        var toLowerMethod = stringType.GetMethod(nameof(string.ToLower), Type.EmptyTypes)!;
+        var containsMethod = stringType.GetMethod(nameof(string.Contains), new[] { stringType })!;
+
+        Expression body = Expression.Constant(false);
+        var notNull = Expression.NotEqual(property, Expression.Constant(null, typeof(string)));
+
+        foreach (var token in tokens)
+        {
+            var lowered = Expression.Call(property, toLowerMethod);
+            var containsCall = Expression.Call(lowered, containsMethod, Expression.Constant(token));
+            var condition = Expression.AndAlso(notNull, containsCall);
+            body = Expression.OrElse(body, condition);
+        }
+
+        return Expression.Lambda<Func<TournamentModel, bool>>(body, parameter);
     }
 
     public async Task<IReadOnlyList<Guid>> GetUserPreferredThemeIdsAsync(Guid userId)
@@ -765,7 +818,7 @@ public class TournamentService : ITournamentService
             .ToListAsync();
     }
 
-    public async Task<IReadOnlyList<TournamentPreviewDto>> GetPersonalizedTournamentsAsync(IReadOnlyCollection<Guid> preferredThemeIds, int page, int pageSize, bool randomize, IReadOnlyList<TournamentStatus>? statuses)
+    public async Task<IReadOnlyList<TournamentPreviewDto>> GetPersonalizedTournamentsAsync(IReadOnlyCollection<Guid> preferredThemeIds, int page, int pageSize, bool randomize, IReadOnlyList<TournamentStatus>? statuses, string? query = null)
     {
         if (preferredThemeIds == null || preferredThemeIds.Count == 0)
             return Array.Empty<TournamentPreviewDto>();
@@ -782,18 +835,22 @@ public class TournamentService : ITournamentService
             ? statuses.Select(s => (TournamentStatusType)s).ToList()
             : new List<TournamentStatusType> { TournamentStatusType.REGISTRATION_OPEN, TournamentStatusType.IN_PROGRESS };
 
-        var query = _context.Set<TournamentModel>()
+        var searchQuery = query;
+        var tournamentsQuery = _context.Set<TournamentModel>()
             .AsNoTracking()
             .Where(t => preferredThemeIds.Contains(t.ThemeId));
 
         if (statusFilters != null)
-            query = query.Where(t => statusFilters.Contains(t.Status));
+            tournamentsQuery = tournamentsQuery.Where(t => statusFilters.Contains(t.Status));
 
-        query = randomize
-            ? query.OrderBy(_ => EF.Functions.Random())
-            : query.OrderByDescending(t => t.StartDate).ThenBy(t => t.Id);
+        tournamentsQuery = ApplySearchQuery(tournamentsQuery, searchQuery);
+        tournamentsQuery = string.IsNullOrWhiteSpace(searchQuery)
+            ? (randomize
+                ? tournamentsQuery.OrderBy(_ => EF.Functions.Random())
+                : tournamentsQuery.OrderByDescending(t => t.StartDate).ThenBy(t => t.Id))
+            : ApplySearchRanking(tournamentsQuery, searchQuery, randomize);
 
-        var rows = await query
+        var rows = await tournamentsQuery
             .Skip(skip)
             .Take(pageSize)
             .Select(t => new
