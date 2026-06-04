@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import { participationService } from '../services/participationService'
@@ -8,7 +8,12 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
+const isProcessing = ref(false) 
+
 onMounted(async () => {
+  if (isProcessing.value) return 
+  isProcessing.value = true
+
   const id = route.params.id as string
 
   if (!authStore.isAuthenticated) {

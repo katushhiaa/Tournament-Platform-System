@@ -130,7 +130,7 @@ import { tournamentService } from '../../services/tournamentService'
 import type { ITournamentPreview } from '../../types/Tournament'
 
 import heroBg from '../../assets/hero-bg.png'
-import defaultCardBg from '../../assets/hero-card.jpg'
+import defaultCardBg from '../../assets/hero-card.png'
 import { getSportPreferences, sortByPreferences } from '../../utils/sortByPreferences'
 
 defineProps<{

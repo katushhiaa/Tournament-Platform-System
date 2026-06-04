@@ -8,7 +8,7 @@ import type { Participant } from '../../types/Participant'
 import { useAuthStore } from '../../stores/authStore'
 import { participationService } from '../../services/participationService'
 import ConfirmModal from '../ui/ConfirmModal.vue'
-import defaultBg from '../../assets/hero-card.jpg'
+import defaultBg from '../../assets/hero-card.png'
 
 const props = defineProps<{
   tournament: ITournament

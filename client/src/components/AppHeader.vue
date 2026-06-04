@@ -1,7 +1,7 @@
 <template>
   <header class="header">
     <div class="header__brand">
-      <img src="../assets/logo-icon.png" alt="Zvytyaha logo" class="header__logo" />
+      <img src="../assets/logo-icon.png" alt="Zvytyaha logo" class="header__logo" width="30"  height="30" />
       <span class="header__title">ZVYTIAHA</span>
     </div>
 
@@ -171,7 +171,6 @@ const handleLeave = () => {
   text-decoration: none;
 }
 
-/* LOG IN — filled by default, outline when pressed */
 .header__btn--login {
   border: 1px solid #ff9800;
   background: #ff9800;
@@ -191,7 +190,6 @@ const handleLeave = () => {
   outline: none;
 }
 
-/* SIGN UP — outline by default, filled when pressed */
 .header__btn--signup {
   border: 1px solid #ff9800;
   background: transparent;
@@ -211,7 +209,7 @@ const handleLeave = () => {
   outline: none;
 }
 
-/* LEAVE — white outline like in dashboard mock */
+
 .header__btn--leave {
   border: 1px solid rgba(255, 252, 242, 0.75);
   background: transparent;

@@ -1,6 +1,6 @@
-import type { IMatchDto } from '../types/Match';
+import type { MatchInfo } from '../types/Match';
 
-export interface IBracketMatch extends IMatchDto { }
+export interface IBracketMatch extends MatchInfo { }
 
 export interface IBracketRound {
     round: number;
@@ -12,18 +12,15 @@ export interface IBracket {
 }
 
 export function buildBracket(
-    matches: IMatchDto[],
+    matches: MatchInfo[],
 ): IBracket {
-    const grouped = new Map<number, IMatchDto[]>();
-
+    const grouped = new Map<number, MatchInfo[]>();
     for (const match of matches) {
         if (!grouped.has(match.round)) {
             grouped.set(match.round, []);
         }
-
         grouped.get(match.round)!.push(match);
     }
-
     const rounds: IBracketRound[] = Array.from(
         grouped.entries(),
     )
@@ -34,6 +31,5 @@ export function buildBracket(
             ),
         }))
         .sort((a, b) => a.round - b.round);
-
     return { rounds };
 }
