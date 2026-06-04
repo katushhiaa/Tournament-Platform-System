@@ -113,11 +113,8 @@
 
         <div class="register-form__hint-row">
           <p v-if="isCheckingEmail" class="register-form__hint">Checking email...</p>
-          <p v-else-if="emailIsUnique === true" class="register-form__success-text">
+          <p v-else-if="emailIsUnique === true && !errors.email" class="register-form__success-text">
             Email is available
-          </p>
-          <p v-else-if="emailIsUnique === false" class="register-form__error">
-            Email is already registered
           </p>
           <p v-else class="register-form__hint"></p>
         </div>
@@ -525,7 +522,7 @@ const handlePhoneInput = (event: Event) => {
 };
 
 const fullNameRegex =
-  /^[A-Za-zА-Яа-яІіЇїЄєҐґ'’-]+(?:\s+[A-Za-zА-Яа-яІіЇїЄєҐґ'’-]+){1,2}$/u;
+  /^[A-Za-zА-Яа-яІіЇїЄєҐґ''-]+(?:\s+[A-Za-zА-Яа-яІіЇїЄєҐґ''-]+){1,2}$/u;
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^\+380\s\d{2}\s\d{3}\s\d{2}\s\d{2}$/;
 const backendPhoneRegex = /^\+380\d{9}$/;
@@ -649,8 +646,10 @@ const validateField = (field: keyof IRegisterFormValues) => {
     case 'email':
       if (!form.email.trim()) {
         errors.email = 'Email is required';
+        emailIsUnique.value = null;
       } else if (!emailRegex.test(form.email.trim())) {
         errors.email = 'Invalid email format';
+        emailIsUnique.value = null;
       } else {
         errors.email = '';
       }
@@ -795,13 +794,14 @@ const handleSubmit = async () => {
       sessionStorage.setItem(`new_user_${response.userId}`, '1')
       router.push('/onboarding/sports');
     }, 900);
-    
+
   } catch (error: unknown) {
     const apiError = error as IApiError;
 
     if (apiError.errorCode === 'EMAIL_TAKEN') {
       submitError.value = 'Email is already registered';
       errors.email = 'Email is already registered';
+      emailIsUnique.value = null;
       focusFirstError();
     } else if (apiError.errorCode === 'VALIDATION_ERROR') {
       applyBackendErrors(apiError.fieldErrors);

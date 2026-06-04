@@ -221,21 +221,42 @@ public class TournamentService : ITournamentService
         // assign statuses and bye flags (important before persisting)
         TournamentPlatformSystemWebApi.Core.Logic.MatchStatusHelper.AssignStatuses(matches);
 
-        // persist generated matches
-        await _tournamentRepository.AddMatchesAsync(matches);
+        var provider = _context.Database.ProviderName ?? string.Empty;
+        var useTransaction = _context.Database.CurrentTransaction == null && !provider.Contains("InMemory", StringComparison.OrdinalIgnoreCase);
 
-        // update tournament status to IN_PROGRESS
-        await _tournamentRepository.UpdateStatus(tournamentId, TournamentStatus.IN_PROGRESS);
-
-        // return minimal start response
-        var response = new TournamentPlatformSystemWebApi.Application.DTOs.TournamentStartResponse
+        await using var txn = useTransaction ? await _context.Database.BeginTransactionAsync() : null;
+        try
         {
-            TournamentId = tournamentId,
-            Status = TournamentStatus.IN_PROGRESS.ToString().ToLowerInvariant(),
-            MatchesCreated = matches?.Count ?? 0
-        };
+            // persist generated matches
+            await _tournamentRepository.AddMatchesAsync(matches);
 
-        return response;
+            // update tournament status to IN_PROGRESS
+            await _tournamentRepository.UpdateStatus(tournamentId, TournamentStatus.IN_PROGRESS);
+
+            if (useTransaction && txn != null)
+            {
+                await txn.CommitAsync();
+            }
+
+            // return minimal start response
+            var response = new TournamentPlatformSystemWebApi.Application.DTOs.TournamentStartResponse
+            {
+                TournamentId = tournamentId,
+                Status = TournamentStatus.IN_PROGRESS.ToString().ToLowerInvariant(),
+                MatchesCreated = matches?.Count ?? 0
+            };
+
+            return response;
+        }
+        catch
+        {
+            if (useTransaction && txn != null)
+            {
+                await txn.RollbackAsync();
+            }
+
+            throw;
+        }
     }
 
     public async Task<IReadOnlyList<TournamentPlatformSystemWebApi.Application.DTOs.MatchesRoundDto>> GetTournamentMatchesAsync(Guid tournamentId)

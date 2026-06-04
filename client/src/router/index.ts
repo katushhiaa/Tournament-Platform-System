@@ -6,7 +6,6 @@ import OrganizerDashboardPage from '../views/OrganizerDashboardPage.vue';
 import PlayerDashboardPage from '../views/PlayerDashboardPage.vue';
 import { useAuthStore } from '../stores/authStore';
 import CreateTournamentPage from '../views/CreateTournamentPage.vue';
-
 import EditTournamentPage from '../views/EditTournamentPage.vue';
 import TournamentsPage from '../views/TournamentsPage.vue';
 import MyTournamentsPage from '../views/MyTournamentsPage.vue';
@@ -78,21 +77,18 @@ const router = createRouter({
             name: 'join-tournament',
             component: JoinTournamentPage,
         },
-
         {
             path: '/onboarding/sports',
             name: 'sport-selection',
             component: SportSelectionPage,
             meta: { requiresAuth: true },
         },
-
-        {
+{
             path: '/:pathMatch(.*)*',
             name: 'not-found',
             component: NotFoundPage,
         },
-
-    ],
+],
 });
 
 router.beforeEach((to) => {

@@ -257,9 +257,6 @@ export const tournamentService = {
 
             throw buildTournamentApiError(error)
         }
-
-
-
     },
 
     async startTournament(

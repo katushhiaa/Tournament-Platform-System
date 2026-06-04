@@ -23,6 +23,12 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Repositories
             _passwordHasher = passwordHasher;
         }
 
+        private bool ShouldUseTransaction()
+        {
+            var provider = _context.Database.ProviderName ?? string.Empty;
+            return _context.Database.CurrentTransaction == null && !provider.Contains("InMemory", StringComparison.OrdinalIgnoreCase);
+        }
+
         public async override Task<Guid> CreateAsync(User entity)
         {
             if (entity.Password == null)
@@ -30,9 +36,7 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Repositories
                 return Guid.Empty;
             }
 
-            var provider = _context.Database.ProviderName ?? string.Empty;
-            var useTransaction = !provider.Contains("InMemory", StringComparison.OrdinalIgnoreCase);
-
+            var useTransaction = ShouldUseTransaction();
             await using var txn = useTransaction ? await _context.Database.BeginTransactionAsync() : null;
             try
             {
@@ -153,32 +157,51 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Repositories
 
         public async Task SetUserThemePreferencesAsync(Guid userId, IReadOnlyCollection<Guid> themeIds)
         {
-            var existing = await _context.Set<UserTournamentThemePreferenceModel>()
-                .Where(x => x.UserId == userId)
-                .ToListAsync();
-
-            if (existing.Any())
+            var useTransaction = ShouldUseTransaction();
+            await using var txn = useTransaction ? await _context.Database.BeginTransactionAsync() : null;
+            try
             {
-                _context.Set<UserTournamentThemePreferenceModel>().RemoveRange(existing);
-            }
+                var existing = await _context.Set<UserTournamentThemePreferenceModel>()
+                    .Where(x => x.UserId == userId)
+                    .ToListAsync();
 
-            if (themeIds != null && themeIds.Count > 0)
-            {
-                var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-                var items = themeIds.Distinct().Select(themeId => new UserTournamentThemePreferenceModel
+                if (existing.Any())
                 {
-                    Id = Guid.NewGuid(),
-                    UserId = userId,
-                    ThemeId = themeId,
-                    CreatedAt = now
-                });
+                    _context.Set<UserTournamentThemePreferenceModel>().RemoveRange(existing);
+                }
 
-                await _context.Set<UserTournamentThemePreferenceModel>().AddRangeAsync(items);
+                if (themeIds != null && themeIds.Count > 0)
+                {
+                    var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+                    var items = themeIds.Distinct().Select(themeId => new UserTournamentThemePreferenceModel
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = userId,
+                        ThemeId = themeId,
+                        CreatedAt = now
+                    });
+
+                    await _context.Set<UserTournamentThemePreferenceModel>().AddRangeAsync(items);
+                }
+
+                await _context.SaveChangesAsync();
+
+                await SetPreferencesSetupCompletedAsync(userId, true);
+
+                if (useTransaction && txn != null)
+                {
+                    await txn.CommitAsync();
+                }
             }
+            catch
+            {
+                if (useTransaction && txn != null)
+                {
+                    await txn.RollbackAsync();
+                }
 
-            await _context.SaveChangesAsync();
-
-            await SetPreferencesSetupCompletedAsync(userId, true);
+                throw;
+            }
         }
 
         public async Task<bool> ExistsByEmailAsync(string email)
