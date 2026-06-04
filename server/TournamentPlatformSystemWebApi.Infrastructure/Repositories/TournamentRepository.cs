@@ -352,21 +352,37 @@ public class TournamentRepository : BaseRepository<Tournament, TournamentModel>,
 
     private static IOrderedQueryable<TournamentModel> ApplySearchRanking(IQueryable<TournamentModel> query, string searchQuery, bool randomize)
     {
-        var normalized = searchQuery.Trim().ToLowerInvariant();
-        var tokens = searchQuery.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-        var ordered = query
-            .OrderByDescending(t => t.Name.ToLower().Contains(normalized))
-            .ThenByDescending(t => t.Description != null && t.Description.ToLower().Contains(normalized))
-            .ThenByDescending(BuildContainsAnyExpression(tokens, t => t.Name))
-            .ThenByDescending(BuildContainsAnyExpression(tokens, t => t.Description));
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            var normalized = searchQuery.Trim().ToLowerInvariant();
+            var tokens = searchQuery.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-        if (randomize)
-            ordered = ordered.ThenBy(_ => EF.Functions.Random());
+            var ordered = query
+                .OrderByDescending(t => t.Name.ToLower().Contains(normalized))
+                .ThenByDescending(t => t.Description != null && t.Description.ToLower().Contains(normalized))
+                .ThenByDescending(BuildContainsAnyExpression(tokens, t => t.Name))
+                .ThenByDescending(BuildContainsAnyExpression(tokens, t => t.Description));
+
+            if (randomize)
+            {
+                ordered = ordered.ThenBy(_ => EF.Functions.Random());
+                return ordered;
+            }
+            return ordered;
+        }
+        else if (randomize)
+        {
+            var ordered = query.OrderBy(_ => EF.Functions.Random());
+            return ordered;
+        }
         else
-            ordered = ordered.ThenByDescending(t => t.StartDate).ThenBy(t => t.Id);
+        {
+            var ordered = query.OrderBy(t => t.StartDate).ThenBy(t => t.Id);
+            return ordered;
+        }
 
-        return ordered;
+
     }
 
     private static Expression<Func<TournamentModel, bool>> BuildContainsAnyExpression(string[] tokens, Expression<Func<TournamentModel, string?>> propertySelector)
