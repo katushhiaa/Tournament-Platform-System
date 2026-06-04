@@ -7,6 +7,7 @@ import { tournamentService } from '../services/tournamentService'
 import { useAuthStore } from '../stores/authStore'
 import type { ITournamentPreview } from '../types/Tournament'
 import defaultCardBg from '../assets/hero-card.jpg'
+import heroBg from '../assets/Background_2.png'
 
 const authStore = useAuthStore()
 const isOrganizer = computed(() => authStore.currentUser?.role === 'organizer')
@@ -78,30 +79,45 @@ const visiblePages = computed(() => {
   <div class="page">
     <AppHeader />
 
+   
+    <section class="hero" :style="{ backgroundImage: `url(${heroBg})` }">
+      <div class="hero__overlay" />
+      <div class="hero__content">
+        <h1 class="hero__title">My tournaments</h1>
+       
+        <p v-if="!isOrganizer" class="hero__subtitle">
+          Find and join the best esports tournaments
+        </p>
+
+        
+        <div class="hero__search-row">
+          <div class="search-wrap" :class="{ 'search-wrap--full': !isOrganizer }">
+            <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <circle cx="11" cy="11" r="7" stroke="rgba(255,255,255,0.45)" stroke-width="2" />
+              <path d="M16.5 16.5L21 21" stroke="rgba(255,255,255,0.45)" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            <input
+              v-model="searchQuery"
+              class="search-input"
+              placeholder="Search tournaments, games, or keywords..."
+            />
+          </div>
+
+          
+          <router-link
+            v-if="isOrganizer"
+            to="/tournaments/create"
+            class="create-btn"
+          >
+            <span class="create-btn__icon">+</span>
+            Create tournament
+          </router-link>
+        </div>
+      </div>
+    </section>
+
+   
     <main class="main">
-      <div class="title-row">
-        <h1 class="title">My Tournaments</h1>
-        <router-link
-          v-if="isOrganizer"
-          to="/tournaments/create"
-          class="create-btn"
-        >
-          + Create Tournament
-        </router-link>
-      </div>
-
-      <div class="search-wrap">
-        <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <circle cx="11" cy="11" r="7" stroke="rgba(255,255,255,0.45)" stroke-width="2" />
-          <path d="M16.5 16.5L21 21" stroke="rgba(255,255,255,0.45)" stroke-width="2" stroke-linecap="round" />
-        </svg>
-        <input
-          v-model="searchQuery"
-          class="search-input"
-          placeholder="Search tournaments, games, or keywords..."
-        />
-      </div>
-
       <template v-if="loading">
         <div class="grid">
           <div v-for="n in 4" :key="n" class="skeleton" />
@@ -162,46 +178,55 @@ const visiblePages = computed(() => {
   color: #fffcf2;
 }
 
-.main {
-  padding: 120px 80px 100px;
+
+.hero {
+  position: relative;
+  background-size: cover;
+  background-position: center top;
+  padding: 100px 80px 60px;
+  min-height: 300px;
 }
 
-.title-row {
+.hero__content {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.hero__title {
+  font-size: 48px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: #fff;
+}
+
+.hero__subtitle {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 32px;
+}
+
+
+.hero__title + .hero__search-row {
+  margin-top: 32px;
+}
+
+.hero__search-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 32px;
+  gap: 16px;
 }
 
-.title {
-  font-size: 40px;
-  font-weight: 700;
-  margin: 0;
-}
-
-.create-btn {
-  display: inline-flex;
-  align-items: center;
-  height: 44px;
-  padding: 0 24px;
-  border-radius: 10px;
-  background: #ff9800;
-  color: #fff;
-  font-size: 15px;
-  font-weight: 700;
-  text-decoration: none;
-  transition: opacity 0.2s;
-  white-space: nowrap;
-}
-
-.create-btn:hover {
-  opacity: 0.88;
-}
 
 .search-wrap {
   position: relative;
+  flex: 1;
   max-width: 600px;
-  margin: 0 0 40px;
+}
+
+.search-wrap--full {
+  max-width: 600px;
 }
 
 .search-icon {
@@ -214,7 +239,7 @@ const visiblePages = computed(() => {
 
 .search-input {
   width: 100%;
-  height: 48px;
+  height: 52px;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.06);
@@ -231,7 +256,44 @@ const visiblePages = computed(() => {
 }
 
 .search-input:focus {
-  border-color: rgba(255, 255, 255, 0.4);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+
+.create-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 52px;
+  padding: 0 28px;
+  border-radius: 10px;
+  background: #ff9800;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+
+.create-btn:hover {
+  opacity: 0.88;
+}
+
+.create-btn__icon {
+  font-size: 20px;
+  line-height: 1;
+  margin-top: -1px;
+}
+
+
+.main {
+  padding: 48px 80px 100px;
+  max-width: 1360px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .grid {
@@ -258,6 +320,7 @@ const visiblePages = computed(() => {
   text-align: center;
   color: rgba(255, 255, 255, 0.6);
   font-size: 16px;
+  padding: 60px 0;
 }
 
 .pagination {
@@ -299,6 +362,7 @@ const visiblePages = computed(() => {
   cursor: not-allowed;
 }
 
+/* ── Responsive ── */
 @media (max-width: 1200px) {
   .grid {
     grid-template-columns: repeat(3, 1fr);
@@ -306,28 +370,45 @@ const visiblePages = computed(() => {
 }
 
 @media (max-width: 900px) {
+  .hero {
+    padding: 90px 32px 48px;
+  }
+
+  .main {
+    padding: 40px 32px 80px;
+  }
+
   .grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 768px) {
-  .main {
-    padding: 100px 16px 80px;
+  .hero {
+    padding: 80px 16px 40px;
   }
 
-  .title-row {
+  .hero__title {
+    font-size: 32px;
+  }
+
+  .hero__search-row {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
+    align-items: stretch;
   }
 
-  .title {
-    font-size: 28px;
-  }
-
-  .search-wrap {
+  .search-wrap,
+  .search-wrap--full {
     max-width: 100%;
+  }
+
+  .create-btn {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .main {
+    padding: 32px 16px 80px;
   }
 
   .grid {
