@@ -6,11 +6,10 @@ import TournamentCard from '../components/TournamentCard.vue'
 import { tournamentService } from '../services/tournamentService'
 import type { ITournamentPreview } from '../types/Tournament'
 import defaultCardBg from '../assets/hero-card.jpg'
-import { useAuthStore } from '../stores/authStore'
-import { getSportPreferences, sortByPreferences } from '../utils/sortByPreferences'
+
 import tournamentsBg from '../assets/hero-bg.png'
 
-const authStore = useAuthStore()
+
 const allTournaments = ref<ITournamentPreview[]>([])
 const loading = ref(true)
 const error = ref(false)
@@ -24,13 +23,14 @@ const formatDate = (iso: string) =>
 const formatTime = (iso: string) =>
   new Date(iso).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })
 
+const isFallback = ref(false)
+
 onMounted(async () => {
   try {
-    const raw = await tournamentService.getTournaments({ pageSize: 100 })
-    const prefs = authStore.currentUser
-      ? getSportPreferences(authStore.currentUser.userId)
-      : []
-    allTournaments.value = sortByPreferences(raw, prefs)
+    const res = await tournamentService.getTournaments({ pageSize: 100 })
+    isFallback.value = res.fallback_reason === 'NO_MATCHING_TOURNAMENTS'
+    
+    allTournaments.value = res.tournaments
   } catch {
     error.value = true
   } finally {
@@ -90,6 +90,9 @@ const visiblePages = computed(() => {
     </div>
 
     <main class="main">
+      <p v-if="isFallback" class="fallback-msg">
+        No tournaments found for your preferred sports. Showing all available tournaments.
+      </p>
       <template v-if="loading">
         <div class="grid">
           <div v-for="n in 12" :key="n" class="skeleton" />
@@ -280,6 +283,13 @@ const visiblePages = computed(() => {
 .page-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
+}
+
+.fallback-msg {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 14px;
+  margin-bottom: 24px;
 }
 
 @media (max-width: 768px) {

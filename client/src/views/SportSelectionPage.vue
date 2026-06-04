@@ -122,9 +122,7 @@ const handleSkipConfirm = async () => {
               :alt="sport.name"
               class="card__img"
             />
-            <div class="card__overlay" />
-            <span class="card__name">{{ sport.name.toUpperCase() }}</span>
-            <span v-if="selected.has(sport.id)" class="card__check">✓</span>
+            
           </button>
         </div>
 
@@ -264,28 +262,6 @@ const handleSkipConfirm = async () => {
   display: block;
 }
 
-.card__overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    160deg,
-    rgba(180, 140, 0, 0.3) 0%,
-    rgba(0, 0, 0, 0.55) 100%
-  );
-}
-
-.card__name {
-  position: absolute;
-  bottom: 10px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-size: 13px;
-  font-weight: 800;
-  color: #fff;
-  letter-spacing: 0.07em;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
-}
 
 .card__check {
   position: absolute;

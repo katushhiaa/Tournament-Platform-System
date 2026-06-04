@@ -72,6 +72,16 @@
             />
 
             <p
+              v-else-if="errorMy"
+              class="dashboard-section__empty"
+            >
+              Failed to load your tournaments.
+              <button class="dashboard-section__retry" @click="fetchMyTournaments">
+                Retry
+              </button>
+            </p>
+
+            <p
               v-else-if="!myTournaments.length"
               class="dashboard-section__empty"
             >
@@ -143,11 +153,11 @@ const goToCreateTournament = () => {
   router.push({ name: 'create-tournament' })
 }
 
-
 const activeTournaments = ref<ITournamentPreview[]>([])
 const myTournaments = ref<ITournamentPreview[]>([])
 const loadingActive = ref(true)
 const loadingMy = ref(true)
+const errorMy = ref(false)
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('uk-UA', {
@@ -162,35 +172,43 @@ const formatTime = (iso: string) =>
     minute: '2-digit',
   })
 
-onMounted(async () => {
-
+async function fetchMyTournaments() {
+  if (!authStore.currentUser) return
+  loadingMy.value = true
+  errorMy.value = false
   try {
-    const raw = await tournamentService.getTournaments({
+    myTournaments.value = await tournamentService.getUserTournaments({
+      userId: authStore.currentUser.userId,
+      pageSize: 4,
+    })
+  } catch (e) {
+    console.error('Failed to load my tournaments', e)
+    errorMy.value = true
+  } finally {
+    loadingMy.value = false
+  }
+}
+
+onMounted(async () => {
+  // First try: active tournaments — errorMy не потрібен тут
+  try {
+    const res = await tournamentService.getTournaments({
       pageSize: 4,
       status: 'IN_PROGRESS,REGISTRATION_OPEN',
     })
     const prefs = authStore.currentUser
       ? getSportPreferences(authStore.currentUser.userId)
       : []
-    activeTournaments.value = sortByPreferences(raw, prefs)
+    activeTournaments.value = sortByPreferences(res.tournaments, prefs)
   } catch (e) {
     console.error('Failed to load active tournaments', e)
   } finally {
     loadingActive.value = false
   }
 
- 
+  // Second try: my tournaments
   if (authStore.currentUser) {
-    try {
-      myTournaments.value = await tournamentService.getUserTournaments({
-        userId: authStore.currentUser.userId,
-        pageSize: 4,
-      })
-    } catch (e) {
-      console.error('Failed to load my tournaments', e)
-    } finally {
-      loadingMy.value = false
-    }
+    await fetchMyTournaments()
   } else {
     loadingMy.value = false
   }
@@ -360,6 +378,33 @@ onMounted(async () => {
   line-height: 1;
 }
 
+.dashboard-section__empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  opacity: 0.6;
+  font-size: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.dashboard-section__retry {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #fffcf2;
+  border-radius: 8px;
+  padding: 6px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.dashboard-section__retry:hover {
+  border-color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.08);
+}
 
 @media (max-width: 1200px) {
   .dashboard-section__grid {
