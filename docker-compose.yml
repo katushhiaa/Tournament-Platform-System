@@ -4,6 +4,7 @@ services:
   db:
     image: postgres:15
     container_name: tournament-db
+    command: ["postgres", "-c", "log_min_duration_statement=500", "-c", "log_statement=none"]
     env_file: .env
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
