@@ -25,6 +25,20 @@
               class="tournament-card-skeleton"
             />
 
+            <p
+              v-else-if="errorActive"
+              class="dashboard-section__error"
+            >
+              Failed to load tournaments. Please try again.
+            </p>
+
+            <p
+              v-else-if="!activeTournaments.length"
+              class="dashboard-section__empty"
+            >
+              No active tournaments at the moment.
+            </p>
+
             <TournamentCard
               v-else
               v-for="item in activeTournaments"
@@ -143,11 +157,11 @@ const goToCreateTournament = () => {
   router.push({ name: 'create-tournament' })
 }
 
-
 const activeTournaments = ref<ITournamentPreview[]>([])
 const myTournaments = ref<ITournamentPreview[]>([])
 const loadingActive = ref(true)
 const loadingMy = ref(true)
+const errorActive = ref(false)
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('uk-UA', {
@@ -175,11 +189,11 @@ onMounted(async () => {
     activeTournaments.value = sortByPreferences(res.tournaments, prefs)
   } catch (e) {
     console.error('Failed to load active tournaments', e)
+    errorActive.value = true
   } finally {
     loadingActive.value = false
   }
 
- 
   if (authStore.currentUser) {
     try {
       myTournaments.value = await tournamentService.getUserTournaments({
@@ -283,6 +297,23 @@ onMounted(async () => {
   grid-template-columns: repeat(4, 230px);
   justify-content: center;
   gap: 32px;
+}
+
+.dashboard-section__empty,
+.dashboard-section__error {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-size: 16px;
+  line-height: 1.5;
+  padding: 32px 0;
+}
+
+.dashboard-section__empty {
+  opacity: 0.7;
+}
+
+.dashboard-section__error {
+  color: #ff6b6b;
 }
 
 .dashboard-section__actions {
