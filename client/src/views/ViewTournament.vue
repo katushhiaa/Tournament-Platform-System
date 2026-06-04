@@ -30,7 +30,9 @@ const authStore = useAuthStore()
 const tournament = ref<ITournament | null>(null)
 const participants = ref<Participant[]>([])
 const bracket = ref<IBracketStructure>([])
+
 const toast = ref('')
+const toastError = ref('')
 const loading = ref(true)
 const error = ref(false)
 const activeTab = ref('overview')
@@ -38,6 +40,11 @@ const activeTab = ref('overview')
 const showToast = (msg: string) => {
   toast.value = msg
   setTimeout(() => { toast.value = '' }, 4000)
+}
+
+const showErrorToast = (msg: string) => {
+  toastError.value = msg
+  setTimeout(() => { toastError.value = '' }, 4000)
 }
 
 const loadData = async () => {
@@ -57,6 +64,12 @@ const loadData = async () => {
     if (joinToast) {
       showToast(joinToast)
       sessionStorage.removeItem('joinToast')
+    }
+
+   const joinError = sessionStorage.getItem('joinToastError')
+    if (joinError) {
+      showErrorToast(joinError)
+      sessionStorage.removeItem('joinToastError')
     }
   } catch (e) {
     console.error(e)
@@ -131,6 +144,7 @@ const handleRefreshParticipants = async () => {
 
         <AppToast v-if="bracketError" :message="bracketError" type="error" />
         <AppToast v-if="toast" :message="toast" type="success" />
+        <AppToast v-if="toastError" :message="toastError" type="error" />
 
         <TournamentOverview
           v-if="activeTab === 'overview'"

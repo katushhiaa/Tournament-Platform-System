@@ -40,7 +40,6 @@ const normalizeFieldName = (field: string) => {
     return normalized;
 };
 
-
 const buildApiError = (
     status: number | undefined,
     data: BackendErrorResponse | undefined,
