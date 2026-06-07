@@ -229,7 +229,8 @@ const visiblePages = computed(() => {
 .grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 24px;
+  column-gap: 32px;
+  row-gap: 100px;
 }
 
 .skeleton {

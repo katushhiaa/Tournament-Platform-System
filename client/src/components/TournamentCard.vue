@@ -44,6 +44,7 @@ defineProps<{
 const statusLabel = (status?: string): string => {
   const map: Record<string, string> = {
     registration_open: 'Registration',
+    registration_closed: 'Active',
     in_progress: 'Active',
     completed: 'Finished',
     draft: 'Draft',
@@ -54,6 +55,7 @@ const statusLabel = (status?: string): string => {
 const statusClass = (status?: string): string => {
   const map: Record<string, string> = {
     registration_open: 'badge--blue',
+    registration_closed: 'badge--green',
     in_progress: 'badge--green',
     completed: 'badge--grey',
     draft: 'badge--grey',
