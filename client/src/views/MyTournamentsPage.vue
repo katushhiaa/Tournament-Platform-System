@@ -17,7 +17,7 @@ const loading = ref(true)
 const error = ref(false)
 const searchQuery = ref('')
 const currentPage = ref(1)
-const PAGE_SIZE = 15
+const PAGE_SIZE = 12
 
 
 const formatDate = (iso: string) =>
@@ -300,7 +300,8 @@ const visiblePages = computed(() => {
 .grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 24px;
+  column-gap: 32px;
+  row-gap: 100px;
 }
 
 .skeleton {

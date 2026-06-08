@@ -216,7 +216,11 @@ const visiblePages = computed(() => {
 .search-input:focus { border-color: rgba(255,255,255,0.5); }
 
 .main {
-  padding: 48px 80px 80px;
+  padding: 48px 80px 100px;
+  max-width: 1360px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .fallback-msg {
@@ -229,7 +233,8 @@ const visiblePages = computed(() => {
 .grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 24px;
+  column-gap: 32px;
+  row-gap: 100px;
 }
 
 .skeleton {
@@ -301,10 +306,13 @@ const visiblePages = computed(() => {
   .grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  .main {
+    padding: 40px 32px 80px;
+  }
 }
 
 @media (max-width: 768px) {
-  .main { padding: 32px 16px 60px; }
+  .main { padding: 32px 16px 80px; }
   .hero__title { font-size: 32px; }
   .grid {
     grid-template-columns: 1fr;

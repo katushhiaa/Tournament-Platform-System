@@ -180,13 +180,14 @@ onMounted(async () => {
 
   try {
     const res = await tournamentService.getTournaments({
-      pageSize: 4,
+      pageSize: 12,
       status: 'IN_PROGRESS,REGISTRATION_OPEN',
     })
     const prefs = authStore.currentUser
       ? getSportPreferences(authStore.currentUser.userId)
       : []
-    activeTournaments.value = sortByPreferences(res.tournaments, prefs)
+    const sorted = sortByPreferences(res.tournaments, prefs)
+    activeTournaments.value = sorted.slice(0, 4)
   } catch (e) {
     console.error('Failed to load active tournaments', e)
     errorActive.value = true
