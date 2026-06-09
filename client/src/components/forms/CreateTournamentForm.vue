@@ -347,7 +347,7 @@ const handleBannerChange = (event: Event) => {
   bannerFileName.value = file.name
 }
 
-const toIsoDate = (value: string) => value
+const toIsoDate = (value: string) => new Date(value).toISOString()
 
 const focusFirstError = () => {
   if (errors.title) return titleInput.value?.focus()

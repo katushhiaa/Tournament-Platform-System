@@ -72,7 +72,6 @@ const loadData = async () => {
       sessionStorage.removeItem('joinToastError')
     }
   } catch (e) {
-    console.error(e)
     error.value = true
   } finally {
     loading.value = false
@@ -98,7 +97,6 @@ const handleBracketGenerated = async () => {
     activeTab.value = 'grid'
     showToast('Bracket generated successfully!')
   } catch (e) {
-    console.error('Failed to refresh after bracket generation', e)
     bracketError.value = 'Failed to update bracket. Please refresh the page.'
     setTimeout(() => { bracketError.value = '' }, 5000)
   } finally {

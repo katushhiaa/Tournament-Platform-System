@@ -148,13 +148,6 @@ export const tournamentService = {
     ): Promise<ITournament> {
         try {
 
-            if (import.meta.env.DEV) {
-                console.log(
-                    '[Tournament API] GET tournament:',
-                    id,
-                )
-            }
-
             const response =
                 await axiosInstance.get<ITournament>(
                     `/tournaments/${id}`,
@@ -199,14 +192,6 @@ export const tournamentService = {
     ): Promise<ITournament> {
 
         try {
-
-            if (import.meta.env.DEV) {
-                console.log(
-                    '[Tournament API] PATCH tournament:',
-                    id,
-                    data,
-                )
-            }
 
             const response =
                 await axiosInstance.patch<ITournament>(
