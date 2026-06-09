@@ -103,10 +103,6 @@ class AuthService {
             role: toBackendRole(data.role),
         };
 
-        if (import.meta.env.DEV) {
-            console.log('[authService] register request', payload);
-        }
-
         try {
             const response = await axiosInstance.post<IRegisterResponse>('/auth/register', payload);
             const successBody = response.data;
@@ -150,8 +146,6 @@ class AuthService {
             const loginResponse = await axiosInstance.post<ILoginResponse>('/auth/login', payload);
             const loginResult = loginResponse.data;
 
-            console.log('[authService] login raw response:', loginResult)
-
             if (!loginResult.tokens?.accessToken) {
                 throw {
                     errorCode: 'INVALID_RESPONSE',
@@ -185,10 +179,7 @@ class AuthService {
         }
     }
 
-    async checkEmailUnique(email: string): Promise<boolean> {
-        if (import.meta.env.DEV) {
-            console.log('[authService] checkEmailUnique fallback', email);
-        }
+    async checkEmailUnique(_email: string): Promise<boolean> {
 
         return true;
     }
