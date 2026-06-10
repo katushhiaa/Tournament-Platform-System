@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
+import ErrorBoundary from '../components/ErrorBoundary.vue'
 
 import { tournamentService } from '../services/tournamentService'
 import { participationService } from '../services/participationService'
@@ -119,55 +120,57 @@ const handleRefreshParticipants = async () => {
   <div class="page">
     <AppHeader />
 
-    <main>
-      <TournamentSkeleton v-if="loading" />
-      <TournamentError v-else-if="error" @retry="loadData" />
+    <ErrorBoundary>
+      <main>
+        <TournamentSkeleton v-if="loading" />
+        <TournamentError v-else-if="error" @retry="loadData" />
 
-      <template v-else-if="tournament">
-        <TournamentHeader
-          :tournament="tournament"
-          :participants="participants"
-          :current-user="authStore.currentUser
-            ? { id: authStore.currentUser.userId, role: authStore.currentUser.role }
-            : null"
-          @refresh-bracket="handleBracketGenerated"
-          @refresh-participants="handleRefreshParticipants"
-          @show-toast="showToast"
-        />
+        <template v-else-if="tournament">
+          <TournamentHeader
+            :tournament="tournament"
+            :participants="participants"
+            :current-user="authStore.currentUser
+              ? { id: authStore.currentUser.userId, role: authStore.currentUser.role }
+              : null"
+            @refresh-bracket="handleBracketGenerated"
+            @refresh-participants="handleRefreshParticipants"
+            @show-toast="showToast"
+          />
 
-        <TournamentTabs
-          :active-tab="activeTab"
-          @change="activeTab = $event"
-        />
+          <TournamentTabs
+            :active-tab="activeTab"
+            @change="activeTab = $event"
+          />
 
-        <AppToast v-if="bracketError" :message="bracketError" type="error" />
-        <AppToast v-if="toast" :message="toast" type="success" />
-        <AppToast v-if="toastError" :message="toastError" type="error" />
+          <AppToast v-if="bracketError" :message="bracketError" type="error" />
+          <AppToast v-if="toast" :message="toast" type="success" />
+          <AppToast v-if="toastError" :message="toastError" type="error" />
 
-        <TournamentOverview
-          v-if="activeTab === 'overview'"
-          :tournament="tournament"
-        />
+          <TournamentOverview
+            v-if="activeTab === 'overview'"
+            :tournament="tournament"
+          />
 
-        <TournamentParticipants
-          v-if="activeTab === 'participants'"
-          :participants="participants"
-        />
+          <TournamentParticipants
+            v-if="activeTab === 'participants'"
+            :participants="participants"
+          />
 
-        <TournamentBracket
-          v-if="activeTab === 'grid'"
-          :rounds="bracket"
-          :is-organizer="authStore.currentUser?.userId === tournament.organizerId"
-          :tournament-id="tournament.id"
-          :is-loading="isBracketLoading"
-          @bracket-updated="handleBracketGenerated"
-        />
+          <TournamentBracket
+            v-if="activeTab === 'grid'"
+            :rounds="bracket"
+            :is-organizer="authStore.currentUser?.userId === tournament.organizerId"
+            :tournament-id="tournament.id"
+            :is-loading="isBracketLoading"
+            @bracket-updated="handleBracketGenerated"
+          />
 
-        <TournamentOtherEvents
-          v-if="activeTab === 'events'"
-        />
-      </template>
-    </main>
+          <TournamentOtherEvents
+            v-if="activeTab === 'events'"
+          />
+        </template>
+      </main>
+    </ErrorBoundary>
 
     <SiteFooter />
   </div>

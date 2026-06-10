@@ -245,8 +245,13 @@ const handleLeave = () => {
 
 @media (max-width: 768px) {
   .header {
-    position: static;
-    margin: 16px;
+    position: relative;
+    z-index: 20;
+    margin: 0;
+    border-radius: 0;
+    top: 0;
+    left: 0;
+    right: 0;
   }
 
   .header__brand,

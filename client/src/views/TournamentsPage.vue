@@ -314,8 +314,5 @@ const visiblePages = computed(() => {
 @media (max-width: 768px) {
   .main { padding: 32px 16px 80px; }
   .hero__title { font-size: 32px; }
-  .grid {
-    grid-template-columns: 1fr;
-  }
 }
 </style>

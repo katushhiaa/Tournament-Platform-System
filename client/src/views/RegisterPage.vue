@@ -41,4 +41,17 @@ import registerBg from '../assets/hero-bg.png';
   position: relative;
   z-index: 1;
 }
+
+@media (max-width: 768px) {
+  .register-page :deep(.header) {
+    position: relative;
+    z-index: 20;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  .register-page__content {
+    padding-top: 16px;
+  }
+}
 </style>
