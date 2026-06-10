@@ -24,8 +24,9 @@ onMounted(async () => {
   try {
     await participationService.addParticipant(id, authStore.currentUser!.userId)
     sessionStorage.setItem('joinToast', `You have successfully joined the tournament!`)
-  } catch (e: any) {
-    console.warn('Join error (may already be registered):', e)
+ } catch (e: any) {
+    const msg = e?.response?.data?.message ?? 'Failed to join the tournament.'
+    sessionStorage.setItem('joinToastError', msg)
   }
 
   router.push(`/tournaments/${id}`)

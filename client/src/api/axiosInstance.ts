@@ -56,10 +56,7 @@ axiosInstance.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                const response = await axiosInstance.post(
-                    '/auth/refresh',
-                    null,
-                );
+                const response = await axios.post('/api/v1/auth/refresh', null, { withCredentials: true });
 
                 const newToken = response.data?.accessToken ?? response.data?.tokens?.accessToken;
 
