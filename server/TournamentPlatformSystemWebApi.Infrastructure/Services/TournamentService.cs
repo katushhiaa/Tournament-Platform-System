@@ -336,7 +336,7 @@ public class TournamentService : ITournamentService
         if (match.IsBye == true)
             throw new ValidationException("Cannot enter a result for a bye match");
 
-        if (!match.TeamAId.HasValue || !match.TeamBId.HasValue)
+        if (match.Status == "pending" || !match.TeamAId.HasValue || !match.TeamBId.HasValue || match.TeamAId == Guid.Empty || match.TeamBId == Guid.Empty)
             throw new MatchNotReadyException("Match is not ready for result entry");
 
         if (match.WinnerId != null)
