@@ -547,10 +547,6 @@ public class TournamentService : ITournamentService
         // Only allow adding participants while registration is open
         if (existing.Status != TournamentPlatformSystemWebApi.Core.Entities.TournamentStatus.REGISTRATION_OPEN)
             throw new TournamentPlatformSystemWebApi.Common.Exceptions.TournamentClosedForChangesException("Registration for tournament is already finished");
-        // check max participants
-        var participantsCount = await _tournamentRepository.GetParticipantsCountAsync(tournamentId);
-        if (existing.MaxTeams > 0 && participantsCount >= existing.MaxTeams)
-            throw new TournamentPlatformSystemWebApi.Common.Exceptions.MaxParticipantsReachedException("Maximum amount of participants is achieved, there is no spot for you");
 
         // check user exists
         var user = await _userRepository.GetUserWithDetails(userId);
@@ -561,10 +557,6 @@ public class TournamentService : ITournamentService
             throw new UnauthorizedAccessException("Only the tournament organizer can add other participants");
         // user must be a player (not organizer)
         if (user.IsOrganizer == true) throw new UnauthorizedAccessException("User does not have player role");
-
-        // check already added
-        var already = await _tournamentRepository.IsUserInTournamentAsync(tournamentId, userId);
-        if (already) throw new TournamentPlatformSystemWebApi.Common.Exceptions.ParticipantAlreadyAddedException("You already joined to this tournament");
 
         // derive team name from user details
         var displayName = user.FullName?.Trim();
@@ -592,18 +584,81 @@ public class TournamentService : ITournamentService
             teamName = $"player_{userId.ToString().Substring(0, 8)}";
         }
 
-        var team = await _tournamentRepository.AddParticipantAsync(tournamentId, userId, teamName);
+        var provider = _context.Database.ProviderName ?? string.Empty;
+        var useTransaction = _context.Database.CurrentTransaction == null && !provider.Contains("InMemory", StringComparison.OrdinalIgnoreCase);
+        await using var txn = useTransaction ? await _context.Database.BeginTransactionAsync() : null;
 
-        return new TournamentPlatformSystemWebApi.Application.DTOs.TeamDto
+        try
         {
-            Id = team.Id,
-            Name = team.Name,
-            UserId = userId,
-            TournamentId = team.TournamentId,
-            IsDisqualified = team.IsDisqualified,
-            CreatedAt = team.CreatedAt,
-            UpdatedAt = team.UpdatedAt
-        };
+            var tournamentLock = await _context.Set<TournamentModel>()
+                .FromSqlInterpolated($"SELECT * FROM tournament WHERE id = {tournamentId} FOR UPDATE")
+                .FirstOrDefaultAsync();
+
+            if (tournamentLock == null)
+                throw new KeyNotFoundException("Tournament not found");
+
+            if (tournamentLock.Status == TournamentStatusType.REGISTRATION_OPEN
+                && tournamentLock.RegistrationDeadline != default
+                && tournamentLock.RegistrationDeadline <= DateTime.UtcNow)
+            {
+                tournamentLock.Status = TournamentStatusType.REGISTRATION_CLOSED;
+                tournamentLock.UpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+                _context.Set<TournamentModel>().Update(tournamentLock);
+                await _context.SaveChangesAsync();
+                throw new TournamentPlatformSystemWebApi.Common.Exceptions.TournamentClosedForChangesException("Registration for tournament is already finished");
+            }
+
+            if (tournamentLock.Status != TournamentStatusType.REGISTRATION_OPEN)
+                throw new TournamentPlatformSystemWebApi.Common.Exceptions.TournamentClosedForChangesException("Registration for tournament is already finished");
+
+            var participantsCount = await _tournamentRepository.GetParticipantsCountAsync(tournamentId);
+            if (existing.MaxTeams > 0 && participantsCount >= existing.MaxTeams)
+                throw new TournamentPlatformSystemWebApi.Common.Exceptions.MaxParticipantsReachedException("Maximum amount of participants is achieved, there is no spot for you");
+
+            var already = await _tournamentRepository.IsUserInTournamentAsync(tournamentId, userId);
+            if (already)
+                throw new TournamentPlatformSystemWebApi.Common.Exceptions.ParticipantAlreadyAddedException("You already joined to this tournament");
+
+            TournamentPlatformSystemWebApi.Core.Entities.Team team;
+            try
+            {
+                team = await _tournamentRepository.AddParticipantAsync(tournamentId, userId, teamName);
+            }
+            catch (DbUpdateException dbEx)
+            {
+                if (dbEx.InnerException?.Message?.Contains("unique_user_tournament", StringComparison.InvariantCultureIgnoreCase) == true)
+                {
+                    throw new TournamentPlatformSystemWebApi.Common.Exceptions.ParticipantAlreadyAddedException("You already joined to this tournament");
+                }
+
+                throw;
+            }
+
+            if (useTransaction && txn != null)
+            {
+                await txn.CommitAsync();
+            }
+
+            return new TournamentPlatformSystemWebApi.Application.DTOs.TeamDto
+            {
+                Id = team.Id,
+                Name = team.Name,
+                UserId = userId,
+                TournamentId = team.TournamentId,
+                IsDisqualified = team.IsDisqualified,
+                CreatedAt = team.CreatedAt,
+                UpdatedAt = team.UpdatedAt
+            };
+        }
+        catch
+        {
+            if (useTransaction && txn != null)
+            {
+                await txn.RollbackAsync();
+            }
+
+            throw;
+        }
     }
 
     public async Task RemoveParticipantAsync(Guid tournamentId, Guid userId)
