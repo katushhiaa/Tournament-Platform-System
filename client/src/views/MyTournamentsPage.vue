@@ -413,8 +413,5 @@ const visiblePages = computed(() => {
     padding: 32px 16px 80px;
   }
 
-  .grid {
-    grid-template-columns: 1fr;
   }
-}
 </style>

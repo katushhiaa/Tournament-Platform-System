@@ -236,6 +236,7 @@ onMounted(async () => {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  
 }
 
 .hero__overlay {
@@ -583,7 +584,7 @@ onMounted(async () => {
   }
 
   .hero__content {
-    padding: 110px 20px 80px;
+    padding: 40px 20px 80px;
   }
 
   .hero__title {
@@ -626,9 +627,9 @@ onMounted(async () => {
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .hero__content {
-    padding: 96px 16px 64px;
+    padding: 32px 16px 64px;
   }
 
   .hero__title {

@@ -2,9 +2,7 @@
   <main class="login-page" :style="{ backgroundImage: `url(${heroBg})` }">
     <div class="login-page__overlay"></div>
 
-    <div class="login-page__header">
-      <AppHeader />
-    </div>
+    <AppHeader />
 
     <LoginForm />
   </main>
@@ -32,11 +30,6 @@ import heroBg from '../assets/hero-bg.png';
   background: rgba(0, 8, 24, 0.45);
 }
 
-.login-page__header {
-  position: relative;
-  z-index: 2;
-}
-
 .login-page :deep(.header) {
   position: absolute;
   top: 22px;
@@ -44,6 +37,7 @@ import heroBg from '../assets/hero-bg.png';
   right: 28px;
   width: auto;
   max-width: none;
+  z-index: 2;
 }
 
 .login-page :deep(.login-form) {
@@ -54,12 +48,17 @@ import heroBg from '../assets/hero-bg.png';
 
 @media (max-width: 768px) {
   .login-page :deep(.header) {
-    position: static;
-    margin: 16px;
+    position: relative;
+    z-index: 20;
+    top: 0;
+    left: 0;
+    right: 0;
+    margin: 0;
+    border-radius: 0;
   }
 
   .login-page :deep(.login-form) {
-    padding-top: 56px;
+    padding-top: 32px;
   }
 }
 </style>
