@@ -1,14 +1,10 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
-
 #nullable disable
-
 namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
 {
-    /// <inheritdoc />
     public partial class AddUserThemePreferences : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<bool>(
@@ -17,13 +13,11 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                 type: "boolean",
                 nullable: false,
                 defaultValueSql: "false");
-
             migrationBuilder.AddColumn<string>(
                 name: "image_url",
                 table: "tournament_theme",
                 type: "text",
                 nullable: true);
-
             migrationBuilder.CreateTable(
                 name: "user_tournament_theme_preference",
                 columns: table => new
@@ -49,29 +43,23 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
-
             migrationBuilder.CreateIndex(
                 name: "IX_user_tournament_theme_preference_theme_id",
                 table: "user_tournament_theme_preference",
                 column: "theme_id");
-
             migrationBuilder.CreateIndex(
                 name: "unique_user_theme_preference",
                 table: "user_tournament_theme_preference",
                 columns: new[] { "user_id", "theme_id" },
                 unique: true);
         }
-
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
                 name: "user_tournament_theme_preference");
-
             migrationBuilder.DropColumn(
                 name: "preferences_setup_completed",
                 table: "user_details");
-
             migrationBuilder.DropColumn(
                 name: "image_url",
                 table: "tournament_theme");

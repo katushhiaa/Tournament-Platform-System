@@ -1,14 +1,10 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
-
 #nullable disable
-
 namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
 {
-    /// <inheritdoc />
     public partial class NewInitial : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
@@ -25,7 +21,6 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                 {
                     table.PrimaryKey("account_state_pkey", x => x.id);
                 });
-
             migrationBuilder.CreateTable(
                 name: "tournament_theme",
                 columns: table => new
@@ -38,7 +33,6 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                 {
                     table.PrimaryKey("tournament_theme_pkey", x => x.id);
                 });
-
             migrationBuilder.CreateTable(
                 name: "user",
                 columns: table => new
@@ -61,7 +55,6 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                         principalTable: "account_state",
                         principalColumn: "id");
                 });
-
             migrationBuilder.CreateTable(
                 name: "refresh_token",
                 columns: table => new
@@ -85,7 +78,6 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
-
             migrationBuilder.CreateTable(
                 name: "tournament",
                 columns: table => new
@@ -120,7 +112,6 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                         principalTable: "tournament_theme",
                         principalColumn: "id");
                 });
-
             migrationBuilder.CreateTable(
                 name: "user_details",
                 columns: table => new
@@ -142,7 +133,6 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
-
             migrationBuilder.CreateTable(
                 name: "user_phone",
                 columns: table => new
@@ -163,7 +153,6 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
-
             migrationBuilder.CreateTable(
                 name: "team",
                 columns: table => new
@@ -185,7 +174,6 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
-
             migrationBuilder.CreateTable(
                 name: "match",
                 columns: table => new
@@ -232,7 +220,6 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                         principalColumn: "id",
                         onDelete: ReferentialAction.SetNull);
                 });
-
             migrationBuilder.CreateTable(
                 name: "user_team",
                 columns: table => new
@@ -258,190 +245,150 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                 });
-
             migrationBuilder.CreateIndex(
                 name: "account_state_name_key",
                 table: "account_state",
                 column: "name",
                 unique: true);
-
             migrationBuilder.CreateIndex(
                 name: "idx_match_is_valid",
                 table: "match",
                 column: "is_valid");
-
             migrationBuilder.CreateIndex(
                 name: "idx_match_level",
                 table: "match",
                 column: "level");
-
             migrationBuilder.CreateIndex(
                 name: "idx_match_team_a_id",
                 table: "match",
                 column: "team_a_id");
-
             migrationBuilder.CreateIndex(
                 name: "idx_match_team_b_id",
                 table: "match",
                 column: "team_b_id");
-
             migrationBuilder.CreateIndex(
                 name: "idx_match_tournament_id",
                 table: "match",
                 column: "tournament_id");
-
             migrationBuilder.CreateIndex(
                 name: "idx_match_winner_id",
                 table: "match",
                 column: "winner_id");
-
             migrationBuilder.CreateIndex(
                 name: "unique_match_position",
                 table: "match",
                 columns: new[] { "tournament_id", "level", "order_number" },
                 unique: true);
-
             migrationBuilder.CreateIndex(
                 name: "IX_refresh_token_user_id",
                 table: "refresh_token",
                 column: "user_id");
-
             migrationBuilder.CreateIndex(
                 name: "idx_team_is_disqualified",
                 table: "team",
                 column: "is_disqualified");
-
             migrationBuilder.CreateIndex(
                 name: "idx_team_tournament_id",
                 table: "team",
                 column: "tournament_id");
-
             migrationBuilder.CreateIndex(
                 name: "unique_team_name_per_tournament",
                 table: "team",
                 columns: new[] { "name", "tournament_id" },
                 unique: true);
-
             migrationBuilder.CreateIndex(
                 name: "idx_tournament_organizer_id",
                 table: "tournament",
                 column: "organizer_id");
-
             migrationBuilder.CreateIndex(
                 name: "idx_tournament_registration_deadline",
                 table: "tournament",
                 column: "registration_deadline");
-
             migrationBuilder.CreateIndex(
                 name: "idx_tournament_start_date",
                 table: "tournament",
                 column: "start_date");
-
             migrationBuilder.CreateIndex(
                 name: "idx_tournament_theme_id",
                 table: "tournament",
                 column: "theme_id");
-
             migrationBuilder.CreateIndex(
                 name: "tournament_theme_name_key",
                 table: "tournament_theme",
                 column: "name",
                 unique: true);
-
             migrationBuilder.CreateIndex(
                 name: "idx_user_account_state_id",
                 table: "user",
                 column: "account_state_id");
-
             migrationBuilder.CreateIndex(
                 name: "idx_user_deleted_at",
                 table: "user",
                 column: "deleted_at");
-
             migrationBuilder.CreateIndex(
                 name: "idx_user_is_organizer",
                 table: "user",
                 column: "is_organizer");
-
             migrationBuilder.CreateIndex(
                 name: "idx_user_details_email",
                 table: "user_details",
                 column: "email");
-
             migrationBuilder.CreateIndex(
                 name: "idx_user_details_user_id",
                 table: "user_details",
                 column: "user_id");
-
             migrationBuilder.CreateIndex(
                 name: "user_details_email_key",
                 table: "user_details",
                 column: "email",
                 unique: true);
-
             migrationBuilder.CreateIndex(
                 name: "user_details_user_id_key",
                 table: "user_details",
                 column: "user_id",
                 unique: true);
-
             migrationBuilder.CreateIndex(
                 name: "idx_user_phone_phone_number",
                 table: "user_phone",
                 column: "phone_number");
-
             migrationBuilder.CreateIndex(
                 name: "idx_user_phone_user_id",
                 table: "user_phone",
                 column: "user_id");
-
             migrationBuilder.CreateIndex(
                 name: "idx_user_team_team_id",
                 table: "user_team",
                 column: "team_id");
-
             migrationBuilder.CreateIndex(
                 name: "idx_user_team_user_id",
                 table: "user_team",
                 column: "user_id");
-
             migrationBuilder.CreateIndex(
                 name: "unique_user_team",
                 table: "user_team",
                 columns: new[] { "user_id", "team_id" },
                 unique: true);
         }
-
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
                 name: "match");
-
             migrationBuilder.DropTable(
                 name: "refresh_token");
-
             migrationBuilder.DropTable(
                 name: "user_details");
-
             migrationBuilder.DropTable(
                 name: "user_phone");
-
             migrationBuilder.DropTable(
                 name: "user_team");
-
             migrationBuilder.DropTable(
                 name: "team");
-
             migrationBuilder.DropTable(
                 name: "tournament");
-
             migrationBuilder.DropTable(
                 name: "user");
-
             migrationBuilder.DropTable(
                 name: "tournament_theme");
-
             migrationBuilder.DropTable(
                 name: "account_state");
         }

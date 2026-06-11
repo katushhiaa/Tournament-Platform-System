@@ -206,6 +206,8 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex(new[] { "Token" }, "idx_refresh_token_token");
+
                     b.ToTable("refresh_token", (string)null);
                 });
 
@@ -332,6 +334,8 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                     b.HasIndex(new[] { "RegistrationDeadline" }, "idx_tournament_registration_deadline");
 
                     b.HasIndex(new[] { "StartDate" }, "idx_tournament_start_date");
+
+                    b.HasIndex(new[] { "Status" }, "idx_tournament_status");
 
                     b.HasIndex(new[] { "ThemeId" }, "idx_tournament_theme_id");
 
