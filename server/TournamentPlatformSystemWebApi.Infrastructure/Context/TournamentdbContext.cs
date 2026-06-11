@@ -178,6 +178,8 @@ public partial class TournamentdbContext : DbContext
 
             entity.HasIndex(e => e.ThemeId, "idx_tournament_theme_id");
 
+            entity.HasIndex(e => e.Status, "idx_tournament_status");
+
             entity.Property(e => e.Status)
                 .HasColumnName("status")
                 .HasColumnType("int");
@@ -424,6 +426,9 @@ public partial class TournamentdbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("refresh_token_pkey");
             entity.ToTable("refresh_token");
+
+            entity.HasIndex(e => e.Token, "idx_refresh_token_token");
+
             entity.Property(e => e.Id)
                 .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("id");

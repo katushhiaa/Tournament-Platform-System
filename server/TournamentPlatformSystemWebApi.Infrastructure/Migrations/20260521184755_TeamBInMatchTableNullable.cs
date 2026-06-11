@@ -1,14 +1,10 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
-
 #nullable disable
-
 namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
 {
-    /// <inheritdoc />
     public partial class TeamBInMatchTableNullable : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterColumn<Guid>(
@@ -19,8 +15,6 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                 oldClrType: typeof(Guid),
                 oldType: "uuid");
         }
-
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterColumn<Guid>(
