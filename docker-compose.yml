@@ -62,11 +62,7 @@ services:
     build: ./client
     container_name: tournament-client
     ports:
-      - "5173:5173"
-    volumes:
-      - ./client:/app
-      - /app/node_modules
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+      - "5173:80"   
     depends_on:
       - app
 
