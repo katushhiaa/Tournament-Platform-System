@@ -34,11 +34,18 @@ const coverImage = computed(() =>
   props.tournament.backgroundImg ?? defaultBg
 )
 
+const toLocalDate = (iso: string): Date => {
+  const d = new Date(iso)
+  
+  if (!iso.endsWith('Z') && !iso.includes('+')) {
+    return new Date(iso + 'Z')
+  }
+  return d
+}
+
 const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('uk-UA', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
+  toLocalDate(iso).toLocaleDateString('uk-UA', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
   })
 
 const isOrganizer = computed(() =>

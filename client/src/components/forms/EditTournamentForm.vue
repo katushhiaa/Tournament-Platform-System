@@ -302,7 +302,12 @@ const handleOutsideClick = (e: MouseEvent) => {
 
 const toDatetimeLocal = (iso: string): string => {
   if (!iso) return ''
-  return iso.slice(0, 16)
+  const d = iso.endsWith('Z') || iso.includes('+') 
+    ? new Date(iso) 
+    : new Date(iso + 'Z')
+  const offset = d.getTimezoneOffset()
+  const local = new Date(d.getTime() - offset * 60000)
+  return local.toISOString().slice(0, 16)
 }
 
 const showError = (msg: string) => {
