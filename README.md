@@ -13,6 +13,7 @@
 * **[Project Hub (Wiki)](https://github.com/katushhiaa/Tournament-Platform-System/wiki)** — повна документація проєкту.
 * **[Jira Board](https://tournamentsystem.atlassian.net/jira/software/projects/DEV/boards/1/backlog)** — таск-трекер та керування спринтами.
 * **[Figma Design]()** — прототипи інтерфейсу користувача.
+* **[Swagger API](http://localhost:5050/swagger)** — інтерактивна API-документація (доступна локально після запуску стеку через `docker compose up`).
 
 ## Структура репозиторію
 Згідно з обраною архітектурою, проєкт має наступну структуру папок:
@@ -24,21 +25,82 @@
 * `📂 /deploy` — Конфігурації для Docker, CI/CD, скрипти розгортання.
 
 ## Технологічний стек
-* **Backend:** .NET / ASP.NET Core
-* **Frontend:** Vue.js (або React)
-* **Database:** PostgreSQL
+* **Backend:** ASP.NET Core (.NET 9)
+* **Frontend:** Vue 3 + TypeScript (Vite)
+* **Database:** PostgreSQL 15
+* **Інфраструктура:** Docker / Docker Compose
 
-## Інструкція із запуску
-*На поточному етапі проєкт містить архітектурний скелет.*
+## 🚀 Інструкція з розгортання (Deployment Guide)
 
-1. **Клонування репозиторію:**
-   ```bash
-   git clone https://github.com/katushhiaa/Tournament-Platform-System
-   ```
-2. **Перехід у папку проєкту:**
-   ```bash
-   cd tournament-platform
-   ```
+Проєкт повністю контейнеризований — для запуску достатньо Docker. Жодних локально встановлених .NET, Node чи PostgreSQL не потрібно.
+
+### Системні вимоги
+
+| Компонент | Мінімум | Протестовано на |
+|-----------|---------|-----------------|
+| Docker Engine | 20.10+ | 28.5.1 |
+| Docker Compose | v2.0+ | v2.40.3 |
+| RAM (виділено Docker) | 4 GB | 8 GB |
+| CPU | 2 ядра | 4 ядра |
+| Вільне місце на диску | ~3 GB | — |
+| ОС | Windows 10/11, macOS, Linux | Windows 11 Pro |
+
+> Достатньо встановленого **Docker Desktop** (включає Engine + Compose).
+
+### Кроки запуску
+
+```bash
+# 1. Клонувати репозиторій
+git clone https://github.com/katushhiaa/Tournament-Platform-System
+cd Tournament-Platform-System
+
+# 2. Створити файл змінних оточення з шаблону
+cp .env.example .env        # Windows (cmd): copy .env.example .env
+#   за потреби відредагувати паролі та JWT__KEY у .env
+
+# 3. Підняти весь стек (db, backend, frontend, pgAdmin)
+docker compose up --build
+```
+
+Перший запуск збирає образи та виконує міграції + наповнення БД автоматично (контейнер `init`) — це може зайняти кілька хвилин.
+
+### Доступ до сервісів
+
+| Сервіс | URL |
+|--------|-----|
+| Frontend (застосунок) | http://localhost:5173 |
+| Backend API | http://localhost:5050/api/v1 |
+| Swagger (API-документація) | http://localhost:5050/swagger |
+| pgAdmin (керування БД) | http://localhost:8080 |
+
+### Корисні команди
+
+```bash
+docker compose down          # зупинити стек
+docker compose down -v       # зупинити + очистити БД (чистий перезапуск)
+docker compose up --build    # перезібрати й підняти заново
+```
+
+> ⚠️ Перед перемиканням між гілками робіть `docker compose down -v`, щоб уникнути конфлікту міграцій.
+
+## 🔑 Тестові доступи (Credentials)
+
+- **Основний спосіб** — зареєструвати власний акаунт через кнопку **Sign Up** на `http://localhost:5173/register` (доступні ролі Organizer та Player).
+- **Seed-користувачі** — при першому запуску БД наповнюється тестовими користувачами з `server/seeds/seed.sql`:
+  - Організатори: `john.smith@example.com`, `jane.williams@example.com`
+  - Гравці: `alex.johnson@example.com`, `michael.brown@example.com` та ін.
+  - Пароль seed-користувачів зберігається у вигляді хешу; актуальний plaintext-пароль уточнюйте у Backend-розробника (Сергій Скуртул).
+
+## 📂 Структура проєкту (де що знаходиться)
+
+| Розташування | Призначення |
+|--------------|-------------|
+| `/client` | **Frontend** — Vue 3 + TypeScript (Vite) |
+| `/server` | **Backend** — ASP.NET Core (.NET 9) |
+| `/server/.../Infrastructure/Migrations` | **Міграції БД** (Entity Framework Core) |
+| `/server/seeds/seed.sql` | Початкові тестові дані (seed) |
+| `docker-compose.yml` | Оркестрація всіх сервісів |
+| `.env.example` | Шаблон змінних оточення |
 
 ## 📁 Структура клієнтської частини
 client/src/
