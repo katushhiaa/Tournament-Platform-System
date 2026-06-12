@@ -1,5 +1,5 @@
 using Swashbuckle.AspNetCore.Filters;
-using TournamentPlatformSystem.Application.DTOs.Auth;
+using TournamentPlatformSystemWebApi.Application.DTOs.Auth;
 
 namespace TournamentPlatformSystemWebApi.API.Swagger.Examples
 {
@@ -10,7 +10,8 @@ namespace TournamentPlatformSystemWebApi.API.Swagger.Examples
             return new LoginRequestDto
             {
                 Email = "player@example.com",
-                Password = "PlayerPass123"
+                Password = "PlayerPass123",
+                RememberMe = true
             };
         }
     }

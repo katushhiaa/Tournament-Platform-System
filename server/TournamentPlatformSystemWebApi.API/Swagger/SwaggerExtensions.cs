@@ -21,6 +21,13 @@ namespace TournamentPlatformSystemWebApi.API.Swagger
                     Description = "Система автоматизації турнірних сіток та управління змаганнями."
                 });
 
+                // Document configured frontend origin for CORS in the Swagger description
+                var frontendOrigin = Environment.GetEnvironmentVariable("FRONTEND_ORIGIN") ?? "http://localhost:5173";
+                // Use Markdown to highlight the allowed origin in Swagger description
+                var corsMessage = "**Allowed origin:** `" + frontendOrigin + "`";
+                c.DocumentFilter<AddCorsInfoDocumentFilter>(corsMessage);
+
+
                 c.EnableAnnotations();
 
                 var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
@@ -69,6 +76,8 @@ namespace TournamentPlatformSystemWebApi.API.Swagger
                 app.UseSwaggerUI(c =>
                 {
                     c.SwaggerEndpoint("/swagger/v1.0.0/swagger.json", "ZVYTYAHA API v1.0.0");
+                    // Include cookies in requests from Swagger UI (so HttpOnly cookies set by the server are sent)
+                    c.ConfigObject.AdditionalItems["requestCredentials"] = "include";
                 });
             }
 

@@ -1,7 +1,9 @@
-<script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
-</script>
-
 <template>
-  <HelloWorld />
+  <ErrorBoundary>
+    <router-view />
+  </ErrorBoundary>
 </template>
+
+<script setup lang="ts">
+import ErrorBoundary from './components/ErrorBoundary.vue'
+</script>

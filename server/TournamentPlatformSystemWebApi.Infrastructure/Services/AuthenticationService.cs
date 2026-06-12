@@ -1,0 +1,307 @@
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.Text.RegularExpressions;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
+using TournamentPlatformSystemWebApi.Application.DTOs.Auth;
+using TournamentPlatformSystemWebApi.Application.Interfaces;
+using System.Security.Claims;
+using TournamentPlatformSystemWebApi.Common.Exceptions;
+using TournamentPlatformSystemWebApi.Core.Entities;
+using TournamentPlatformSystemWebApi.Infrastructure.Context;
+using TournamentPlatformSystemWebApi.Infrastructure.Security;
+using System.IdentityModel.Tokens.Jwt;
+
+namespace TournamentPlatformSystemWebApi.Infrastructure.Services;
+
+public class AuthenticationService : IAuthenticationService
+{
+    private readonly IUserRepository _userRepository;
+    private readonly IPasswordHasher _passwordHasher;
+    private readonly IJwtTokenService _jwtTokenService;
+    private readonly IMemoryCache _cache;
+    private readonly int _refreshTokenDays;
+    private readonly TournamentdbContext? _context;
+
+    public AuthenticationService(IUserRepository userRepository, IPasswordHasher passwordHasher, IJwtTokenService jwtTokenService, IConfiguration configuration, IMemoryCache? cache = null, TournamentdbContext? context = null)
+    {
+        _userRepository = userRepository;
+        _passwordHasher = passwordHasher;
+        _jwtTokenService = jwtTokenService;
+        _cache = cache ?? new MemoryCache(new MemoryCacheOptions());
+        _context = context;
+        var daysStr = configuration["REFRESH_TOKEN_DAYS"];
+        if (!int.TryParse(daysStr, out _refreshTokenDays))
+        {
+            _refreshTokenDays = 7;
+        }
+    }
+
+    public async Task<TokensResponseDto> RefreshAsync(string refreshToken, string accessToken)
+    {
+        if (string.IsNullOrWhiteSpace(refreshToken))
+        {
+            throw new InvalidCredentialsException("Refresh token missing");
+        }
+
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            throw new InvalidCredentialsException("Access token missing");
+        }
+
+        // strip Bearer prefix if present
+        if (accessToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            accessToken = accessToken.Substring(7).Trim();
+        }
+
+        JwtSecurityToken jwt;
+        try
+        {
+            var handler = new JwtSecurityTokenHandler();
+            jwt = handler.ReadJwtToken(accessToken);
+        }
+        catch
+        {
+            throw new InvalidCredentialsException("Invalid access token");
+        }
+
+        var jti = jwt.Id;
+        var sub = jwt.Subject;
+        if (string.IsNullOrWhiteSpace(jti) || string.IsNullOrWhiteSpace(sub))
+        {
+            throw new InvalidCredentialsException("Invalid token claims");
+        }
+
+        if (!Guid.TryParse(sub, out var userId))
+        {
+            throw new InvalidCredentialsException("Invalid user id in token");
+        }
+
+        var valid = await _userRepository.ValidateRefreshTokenForUser(userId, refreshToken, jti);
+        if (!valid)
+        {
+            throw new InvalidCredentialsException("Invalid or expired refresh token");
+        }
+
+        // Safely read email, role and isOrganizer from the token payload. The token may store role under
+        // different keys (we use "role" when generating tokens), so use TryGetValue to avoid KeyNotFoundException.
+        string email = string.Empty;
+        if (jwt.Payload.TryGetValue(JwtRegisteredClaimNames.Email, out var emailObj))
+        {
+            email = emailObj?.ToString() ?? string.Empty;
+        }
+
+        string role = "player";
+        if (jwt.Payload.TryGetValue("role", out var roleObj))
+        {
+            role = roleObj?.ToString() ?? role;
+        }
+        else if (jwt.Payload.TryGetValue(ClaimTypes.Role, out var roleObj2))
+        {
+            role = roleObj2?.ToString() ?? role;
+        }
+        else if (jwt.Payload.TryGetValue("roles", out var roleObj3))
+        {
+            role = roleObj3?.ToString() ?? role;
+        }
+
+        var isOrganizer = false;
+        if (jwt.Payload.TryGetValue("isOrganizer", out var isOrgObj) && bool.TryParse(isOrgObj?.ToString(), out var isOrg))
+        {
+            isOrganizer = isOrg;
+        }
+
+        var (newAccess, newJwtId, expiresAt) = _jwtTokenService.GenerateToken(userId, email, role, isOrganizer);
+
+        var newRefresh = _jwtTokenService.GenerateRefreshToken();
+        var refreshExpires = DateTime.UtcNow.AddDays(_refreshTokenDays);
+        await _userRepository.SetRefreshTokenForUser(userId, newRefresh, newJwtId, refreshExpires);
+
+        return new TokensResponseDto { AccessToken = newAccess, RefreshToken = newRefresh };
+    }
+
+    public async Task<RegisterUserResponse> RegisterAsync(RegisterUserRequest request)
+    {
+        if (request.Email == null || request.Password == null || request.FullName == null || request.PhoneNumber == null || request.DateOfBirth == null || request.Role == null)
+        {
+            throw new ValidationException("Missing required fields");
+        }
+        // normalize email (case-insensitive handling)
+        var email = request.Email.ToLowerInvariant();
+
+        // check duplicate email
+        if (await _userRepository.ExistsByEmailAsync(email))
+        {
+            throw new DuplicateEmailException("Email is already in use");
+        }
+
+        // password validation
+        var pwdRegex = new Regex("^(?=.*[A-Z])(?=.*\\d).{8,128}$");
+        if (!pwdRegex.IsMatch(request.Password))
+        {
+            throw new ValidationException("Password must be at least 8 characters, contain an uppercase letter and a digit");
+        }
+
+        // date of birth validation (age >= 13)
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var dob = request.DateOfBirth.Value;
+        var age = today.Year - dob.Year - (today < dob.AddYears(today.Year - dob.Year) ? 1 : 0);
+        if (age < 13)
+        {
+            throw new ValidationException("User must be at least 13 years old");
+        }
+
+        // phone validation
+        var phoneRegex = new Regex("^\\+380\\d{9}$");
+        if (!phoneRegex.IsMatch(request.PhoneNumber))
+        {
+            throw new ValidationException("Phone number must match +380XXXXXXXXX");
+        }
+
+        var userEntity = new User
+        {
+            Id = Guid.NewGuid(),
+            FullName = request.FullName,
+            IsOrganizer = string.Equals(request.Role, "Organizer", StringComparison.OrdinalIgnoreCase),
+            Password = request.Password,
+            UserDetail = new UserDetail
+            {
+                Email = email,
+                DateOfBirth = request.DateOfBirth.Value,
+                Phones = new List<string> { request.PhoneNumber }
+            }
+        };
+
+        var useTransaction = _context != null && _context.Database.CurrentTransaction == null && !(_context.Database.ProviderName?.Contains("InMemory", StringComparison.OrdinalIgnoreCase) ?? false);
+        await using var txn = useTransaction ? await _context!.Database.BeginTransactionAsync() : null;
+        try
+        {
+            var createdUserId = await _userRepository.CreateAsync(userEntity);
+
+            var isOrganizer = string.Equals(request.Role, "organizer", StringComparison.OrdinalIgnoreCase);
+            var (token, jwtId, accessExpires) = _jwtTokenService.GenerateToken(createdUserId, request.Email, request.Role, isOrganizer);
+            var refreshToken = _jwtTokenService.GenerateRefreshToken();
+
+            // persist refresh token (7 days expiry)
+            var refreshExpires = DateTime.UtcNow.AddDays(_refreshTokenDays);
+            await _userRepository.SetRefreshTokenForUser(createdUserId, refreshToken, jwtId, refreshExpires);
+
+            if (useTransaction && txn != null)
+            {
+                await txn.CommitAsync();
+            }
+
+            return new RegisterUserResponse
+            {
+                UserId = createdUserId,
+                Email = email,
+                FullName = request.FullName,
+                Role = request.Role,
+                Tokens = new TokensResponseDto
+                {
+                    AccessToken = token,
+                    RefreshToken = refreshToken
+                }
+            };
+        }
+        catch
+        {
+            if (useTransaction && txn != null)
+            {
+                await txn.RollbackAsync();
+            }
+
+            throw;
+        }
+    }
+
+    public async Task<LoginResponseDto> LoginAsync(LoginRequestDto request)
+    {
+        if (request.Email == null || request.Password == null)
+        {
+            throw new ValidationException("Missing email or password");
+        }
+        var email = request.Email.ToLowerInvariant();
+        var emailKey = email;
+        var blockedKey = $"login_blocked:{emailKey}";
+        var failedKey = $"login_failed:{emailKey}";
+
+        if (_cache.TryGetValue(blockedKey, out _))
+        {
+            throw new TooManyLoginAttemptsException("Too many failed login attempts. Try again later.");
+        }
+        var user = await _userRepository.GetByEmailAsync(email);
+        if (user == null)
+        {
+            LoginFailedAttempt(failedKey, blockedKey);
+            throw new InvalidCredentialsException("Invalid email or password");
+        }
+        var storedHash = await _userRepository.GetPasswordHashByEmailAsync(email) ?? string.Empty;
+        var verified = _passwordHasher.VerifyPassword(request.Password, storedHash);
+        if (!verified)
+        {
+            LoginFailedAttempt(failedKey, blockedKey);
+            throw new InvalidCredentialsException("Invalid email or password");
+        }
+
+        _cache.Remove(failedKey);
+        _cache.Remove(blockedKey);
+
+        if (!user.IsActive)
+        {
+            throw new ForbiddenException("User account is inactive. Please contact support.");
+        }
+
+        var isOrganizer = user.IsOrganizer ?? false;
+        var (access, jwtId, accessExpires) = _jwtTokenService.GenerateToken(user.Id, user.UserDetail?.Email ?? string.Empty, isOrganizer ? "organizer" : "player", isOrganizer);
+
+        var refresh = request.RememberMe ? _jwtTokenService.GenerateRefreshToken() : null;
+        if (refresh != null)
+        {
+            var refreshExpires = DateTime.UtcNow.AddDays(_refreshTokenDays);
+            await _userRepository.SetRefreshTokenForUser(user.Id, refresh, jwtId, refreshExpires);
+        }
+        else
+        {
+            await _userRepository.RevokeUserTokens(user.Id);
+        }
+
+        var response = new LoginResponseDto
+        {
+            User = new UserDto
+            {
+                Id = user.Id,
+                Email = user.UserDetail?.Email,
+                Role = isOrganizer ? "organizer" : "player",
+                FullName = user.FullName
+            },
+            Tokens = new TokensResponseDto { AccessToken = access, RefreshToken = refresh }
+        };
+        return response;
+    }
+
+    private void LoginFailedAttempt(string failedKey, string blockedKey)
+    {
+        const int maxAttempts = 5;
+        var attempts = 0;
+        if (_cache.TryGetValue(failedKey, out var obj) && obj is int current)
+        {
+            attempts = current;
+        }
+        attempts++;
+
+        if (attempts >= maxAttempts)
+        {
+            _cache.Set(blockedKey, true, TimeSpan.FromMinutes(5));
+            _cache.Remove(failedKey);
+        }
+        else
+        {
+            _cache.Set(failedKey, attempts, TimeSpan.FromMinutes(5));
+        }
+    }
+}

@@ -2,8 +2,12 @@ using System;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
-using TournamentPlatformSystem.Application.DTOs.Auth;
+using TournamentPlatformSystemWebApi.Application.DTOs.Auth;
+using TournamentPlatformSystemWebApi.Application.Interfaces;
 using TournamentPlatformSystemWebApi.Common.Models;
+using TournamentPlatformSystemWebApi.Common.Exceptions;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
 
 namespace TournamentPlatformSystemWebApi.API.Controllers
 {
@@ -12,45 +16,256 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
     [SwaggerTag("Auth")]
     public class AuthController : ControllerBase
     {
+        private readonly IAuthenticationService _authenticationService;
+
+        public AuthController(IAuthenticationService authenticationService)
+        {
+            _authenticationService = authenticationService;
+        }
+
         [HttpPost("register")]
+        [AllowAnonymous]
         [SwaggerOperation(Summary = "Реєстрація нового користувача", Description = "Реєструє нового користувача. Роль: Guest.")]
-        [SwaggerResponse(201, Type = typeof(TokenResponseDto), Description = "Повертає токен та дані користувача")]
+        [SwaggerResponse(201, Type = typeof(RegisterUserResponse), Description = "Повертає токен та дані користувача")]
         [SwaggerResponse(400, Type = typeof(ErrorResponseDto), Description = "Невалідні дані")]
         [SwaggerResponse(409, Type = typeof(ErrorResponseDto), Description = "Email вже існує")]
-        [SwaggerRequestExample(typeof(RegisterRequestDto), typeof(Swagger.Examples.RegisterRequestExample))]
-        [SwaggerResponseExample(201, typeof(Swagger.Examples.TokenResponseExample))]
-        public IActionResult Register([FromBody] RegisterRequestDto dto)
+        [SwaggerRequestExample(typeof(RegisterUserRequest), typeof(Swagger.Examples.RegisterUserRequestExample))]
+        [SwaggerResponseExample(201, typeof(Swagger.Examples.RegisterUserResponseExample))]
+        public async Task<IActionResult> Register([FromBody] RegisterUserRequest dto)
         {
-            var user = new UserDto { Id = Guid.NewGuid(), Email = dto.Email, Name = dto.Name, Role = dto.Role };
-            var token = new TokenResponseDto { Token = "token-sample" };
-            return Created(string.Empty, new { token = token.Token, user });
+            try
+            {
+                var result = await _authenticationService.RegisterAsync(dto);
+
+                if (!string.IsNullOrWhiteSpace(result.Tokens?.RefreshToken))
+                {
+                    AppendRefreshCookies(result.Tokens.RefreshToken);
+                }
+
+                return Created(string.Empty, result);
+            }
+            catch (ValidationException ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = 400,
+                        Type = "ValidationError",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+                return BadRequest(err);
+            }
+            catch (DuplicateEmailException ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = 409,
+                        Type = "Conflict",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+                return Conflict(err);
+            }
+            catch (Exception)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = 500,
+                        Type = "InternalServerError",
+                        Message = "Internal server error",
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+                return StatusCode(500, err);
+            }
         }
 
         [HttpPost("login")]
         [SwaggerOperation(Summary = "Авторизація користувача", Description = "Авторизує користувача за email/password. Роль: Guest.")]
-        [SwaggerResponse(200, Type = typeof(TokenResponseDto), Description = "Успішна авторизація")]
+        [SwaggerResponse(200, Type = typeof(LoginResponseDto), Description = "Успішна авторизація")]
         [SwaggerResponse(400, Type = typeof(ErrorResponseDto), Description = "Помилка валідації")]
         [SwaggerResponse(401, Type = typeof(ErrorResponseDto), Description = "Невірний логін/пароль")]
         [SwaggerRequestExample(typeof(LoginRequestDto), typeof(Swagger.Examples.LoginRequestExample))]
-        [SwaggerResponseExample(200, typeof(Swagger.Examples.TokenResponseExample))]
-        public IActionResult Login([FromBody] LoginRequestDto dto)
+        [SwaggerResponseExample(200, typeof(Swagger.Examples.LoginResponseExample))]
+        public async Task<IActionResult> Login([FromBody] LoginRequestDto dto)
         {
-            var user = new UserDto { Id = Guid.NewGuid(), Email = dto.Email, Name = "Sample User", Role = "Player" };
-            var token = new TokenResponseDto { Token = "token-sample" };
-            return Ok(new { token = token.Token, user });
+            try
+            {
+                var tokens = await _authenticationService.LoginAsync(dto);
+
+                if (!string.IsNullOrWhiteSpace(tokens.Tokens?.RefreshToken))
+                {
+                    AppendRefreshCookies(tokens.Tokens.RefreshToken);
+                }
+
+                return Ok(tokens);
+            }
+            catch (TournamentPlatformSystemWebApi.Common.Exceptions.TooManyLoginAttemptsException ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status429TooManyRequests,
+                        Type = "TooManyRequests",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+                return StatusCode(StatusCodes.Status429TooManyRequests, err);
+            }
+            catch (TournamentPlatformSystemWebApi.Common.Exceptions.InvalidCredentialsException ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status401Unauthorized,
+                        Type = "Unauthorized",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+                return Unauthorized(err);
+            }
+            catch (ValidationException ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = 400,
+                        Type = "ValidationError",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+                return BadRequest(err);
+            }
+            catch (ForbiddenException ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status403Forbidden,
+                        Type = "Forbidden",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+
+                return StatusCode(StatusCodes.Status403Forbidden, err);
+            }
+            catch (Exception ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = 500,
+                        Type = "InternalServerError",
+                        Message = ex.Message,
+                        Path = HttpContext.GetEndpoint()?.DisplayName,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+                return StatusCode(500, err);
+            }
         }
 
+        /// <summary>
+        /// Refreshes the access token using a refresh token stored in an HttpOnly cookie.
+        /// </summary>
+        /// <remarks>
+        /// Client must send the refresh token in an HttpOnly cookie named "refresh_token".
+        /// The endpoint validates tokens, sets a NEW refresh token in HttpOnly cookie, and returns a NEW access token in the response body.
+        /// </remarks>
         [HttpPost("refresh")]
-        [SwaggerOperation(Summary = "Оновлення Access токена", Description = "Оновлює access токен з використанням refresh токена з cookie. Роль: Guest/Player/Organizer.")]
-        [SwaggerResponse(200, Type = typeof(TokenResponseDto), Description = "Новий access токен")]
-        [SwaggerResponse(401, Type = typeof(ErrorResponseDto), Description = "Токен недійсний/прострочений")]
-        [SwaggerResponseExample(200, typeof(Swagger.Examples.TokenResponseExample))]
-        public IActionResult Refresh()
+        [AllowAnonymous]
+        [SwaggerOperation(Summary = "Refresh access token", Description = "Refreshes the access token using the refresh token stored in an HttpOnly cookie named 'refresh_token'.")]
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(TokensResponseDto), StatusCodes.Status200OK)] // Змінено DTO
+        [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> Refresh()
         {
-            var token = new TokenResponseDto { Token = "new-token-sample" };
-            return Ok(token);
+            try
+            {
+                var refreshToken = Request.Cookies["refresh_token"];
+                var authHeader = Request.Headers["Authorization"].ToString();
+
+                // Сервіс повертає пару токенів (наприклад, об'єкт з AccessToken та RefreshToken)
+                var tokens = await _authenticationService.RefreshAsync(refreshToken, authHeader);
+
+                AppendRefreshCookies(tokens.RefreshToken);
+                // Повертаємо у JSON ТІЛЬКИ access токен
+                var response = new TokensResponseDto
+                {
+                    AccessToken = tokens.AccessToken
+                };
+
+                return Ok(response);
+            }
+            catch (TournamentPlatformSystemWebApi.Common.Exceptions.InvalidCredentialsException ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = StatusCodes.Status401Unauthorized,
+                        Type = "Unauthorized",
+                        Message = ex.Message,
+                        Path = HttpContext.Request.Path,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+                return Unauthorized(err);
+            }
+            catch (Exception ex)
+            {
+                var err = new ErrorResponseDto
+                {
+                    Error = new ErrorDetail
+                    {
+                        Code = 500,
+                        Type = "InternalServerError",
+                        Message = ex.Message,
+                        Path = HttpContext.Request.Path,
+                        Timestamp = DateTime.UtcNow.ToString("o"),
+                        TraceId = HttpContext.TraceIdentifier
+                    }
+                };
+                return StatusCode(500, err);
+            }
         }
 
+
+        [Authorize]
         [HttpGet("/api/v1/users/me")]
         [SwaggerOperation(Summary = "Отримання даних поточного користувача", Description = "Повертає профіль поточного користувача. Роль: Player/Organizer.")]
         [SwaggerResponse(200, Type = typeof(UserDto), Description = "Дані користувача")]
@@ -61,11 +276,24 @@ namespace TournamentPlatformSystemWebApi.API.Controllers
             {
                 Id = Guid.NewGuid(),
                 Email = "player@example.com",
-                Name = "Sample Player",
-                Role = "Player",
-                Stats = new { wins = 10, losses = 2 }
+                FullName = "Sample Player",
+                Role = "Player"
             };
             return Ok(user);
+        }
+        private void AppendRefreshCookies(string token)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = Request.IsHttps,
+                SameSite = Request.IsHttps ? SameSiteMode.None : SameSiteMode.Lax,
+                Path = "/api/v1/auth/refresh",
+                Expires = DateTimeOffset.UtcNow.AddDays(15)
+            };
+
+            Response.Cookies.Append("refresh_token", token, cookieOptions);
+
         }
     }
 }

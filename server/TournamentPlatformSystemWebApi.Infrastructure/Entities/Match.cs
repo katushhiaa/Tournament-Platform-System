@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using TournamentPlatformSystemWebApi.Common.Helpers;
 
 namespace TournamentPlatformSystemWebApi.Infrastructure.Entities;
 
-public partial class MatchModel
+public partial class MatchModel : BaseDbEntity
 {
-    public Guid Id { get; set; }
-
     public Guid TournamentId { get; set; }
 
-    public Guid TeamAId { get; set; }
+    public Guid? TeamAId { get; set; }
 
     public Guid? TeamBId { get; set; }
 
@@ -30,6 +29,10 @@ public partial class MatchModel
     public DateTime? CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
+
+    public bool? IsBye { get; set; }
+
+    public string? Status { get; set; }
 
     public virtual TeamModel TeamA { get; set; } = null!;
 
