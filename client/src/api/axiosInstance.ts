@@ -56,7 +56,17 @@ axiosInstance.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                const response = await axios.post('/api/v1/auth/refresh', null, { withCredentials: true });
+                const currentToken = localStorage.getItem('zvytiaha_token');
+                const response = await axios.post(
+                    '/api/v1/auth/refresh',
+                    null,
+                    {
+                        withCredentials: true,
+                        headers: {
+                            Authorization: currentToken ? `Bearer ${currentToken}` : undefined,
+                        },
+                    },
+                );
 
                 const newToken = response.data?.accessToken ?? response.data?.tokens?.accessToken;
 
