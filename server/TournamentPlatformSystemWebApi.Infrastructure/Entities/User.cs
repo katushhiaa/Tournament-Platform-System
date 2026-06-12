@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using TournamentPlatformSystemWebApi.Common.Helpers;
 
 namespace TournamentPlatformSystemWebApi.Infrastructure.Entities;
 
-public partial class UserModel
+public partial class UserModel : BaseDbEntity
 {
-    public Guid Id { get; set; }
-
     public string FullName { get; set; } = null!;
 
     public string PasswordHash { get; set; } = null!;
@@ -30,4 +29,8 @@ public partial class UserModel
     public virtual ICollection<UserPhoneModel> UserPhones { get; set; } = new List<UserPhoneModel>();
 
     public virtual ICollection<UserTeamModel> UserTeams { get; set; } = new List<UserTeamModel>();
+
+    public virtual ICollection<RefreshTokenModel> RefreshTokens { get; set; } = new List<RefreshTokenModel>();
+
+    public virtual ICollection<UserTournamentThemePreferenceModel> UserThemePreferences { get; set; } = new List<UserTournamentThemePreferenceModel>();
 }

@@ -13,8 +13,6 @@ public static class TournamentDbDataSourceConfiguring
     {
         var dataSourceBuilder = new NpgsqlDataSourceBuilder(connectionString);
 
-        dataSourceBuilder.MapEnum<TournamentStatusType>("tournament_status");
-
         var dataSource = dataSourceBuilder.Build();
 
         services.AddDbContext<TournamentdbContext>(options =>

@@ -2,10 +2,18 @@
 
 Система управління турнірами, яка дозволяє користувачам створювати турніри, керувати учасниками та відстежувати результати матчів
 
+## 👥 Команда проєкту
+* **Анур'єва Катерина** — Project Manager
+* **Скуртул Сергій** — Backend Developer
+* **Дудко Володимир** — Database Engineer
+* **Ярмолюк Людмила** — Frontend Developer
+* **Загрбенюк Богдан** — QA Engineer
+
 ## Корисні посилання
 * **[Project Hub (Wiki)](https://github.com/katushhiaa/Tournament-Platform-System/wiki)** — повна документація проєкту.
 * **[Jira Board](https://tournamentsystem.atlassian.net/jira/software/projects/DEV/boards/1/backlog)** — таск-трекер та керування спринтами.
 * **[Figma Design]()** — прототипи інтерфейсу користувача.
+* **[Swagger API](http://localhost:5050/swagger)** — інтерактивна API-документація (доступна локально після запуску стеку через `docker compose up`).
 
 ## Структура репозиторію
 Згідно з обраною архітектурою, проєкт має наступну структуру папок:
@@ -17,200 +25,181 @@
 * `📂 /deploy` — Конфігурації для Docker, CI/CD, скрипти розгортання.
 
 ## Технологічний стек
-* **Backend:** .NET / ASP.NET Core
-* **Frontend:** Vue.js (або React)
-* **Database:** PostgreSQL
+* **Backend:** ASP.NET Core (.NET 9)
+* **Frontend:** Vue 3 + TypeScript (Vite)
+* **Database:** PostgreSQL 15
+* **Інфраструктура:** Docker / Docker Compose
 
-## Інструкція із запуску
-*На поточному етапі проєкт містить архітектурний скелет.*
+## 🚀 Інструкція з розгортання (Deployment Guide)
 
-1. **Клонування репозиторію:**
-   ```bash
-   git clone https://github.com/katushhiaa/Tournament-Platform-System
-   ```
-2. **Перехід у папку проєкту:**
-   ```bash
-   cd tournament-platform
-   ```
+Проєкт повністю контейнеризований — для запуску достатньо Docker. Жодних локально встановлених .NET, Node чи PostgreSQL не потрібно.
 
-## 👥 Команда проєкту
-* **Анур'єва Катерина** — Project Manager
-* **Скуртул Сергій** — Backend Developer
-* **Дудко Володимир** — Database Engineer
-* **Ярмолюк Людмила** — Frontend Developer
-* **Загрбенюк Богдан** — QA Engineer
+### Системні вимоги
+
+| Компонент | Мінімум | Протестовано на |
+|-----------|---------|-----------------|
+| Docker Engine | 20.10+ | 28.5.1 |
+| Docker Compose | v2.0+ | v2.40.3 |
+| RAM (виділено Docker) | 4 GB | 8 GB |
+| CPU | 2 ядра | 4 ядра |
+| Вільне місце на диску | ~3 GB | — |
+| ОС | Windows 10/11, macOS, Linux | Windows 11 Pro |
+
+> Достатньо встановленого **Docker Desktop** (включає Engine + Compose).
+
+### Кроки запуску
+
+```bash
+# 1. Клонувати репозиторій
+git clone https://github.com/katushhiaa/Tournament-Platform-System
+cd Tournament-Platform-System
+
+# 2. Створити файл змінних оточення з шаблону
+cp .env.example .env        # Windows (cmd): copy .env.example .env
+#   за потреби відредагувати паролі та JWT__KEY у .env
+
+# 3. Підняти весь стек (db, backend, frontend, pgAdmin)
+docker compose up --build
+```
+
+Перший запуск збирає образи та виконує міграції + наповнення БД автоматично (контейнер `init`) — це може зайняти кілька хвилин.
+
+### Доступ до сервісів
+
+| Сервіс | URL |
+|--------|-----|
+| Frontend (застосунок) | http://localhost:5173 |
+| Backend API | http://localhost:5050/api/v1 |
+| Swagger (API-документація) | http://localhost:5050/swagger |
+| pgAdmin (керування БД) | http://localhost:8080 |
+
+### Корисні команди
+
+```bash
+docker compose down          # зупинити стек
+docker compose down -v       # зупинити + очистити БД (чистий перезапуск)
+docker compose up --build    # перезібрати й підняти заново
+```
+
+> ⚠️ Перед перемиканням між гілками робіть `docker compose down -v`, щоб уникнути конфлікту міграцій.
+
+## 🔑 Тестові доступи (Credentials)
+
+- **Основний спосіб** — зареєструвати власний акаунт через кнопку **Sign Up** на `http://localhost:5173/register` (доступні ролі Organizer та Player).
+- **Seed-користувачі** — при першому запуску БД наповнюється тестовими користувачами з `server/seeds/seed.sql`:
+  - Організатори: `john.smith@example.com`, `jane.williams@example.com`
+  - Гравці: `alex.johnson@example.com`, `michael.brown@example.com` та ін.
+  - Пароль seed-користувачів зберігається у вигляді хешу; актуальний plaintext-пароль уточнюйте у Backend-розробника (Сергій Скуртул).
+
+## 📂 Структура проєкту (де що знаходиться)
+
+| Розташування | Призначення |
+|--------------|-------------|
+| `/client` | **Frontend** — Vue 3 + TypeScript (Vite) |
+| `/server` | **Backend** — ASP.NET Core (.NET 9) |
+| `/server/.../Infrastructure/Migrations` | **Міграції БД** (Entity Framework Core) |
+| `/server/seeds/seed.sql` | Початкові тестові дані (seed) |
+| `docker-compose.yml` | Оркестрація всіх сервісів |
+| `.env.example` | Шаблон змінних оточення |
+
+## 📁 Структура клієнтської частини
+client/src/
+├── api/              # Axios-інстанція, базові налаштування HTTP-запитів
+
+├── assets/           # Статичні ресурси (зображення, шрифти)
+
+│   └── icons/        # SVG-іконки
+
+├── components/       # Перевикористовувані Vue-компоненти
+
+│   ├── dashboard/    # Компоненти дашборду (картки турнірів, секції)
+
+│   ├── forms/        # Форми (логін, реєстрація, створення турніру)
+
+│   ├── modals/       # Модальні вікна
+
+│   ├── tournament/   # Компоненти сторінки турніру (деталі, учасники, сітка)
+
+│   └── ui/           # Базові UI-елементи (кнопки, інпути, спінери)
+
+├── hooks/            # Композабли (useAuth, useTournament тощо)
+
+├── router/           # Vue Router — визначення маршрутів
+
+├── services/         # Сервіси для роботи з API (authService, tournamentService)
+
+├── stores/           # Pinia-стори — глобальний стан застосунку
+
+├── types/            # TypeScript-типи та інтерфейси
+
+├── utils/            # Утиліти (форматування дат, валідація тощо)
+
+└── views/            # Сторінки застосунку (HomePage, LoginPage тощо)
+
+
+---
+## 📸 Screenshots
+
+### 🏠 Головна сторінка
+
+![Головна сторінка](docs/screenshots/home_page.png)
+
+Лендінг з hero-секцією, переліком активних турнірів та описом платформи для організаторів і гравців.
 
 ---
 
-## Naming Conventions
+### 🔐 Авторизація
 
-### Backend (.NET)
-
-#### Класи
-- PascalCase  
-- Приклади: `User`, `Tournament`, `Match`, `TournamentService`
-
-#### Методи
-- PascalCase  
-- Назва починається з дієслова  
-- Приклади: `GetTournamentById()`, `CreateTournament()`, `JoinTournament()`
-
-#### Параметри
-- camelCase  
-- Приклади: `tournamentId`, `userId`, `matchResult`
-
-#### Private-поля
-- _camelCase  
-- Приклади: `_userRepository`, `_tournamentService`, `_logger`
-
-#### Публічні властивості
-- PascalCase  
-- Приклади: `Id`, `UserName`, `Email`, `CreatedAt`
-
-#### Інтерфейси
-- PascalCase з префіксом `I`  
-- Приклади: `IUserService`, `ITournamentRepository`
-
-#### DTO / Request / Response
-- PascalCase  
-- Приклади: `RegisterUserRequest`, `LoginResponse`, `TournamentDetailsDto`
+| Вхід | Реєстрація |
+|------|------------|
+| ![Вхід](docs/screenshots/log_in_page.png) | ![Реєстрація](docs/screenshots/sign_up_page.png) |
 
 ---
 
-### Frontend (Vue 3 + TypeScript)
+### 🎮 Гравець
 
-#### Папки
-- kebab-case  
-- Приклади: `user-profile`, `match-bracket`, `tournaments`
+**Дашборд** — персоналізований огляд активних та приєднаних турнірів.
 
-#### Компоненти
-- PascalCase  
-- Файл = назва компонента  
-- Приклади: `TournamentCard.vue`, `MatchBracket.vue`, `UserProfile.vue`
+![Дашборд гравця](docs/screenshots/player_dashboard.png)
 
-Заборонено використовувати абстрактні назви:
-- `Data.vue`, `Item.vue`, `Info.vue`
+**Перегляд турнірів** — повний список з пошуком і пагінацією.
 
-#### Сторінки
-- PascalCase + суфікс Page  
-- Приклади: `HomePage.vue`, `TournamentDetailsPage.vue`
+![Сторінка турнірів](docs/screenshots/player_tournaments_page.png)
 
-#### Форми
-- PascalCase + суфікс Form  
-- Приклади: `LoginForm.vue`, `CreateTournamentForm.vue`
+**Мої турніри** — турніри, до яких гравець приєднався.
 
-#### Сервіси (API)
-- camelCase  
-- Приклади: `authService.ts`, `tournamentService.ts`
+![Мої турніри гравця](docs/screenshots/player_my_tournaments_page.png)
 
-#### Утиліти
-- camelCase  
-- Приклади: `formatDate.ts`, `validateEmail.ts`
+**Деталі турніру** — огляд, умови, учасники, сітка гравців.
 
-#### Hooks
-- camelCase з префіксом use  
-- Приклади: `useAuth.ts`, `useTournament.ts`
-
-#### Змінні
-- camelCase  
-- Приклади: `tournamentList`, `currentUser`
-
-#### Boolean-змінні
-- префікси: is, has, can  
-- Приклади: `isLoading`, `hasError`, `canJoinTournament`
-
-#### Функції
-- camelCase  
-- Приклади: `fetchTournaments()`, `createTournament()`
-
-#### Константи
-- UPPER_SNAKE_CASE  
-- Приклади: `API_URL`, `MAX_PLAYERS`
-
-#### Props
-- camelCase у script  
-- kebab-case у template  
-
-#### Emits
-- kebab-case  
-- Приклади: `join-tournament`, `submit-result`
+| Подати заявку | Скасувати участь |
+|---------------|-----------------|
+| ![Подати заявку](docs/screenshots/player_detail_tournament_submit.png) | ![Скасувати участь](docs/screenshots/player_detail_tournament_cancel_participation.png) |
 
 ---
 
-### Database (PostgreSQL)
+### 🛠️ Організатор
 
-#### Таблиці
-- snake_case, множина  
-- Приклади: `users`, `tournaments`, `matches`
+**Дашборд** — огляд створених турнірів, розділених на активні та керовані.
 
-#### Колонки
-- snake_case, однина  
-- Приклади: `id`, `user_name`, `created_at`
+![Дашборд організатора](docs/screenshots/organizer_dashboard.png)
 
-#### Первинний ключ
-- `id`
+**Мої турніри** — повний список створених турнірів з пошуком.
 
-#### Зовнішні ключі
-- формат: entity_id  
-- Приклади: `user_id`, `tournament_id`, `match_id`
+![Мої турніри організатора](docs/screenshots/organizer_my_tournaments_page.png)
 
-#### Таблиці зв’язку
-- snake_case  
-- Приклади: `tournament_participants`, `user_roles`
+**Деталі турніру** — вигляд організатора з кнопкою редагування.
 
-#### Boolean-поля
-- префікси: is_, has_, can_  
-- Приклади: `is_active`, `has_paid_fee`
+![Деталі турніру організатора](docs/screenshots/organizer_detail_tournament.png)
 
-#### Дата та час
-- суфікс _at  
-- Приклади: `created_at`, `updated_at`
+**Створення турніру** — форма з завантаженням банера, типом спорту, датами, описом та умовами.
 
+![Створення турніру](docs/screenshots/create_tournament.png)
+
+**Редагування турніру** — попередньо заповнена форма з керуванням учасниками та можливістю дискваліфікації.
+
+![Редагування турніру](docs/screenshots/edit_tournament.png)
 ---
-
-### Заборонені назви
-
-Заборонено використовувати:
-
-- data  
-- info  
-- temp  
-- test  
-- item  
-- object  
-- helper  
-- utils  
-- value  
-- entity  
-
-Bad:
-- DataService  
-- InfoComponent  
-- TempTable  
-
-Good:
-- TournamentService  
-- MatchResultCard  
-- UserRepository  
-
----
-
-### Formatting Rules
-
-#### Backend (.NET)
-- відступ: 4 пробіли  
-- один клас на файл  
-- using-директиви впорядковані  
-
-#### Frontend (Vue + TypeScript)
-- відступ: 2 пробіли  
-- крапка з комою обов’язкова  
-- лапки: одинарні (' ')  
-- max довжина рядка: 100 символів  
-
-#### Database
-- SQL ключові слова у верхньому регістрі  
-- назви у snake_case  
 
 
 *Чернівці, 2026*

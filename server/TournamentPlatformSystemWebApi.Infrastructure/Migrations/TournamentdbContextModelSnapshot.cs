@@ -20,7 +20,6 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                 .HasAnnotation("ProductVersion", "9.0.15")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "tournament_status", "tournament_status_type", new[] { "registration_open", "registration_closed", "in_progress", "completed" });
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("TournamentPlatformSystemWebApi.Infrastructure.Entities.AccountStateModel", b =>
@@ -77,6 +76,9 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
+                    b.Property<bool?>("IsBye")
+                        .HasColumnType("boolean");
+
                     b.Property<bool?>("IsValid")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -95,7 +97,10 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("start_date");
 
-                    b.Property<Guid>("TeamAId")
+                    b.Property<string>("Status")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("TeamAId")
                         .HasColumnType("uuid")
                         .HasColumnName("team_a_id");
 
@@ -148,6 +153,62 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("match", (string)null);
+                });
+
+            modelBuilder.Entity("TournamentPlatformSystemWebApi.Infrastructure.Entities.RefreshTokenModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<bool>("IsRevoked")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_revoked");
+
+                    b.Property<bool>("IsUsed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_used");
+
+                    b.Property<string>("JwtId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("jwt_id");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("token");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("refresh_token_pkey");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex(new[] { "Token" }, "idx_refresh_token_token");
+
+                    b.ToTable("refresh_token", (string)null);
                 });
 
             modelBuilder.Entity("TournamentPlatformSystemWebApi.Infrastructure.Entities.TeamModel", b =>
@@ -251,9 +312,8 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("start_date");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("tournament_status")
+                    b.Property<int>("Status")
+                        .HasColumnType("int")
                         .HasColumnName("status");
 
                     b.Property<Guid>("ThemeId")
@@ -275,6 +335,8 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
 
                     b.HasIndex(new[] { "StartDate" }, "idx_tournament_start_date");
 
+                    b.HasIndex(new[] { "Status" }, "idx_tournament_status");
+
                     b.HasIndex(new[] { "ThemeId" }, "idx_tournament_theme_id");
 
                     b.ToTable("tournament", (string)null);
@@ -293,6 +355,10 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("image_url");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -332,6 +398,12 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
                         .HasColumnName("email");
+
+                    b.Property<bool>("PreferencesSetupCompleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasColumnName("preferences_setup_completed")
+                        .HasDefaultValueSql("false");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .ValueGeneratedOnAdd()
@@ -490,13 +562,45 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                     b.ToTable("user_team", (string)null);
                 });
 
+            modelBuilder.Entity("TournamentPlatformSystemWebApi.Infrastructure.Entities.UserTournamentThemePreferenceModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<Guid>("ThemeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("theme_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("user_tournament_theme_preference_pkey");
+
+                    b.HasIndex("ThemeId");
+
+                    b.HasIndex(new[] { "UserId", "ThemeId" }, "unique_user_theme_preference")
+                        .IsUnique();
+
+                    b.ToTable("user_tournament_theme_preference", (string)null);
+                });
+
             modelBuilder.Entity("TournamentPlatformSystemWebApi.Infrastructure.Entities.MatchModel", b =>
                 {
                     b.HasOne("TournamentPlatformSystemWebApi.Infrastructure.Entities.TeamModel", "TeamA")
                         .WithMany("MatchTeamAs")
                         .HasForeignKey("TeamAId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
                         .HasConstraintName("match_team_a_id_fkey");
 
                     b.HasOne("TournamentPlatformSystemWebApi.Infrastructure.Entities.TeamModel", "TeamB")
@@ -525,6 +629,18 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                     b.Navigation("Tournament");
 
                     b.Navigation("Winner");
+                });
+
+            modelBuilder.Entity("TournamentPlatformSystemWebApi.Infrastructure.Entities.RefreshTokenModel", b =>
+                {
+                    b.HasOne("TournamentPlatformSystemWebApi.Infrastructure.Entities.UserModel", "User")
+                        .WithMany("RefreshTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("refresh_token_user_id_fkey");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("TournamentPlatformSystemWebApi.Infrastructure.Entities.TeamModel", b =>
@@ -614,6 +730,27 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("TournamentPlatformSystemWebApi.Infrastructure.Entities.UserTournamentThemePreferenceModel", b =>
+                {
+                    b.HasOne("TournamentPlatformSystemWebApi.Infrastructure.Entities.TournamentThemeModel", "Theme")
+                        .WithMany("UserPreferences")
+                        .HasForeignKey("ThemeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("user_tournament_theme_preference_theme_id_fkey");
+
+                    b.HasOne("TournamentPlatformSystemWebApi.Infrastructure.Entities.UserModel", "User")
+                        .WithMany("UserThemePreferences")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("user_tournament_theme_preference_user_id_fkey");
+
+                    b.Navigation("Theme");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("TournamentPlatformSystemWebApi.Infrastructure.Entities.AccountStateModel", b =>
                 {
                     b.Navigation("Users");
@@ -640,10 +777,14 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
             modelBuilder.Entity("TournamentPlatformSystemWebApi.Infrastructure.Entities.TournamentThemeModel", b =>
                 {
                     b.Navigation("Tournaments");
+
+                    b.Navigation("UserPreferences");
                 });
 
             modelBuilder.Entity("TournamentPlatformSystemWebApi.Infrastructure.Entities.UserModel", b =>
                 {
+                    b.Navigation("RefreshTokens");
+
                     b.Navigation("Tournaments");
 
                     b.Navigation("UserDetail");
@@ -651,6 +792,8 @@ namespace TournamentPlatformSystemWebApi.Infrastructure.Migrations
                     b.Navigation("UserPhones");
 
                     b.Navigation("UserTeams");
+
+                    b.Navigation("UserThemePreferences");
                 });
 #pragma warning restore 612, 618
         }
