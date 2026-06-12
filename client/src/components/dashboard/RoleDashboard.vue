@@ -163,17 +163,22 @@ const loadingActive = ref(true)
 const loadingMy = ref(true)
 const errorActive = ref(false)
 
+const toLocalDate = (iso: string): Date => {
+  const d = new Date(iso)
+  if (!iso.endsWith('Z') && !iso.includes('+')) {
+    return new Date(iso + 'Z')
+  }
+  return d
+}
+
 const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('uk-UA', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
+  toLocalDate(iso).toLocaleDateString('uk-UA', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
   })
 
 const formatTime = (iso: string) =>
-  new Date(iso).toLocaleTimeString('uk-UA', {
-    hour: '2-digit',
-    minute: '2-digit',
+  toLocalDate(iso).toLocaleTimeString('uk-UA', {
+    hour: '2-digit', minute: '2-digit',
   })
 
 onMounted(async () => {

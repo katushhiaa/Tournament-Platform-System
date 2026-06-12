@@ -25,22 +25,24 @@ const tournaments = ref<ITournamentPreview[]>([])
 const tournamentsLoading = ref(true)
 const tournamentsError = ref(false)
 
-const formatDate = (iso: string): string => {
-    const d = new Date(iso)
-    return d.toLocaleDateString('uk-UA', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-    })
+const toLocalDate = (iso: string): Date => {
+  const d = new Date(iso)
+  
+  if (!iso.endsWith('Z') && !iso.includes('+')) {
+    return new Date(iso + 'Z')
+  }
+  return d
 }
 
-const formatTime = (iso: string): string => {
-    const d = new Date(iso)
-    return d.toLocaleTimeString('uk-UA', {
-        hour: '2-digit',
-        minute: '2-digit',
-    })
-}
+const formatDate = (iso: string) =>
+  toLocalDate(iso).toLocaleDateString('uk-UA', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+  })
+
+const formatTime = (iso: string) =>
+  toLocalDate(iso).toLocaleTimeString('uk-UA', {
+    hour: '2-digit', minute: '2-digit',
+  })
 
 onMounted(async () => {
   try {

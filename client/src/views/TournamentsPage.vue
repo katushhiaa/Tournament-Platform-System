@@ -16,12 +16,23 @@ const searchQuery = ref('')
 const currentPage = ref(1)
 const PAGE_SIZE = 12
 
+const toLocalDate = (iso: string): Date => {
+  const d = new Date(iso)
+  if (!iso.endsWith('Z') && !iso.includes('+')) {
+    return new Date(iso + 'Z')
+  }
+  return d
+}
+
 const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  toLocalDate(iso).toLocaleDateString('uk-UA', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+  })
 
 const formatTime = (iso: string) =>
-  new Date(iso).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })
-
+  toLocalDate(iso).toLocaleTimeString('uk-UA', {
+    hour: '2-digit', minute: '2-digit',
+  })
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
 async function fetchTournaments(q?: string) {
