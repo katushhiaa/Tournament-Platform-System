@@ -10,3 +10,7 @@ o elevator_pitch.txt (текст вашої 60-секундної промови
 /strategy
 o market_analysis.pdf (SWOT, конкуренти, персони, модель монетизації, CAC гіпотеза).
 o social_media_plan.xlsx (календар постів, приклади постів та список каналів просування).
+
+• Формати: Зображення — .png або .svg. Документи — тільки .pdf. Відео — .mp4.
+• Naming Convention: Всі файли мають бути названі в snake_case або kebab-case (напр.,
+style_guide.pdf). Жодних «презентація_фінал_2.pdf».
