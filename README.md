@@ -2,7 +2,7 @@
   <img src="docs/screenshots/banner.png" alt="ZVYTIAHA Banner" width="100%"/>
 </div>
 
-# Tournament-Platform-System
+# ZVYTIAHA
 
 <div align="center">
 
