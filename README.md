@@ -1,4 +1,20 @@
+<div align="center">
+  <img src="docs/screenshots/banner.png" alt="ZVYTIAHA Banner" width="100%"/>
+</div>
+
 # Tournament-Platform-System
+
+<div align="center">
+
+![Vue 3](https://img.shields.io/badge/Vue-3-4FC08D?style=flat&logo=vue.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-Vite-3178C6?style=flat&logo=typescript)
+![ASP.NET Core](https://img.shields.io/badge/ASP.NET_Core-.NET_9-512BD4?style=flat&logo=dotnet)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?style=flat&logo=postgresql)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat&logo=docker)
+![Status](https://img.shields.io/badge/Status-Stable-brightgreen?style=flat)
+![Version](https://img.shields.io/badge/Version-1.0.0-orange?style=flat)
+
+</div>
 
 Система управління турнірами, яка дозволяє користувачам створювати турніри, керувати учасниками та відстежувати результати матчів
 
@@ -201,5 +217,39 @@ client/src/
 ![Редагування турніру](docs/screenshots/edit_tournament.png)
 ---
 
+## 🎬 Demo
+### Реєстрація
+![Реєстрація](docs/gif/registration.gif)
+
+### Пошук турнірів
+![Пошук турнірів](docs/gif/search.gif)
+
+### Взяти участь
+![Взяти участь](docs/gif/to%20take%20part.gif)
+
+### Скасувати участь
+![Скасувати участь](docs/gif/cancel%20participation.gif)
+
+### Генерація сітки
+![Генерація сітки](docs/gif/grid%20generation.gif)
+
+### Результати матчу
+![Результати матчу](docs/gif/match%20results.gif)
+
+### Дискваліфікація
+![Дискваліфікація](docs/gif/disqualification.gif)
+
+### Додати гравця 
+![Додати гравця](docs/gif/add%20member.gif)
+
+## 📱 Mobile View
+### Головна
+![Головна](docs/screenshots/home_dashboard(iPhone%2014%20Pro%20Max)%20(1).png)
+
+### Дашборд гравця 
+![Дашборд гравця ](docs/screenshots/player_dashboard(iPhone%2014%20Pro%20Max).png)
+
+### Дашборд організатора 
+![Дашборд організатора](docs/screenshots/organizer_dashboard(iPhone%2014%20Pro%20Max).png)
 
 *Чернівці, 2026*
