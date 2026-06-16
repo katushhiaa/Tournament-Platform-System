@@ -128,6 +128,25 @@ docker compose up --build    # перезібрати й підняти зано
 | `.env.example` | Шаблон змінних оточення |
 | `tournament-platform-system-secrets.example.json` | Секрети для доступу до Google Storage
 
+## 📢 Marketing Kit
+
+Повний набір маркетингових матеріалів та стратегічних артефактів проєкту розміщено в директорії [`/marketing`](https://github.com/katushhiaa/Tournament-Platform-System/tree/main/docs/marketing). 
+
+Нижче наведено огляд структури та вмісту активів, які використовуються для просування та позиціювання продукту.
+
+### 📁 Структура матеріалів
+
+| Розділ | Опис активів та файли |
+| :--- | :--- |
+| **🎨[Брендінг](https://github.com/katushhiaa/Tournament-Platform-System/tree/main/docs/marketing/branding)** | Елементи фірмового стилю для візуальної ідентифікації:<br>• `logo_primary.png` — основний логотип проекту.<br>• `logo_white.svg` — векторний логотип для темних фонів.<br>• `style_guide.pdf` — гайдлайн (HEX/RGB коди кольорів, шрифти, слоган). |
+|    **🎬[Відеоматеріали](https://github.com/katushhiaa/Tournament-Platform-System/tree/main/docs/marketing/video)**    | Візуальний контент для презентації продукту:<br>• `product_promo_video.mp4` — промо-ролик тривалістю 45–60 секунд.<br>• `thumbnail.jpg` — приваблива обкладинка (прев'ю) для відео. |
+| **✍️[Копірайтинг](https://github.com/katushhiaa/Tournament-Platform-System/tree/main/docs/marketing/copywriting)** | Текстові матеріали для пітчингу:<br>• `elevator_pitch.txt` — текстова версія 60-секундної презентації проєкту. |
+| **📊[Стратегія](https://github.com/katushhiaa/Tournament-Platform-System/tree/main/docs/marketing/strategy)** | Аналітичні та планові документи:<br>• `market_analysis.pdf` — SWOT-аналіз, дослідження конкурентів, портрети персон (цільової аудиторії), модель монетизації та гіпотези CAC.<br>• `social_media_plan.xlsx` — контент-календар, приклади публікацій та перелік каналів просування. |
+
+---
+
+> 💡 **Примітка:** Усі графічні та текстові матеріали є інтелектуальною власністю проєкту та оптимізовані для використання у соціальних мережах, презентаціях для інвесторів (Pitch Decks) та рекламних кампаніях.
+
 ## 📁 Структура клієнтської частини
 client/src/
 ├── api/              # Axios-інстанція, базові налаштування HTTP-запитів
