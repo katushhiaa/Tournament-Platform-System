@@ -2,8 +2,6 @@
   <img src="docs/screenshots/banner.png" alt="ZVYTIAHA Banner" width="100%"/>
 </div>
 
-# ZVYTIAHA
-
 <div align="center">
 
 ![Vue 3](https://img.shields.io/badge/Vue-3-4FC08D?style=flat&logo=vue.js)
@@ -16,7 +14,32 @@
 
 </div>
 
+
+# ZVYTIAHA
+
 Система управління турнірами, яка дозволяє користувачам створювати турніри, керувати учасниками та відстежувати результати матчів
+
+## ✨ Features
+
+- 🏆 Швидке створення турніру — запустіть змагання за кілька хвилин 
+через зручну форму з банером, типом спорту та умовами участі
+
+- 🔍 Розумний пошук — знаходьте потрібні турніри за назвою завдяки системі фільтрів та пагінації
+
+- 👥 Керування учасниками — організатор може додавати гравців, 
+дискваліфіковувати та відстежувати склад у реальному часі
+
+- 🎯 Автоматична турнірна сітка — система сама розподіляє гравців 
+після набору учасників, без жодної ручної роботи
+
+- 📊 Фіксація результатів матчів — вносьте рахунки одразу після гри, 
+прогрес турніру оновлюється миттєво
+
+- 🔐 Безпечний доступ — окремі ролі для Гравця та Організатора 
+захищені сучасною JWT-авторизацією
+
+- 📱 Адаптивний дизайн — платформа однаково зручна на комп'ютері
+та смартфоні
 
 ## 👥 Команда проєкту
 * **Анур'єва Катерина** — Project Manager
@@ -25,28 +48,14 @@
 * **Ярмолюк Людмила** — Frontend Developer
 * **Загрбенюк Богдан** — QA Engineer
 
-## Корисні посилання
+## 🔗 Корисні посилання
 * **[Project Hub (Wiki)](https://github.com/katushhiaa/Tournament-Platform-System/wiki)** — повна документація проєкту.
 * **[Jira Board](https://tournamentsystem.atlassian.net/jira/software/projects/DEV/boards/1/backlog)** — таск-трекер та керування спринтами.
 * **[Figma Design]()** — прототипи інтерфейсу користувача.
 * **[Swagger API](http://localhost:5050/swagger)** — інтерактивна API-документація (доступна локально після запуску стеку через `docker compose up`).
 
-## Структура репозиторію
-Згідно з обраною архітектурою, проєкт має наступну структуру папок:
 
-* `📂 /docs` — Документація, ТЗ, діаграми, API-специфікації
-* `📂 /client` — Frontend-частина застосунку.
-* `📂 /server` — Backend-частина застосунку.
-* `📂 /shared` — Спільні ресурси (типи даних, константи, переклади).
-* `📂 /deploy` — Конфігурації для Docker, CI/CD, скрипти розгортання.
-
-## Технологічний стек
-* **Backend:** ASP.NET Core (.NET 9)
-* **Frontend:** Vue 3 + TypeScript (Vite)
-* **Database:** PostgreSQL 15
-* **Інфраструктура:** Docker / Docker Compose
-
-## 🚀 Інструкція з розгортання (Deployment Guide)
+## 🚀 Інструкція з розгортання (Setup Guide)
 
 Проєкт повністю контейнеризований — для запуску достатньо Docker. Жодних локально встановлених .NET, Node чи PostgreSQL не потрібно.
 
@@ -117,6 +126,7 @@ docker compose up --build    # перезібрати й підняти зано
 | `/server/seeds/seed.sql` | Початкові тестові дані (seed) |
 | `docker-compose.yml` | Оркестрація всіх сервісів |
 | `.env.example` | Шаблон змінних оточення |
+| `tournament-platform-system-secrets.example.json` | Секрети для доступу до Google Storage
 
 ## 📁 Структура клієнтської частини
 client/src/
@@ -216,40 +226,5 @@ client/src/
 
 ![Редагування турніру](docs/screenshots/edit_tournament.png)
 ---
-
-## 🎬 Demo
-### Реєстрація
-![Реєстрація](docs/gif/registration.gif)
-
-### Пошук турнірів
-![Пошук турнірів](docs/gif/search.gif)
-
-### Взяти участь
-![Взяти участь](docs/gif/to%20take%20part.gif)
-
-### Скасувати участь
-![Скасувати участь](docs/gif/cancel%20participation.gif)
-
-### Генерація сітки
-![Генерація сітки](docs/gif/grid%20generation.gif)
-
-### Результати матчу
-![Результати матчу](docs/gif/match%20results.gif)
-
-### Дискваліфікація
-![Дискваліфікація](docs/gif/disqualification.gif)
-
-### Додати гравця 
-![Додати гравця](docs/gif/add%20member.gif)
-
-## 📱 Mobile View
-### Головна
-![Головна](docs/screenshots/home_dashboard(iPhone%2014%20Pro%20Max)%20(1).png)
-
-### Дашборд гравця 
-![Дашборд гравця ](docs/screenshots/player_dashboard(iPhone%2014%20Pro%20Max).png)
-
-### Дашборд організатора 
-![Дашборд організатора](docs/screenshots/organizer_dashboard(iPhone%2014%20Pro%20Max).png)
 
 *Чернівці, 2026*
