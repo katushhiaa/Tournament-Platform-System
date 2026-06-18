@@ -51,7 +51,7 @@
 ## 🔗 Корисні посилання
 * **[Project Hub (Wiki)](https://github.com/katushhiaa/Tournament-Platform-System/wiki)** — повна документація проєкту.
 * **[Jira Board](https://tournamentsystem.atlassian.net/jira/software/projects/DEV/boards/1/backlog)** — таск-трекер та керування спринтами.
-* **[Figma Design]()** — прототипи інтерфейсу користувача.
+* **[Figma Design](https://www.figma.com/design/3vOrfAqN7YR6snGJBVQURt/UI-%D0%BF%D1%80%D0%BE%D1%82%D0%BE%D1%82%D0%B8%D0%BF?node-id=0-1&t=ApE2quWKRSBYVRjD-1)** — прототипи інтерфейсу користувача.
 * **[Swagger API](http://localhost:5050/swagger)** — інтерактивна API-документація (доступна локально після запуску стеку через `docker compose up`).
 
 
