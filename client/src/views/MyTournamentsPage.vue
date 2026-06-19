@@ -393,7 +393,7 @@ const visiblePages = computed(() => {
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 520px) {
   .hero {
     padding: 80px 16px 40px;
   }
@@ -419,6 +419,10 @@ const visiblePages = computed(() => {
 
   .main {
     padding: 32px 16px 80px;
+  }
+
+  .grid {
+    grid-template-columns: repeat(1, 1fr);
   }
 
   }
