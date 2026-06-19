@@ -40,31 +40,36 @@ INSERT INTO tournament_theme (name, image_url)
 SELECT 'Table Tennis', 'https://storage.googleapis.com/tournament-zvytiaga-images/themes/table_tennis_sport_image.png' WHERE NOT EXISTS (SELECT 1 FROM tournament_theme WHERE name = 'Table Tennis');
 INSERT INTO tournament_theme (name, image_url)
 SELECT 'Tennis', 'https://storage.googleapis.com/tournament-zvytiaga-images/themes/tennis_sport_image.png' WHERE NOT EXISTS (SELECT 1 FROM tournament_theme WHERE name = 'Tennis');
+
 INSERT INTO "user" (id, full_name, password_hash, is_organizer, account_state_id)
 SELECT 
     '00000000-0000-0000-0000-000000000001'::uuid,
     'John Smith',
-    '$2a$10$dXJ3SW6G7P50eS3WQYshlOAG4VPT8X3xDVNKBN3ILWtY3lV0kF8wS',
+    '$2a$12$ExmFCWGakMcYGC5KcD65pe9EcGWyJqBwJwyasBwjvw90LoIzVzakW',
     true,
     id
 FROM account_state 
 WHERE name = 'active'
 AND NOT EXISTS (SELECT 1 FROM "user" WHERE id = '00000000-0000-0000-0000-000000000001'::uuid);
+
+
 INSERT INTO "user" (id, full_name, password_hash, is_organizer, account_state_id)
 SELECT 
     '00000000-0000-0000-0000-000000000002'::uuid,
     'Jane Williams',
-    '$2a$10$dXJ3SW6G7P50eS3WQYshlOAG4VPT8X3xDVNKBN3ILWtY3lV0kF8wS',
+    '$2a$12$ExmFCWGakMcYGC5KcD65pe9EcGWyJqBwJwyasBwjvw90LoIzVzakW',
     true,
     id
 FROM account_state 
 WHERE name = 'active'
 AND NOT EXISTS (SELECT 1 FROM "user" WHERE id = '00000000-0000-0000-0000-000000000002'::uuid);
+
+
 INSERT INTO "user" (id, full_name, password_hash, is_organizer, account_state_id)
 SELECT 
     ('00000000-0000-0000-0000-0000000000' || LPAD(players.num::text, 2, '0'))::uuid,
     players.name,
-    '$2a$10$dXJ3SW6G7P50eS3WQYshlOAG4VPT8X3xDVNKBN3ILWtY3lV0kF8wS',
+    '$2a$12$ExmFCWGakMcYGC5KcD65pe9EcGWyJqBwJwyasBwjvw90LoIzVzakW',
     false,
     (SELECT id FROM account_state WHERE name = 'active')
 FROM (
@@ -383,11 +388,11 @@ INSERT INTO team (id, name, tournament_id) VALUES
 ('44444444-0000-0000-0000-000000000003'::uuid, 'Bears', '33333333-0000-0000-0000-000000000001'::uuid),
 ('44444444-0000-0000-0000-000000000004'::uuid, 'Wolves', '33333333-0000-0000-0000-000000000001'::uuid)
 ON CONFLICT DO NOTHING;
-INSERT INTO match (id, tournament_id, team_a_id, team_b_id, winner_id, level, order_number, start_date, team_a_score, team_b_score, status) VALUES
+INSERT INTO match (id, tournament_id, team_a_id, team_b_id, winner_id, level, order_number, start_date, team_a_score, team_b_score, "Status") VALUES
 ('55555555-0000-0000-0000-000000000001'::uuid, '33333333-0000-0000-0000-000000000001'::uuid, '44444444-0000-0000-0000-000000000001'::uuid, '44444444-0000-0000-0000-000000000002'::uuid, '44444444-0000-0000-0000-000000000001'::uuid, 1, 1, '2025-12-01 10:30:00', 3, 1, 'completed'),
 ('55555555-0000-0000-0000-000000000002'::uuid, '33333333-0000-0000-0000-000000000001'::uuid, '44444444-0000-0000-0000-000000000003'::uuid, '44444444-0000-0000-0000-000000000004'::uuid, '44444444-0000-0000-0000-000000000004'::uuid, 1, 2, '2025-12-01 12:30:00', 0, 2, 'completed')
 ON CONFLICT DO NOTHING;
-INSERT INTO match (id, tournament_id, team_a_id, team_b_id, winner_id, level, order_number, start_date, team_a_score, team_b_score, status) VALUES
+INSERT INTO match (id, tournament_id, team_a_id, team_b_id, winner_id, level, order_number, start_date, team_a_score, team_b_score, "Status") VALUES
 ('55555555-0000-0000-0000-000000000003'::uuid, '33333333-0000-0000-0000-000000000001'::uuid, '44444444-0000-0000-0000-000000000001'::uuid, '44444444-0000-0000-0000-000000000004'::uuid, '44444444-0000-0000-0000-000000000001'::uuid, 2, 1, '2025-12-05 15:30:00', 5, 4, 'completed')
 ON CONFLICT DO NOTHING;
 INSERT INTO tournament (
@@ -405,9 +410,9 @@ INSERT INTO team (id, name, tournament_id) VALUES
 ('77777777-0000-0000-0000-000000000003'::uuid, 'Falcons', '66666666-0000-0000-0000-000000000001'::uuid),
 ('77777777-0000-0000-0000-000000000004'::uuid, 'Hawks', '66666666-0000-0000-0000-000000000001'::uuid)
 ON CONFLICT DO NOTHING;
-INSERT INTO match (id, tournament_id, team_a_id, team_b_id, winner_id, level, order_number, start_date, team_a_score, team_b_score, status) VALUES
+INSERT INTO match (id, tournament_id, team_a_id, team_b_id, winner_id, level, order_number, start_date, team_a_score, team_b_score, "Status") VALUES
 ('88888888-0000-0000-0000-000000000001'::uuid, '66666666-0000-0000-0000-000000000001'::uuid, '77777777-0000-0000-0000-000000000001'::uuid, '77777777-0000-0000-0000-000000000002'::uuid, '77777777-0000-0000-0000-000000000001'::uuid, 1, 1, CURRENT_TIMESTAMP - INTERVAL '12 hours', 8, 5, 'completed')
 ON CONFLICT DO NOTHING;
-INSERT INTO match (id, tournament_id, team_a_id, team_b_id, level, order_number, start_date, team_a_score, team_b_score, status) VALUES
+INSERT INTO match (id, tournament_id, team_a_id, team_b_id, level, order_number, start_date, team_a_score, team_b_score, "Status") VALUES
 ('88888888-0000-0000-0000-000000000002'::uuid, '66666666-0000-0000-0000-000000000001'::uuid, '77777777-0000-0000-0000-000000000003'::uuid, '77777777-0000-0000-0000-000000000004'::uuid, 1, 2, CURRENT_TIMESTAMP - INTERVAL '2 hours', 3, 4, 'in_progress')
 ON CONFLICT DO NOTHING;
