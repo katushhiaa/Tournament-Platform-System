@@ -46,13 +46,14 @@
 * **Скуртул Сергій** — Backend Developer
 * **Дудко Володимир** — Database Engineer
 * **Ярмолюк Людмила** — Frontend Developer
-* **Загрбенюк Богдан** — QA Engineer
+* **Загребенюк Богдан** — QA Engineer
 
-## 🔗 Корисні посилання
+## 🔗 Корисні посилання (Project Resources)
 * **[Project Hub (Wiki)](https://github.com/katushhiaa/Tournament-Platform-System/wiki)** — повна документація проєкту.
 * **[Jira Board](https://tournamentsystem.atlassian.net/jira/software/projects/DEV/boards/1/backlog)** — таск-трекер та керування спринтами.
 * **[Figma Design](https://www.figma.com/design/3vOrfAqN7YR6snGJBVQURt/UI-%D0%BF%D1%80%D0%BE%D1%82%D0%BE%D1%82%D0%B8%D0%BF?node-id=0-1&t=ApE2quWKRSBYVRjD-1)** — прототипи інтерфейсу користувача.
 * **[Swagger API](http://localhost:5050/swagger)** — інтерактивна API-документація (доступна локально після запуску стеку через `docker compose up`).
+* **[Cloude Storage](https://drive.google.com/drive/u/3/folders/1aManIpaxoNcx4vRoxnco_O8lVbiHai-t)** - Cloude storage (частина документації знаходиться тут, проте на сторінках Wiki присутні посилання на документи)
 
 
 ## 🚀 Інструкція з розгортання (Setup Guide)
@@ -114,7 +115,7 @@ docker compose up --build    # перезібрати й підняти зано
 - **Seed-користувачі** — при першому запуску БД наповнюється тестовими користувачами з `server/seeds/seed.sql`:
   - Організатори: `john.smith@example.com`, `jane.williams@example.com`
   - Гравці: `alex.johnson@example.com`, `michael.brown@example.com` та ін.
-  - Пароль seed-користувачів зберігається у вигляді хешу; актуальний plaintext-пароль уточнюйте у Backend-розробника (Сергій Скуртул).
+  - Пароль seed-користувачів зберігається у вигляді хешу; актуальний plaintext-пароль уточнюйте у DB-розробника (Дудко Володимир).
 
 ## 📂 Структура проєкту (де що знаходиться)
 
