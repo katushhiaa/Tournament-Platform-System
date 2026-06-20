@@ -322,8 +322,11 @@ const visiblePages = computed(() => {
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 520px) {
   .main { padding: 32px 16px 80px; }
   .hero__title { font-size: 32px; }
+  .grid {
+    grid-template-columns: repeat(1, 1fr);
+  }
 }
 </style>
